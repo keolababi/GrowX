@@ -1,0 +1,37 @@
+{
+  "name": "startup-platform",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "mobile"
+  ],
+  "packageManager": "bun@1.2.17",
+  "scripts": {
+    "dev:backend": "bun --filter backend dev",
+    "dev:mobile": "bun --filter mobile start",
+    "build": "bun --filter backend build",
+    "typecheck": "bun --filter backend typecheck && bun --filter mobile typecheck",
+    "lint": "bun --filter backend lint && bun --filter mobile lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
+    "prettier": "^3.5.3",
+    "typescript-eslint": "^8.35.0"
+  },
+  "lint-staged": {
+    "*.{js,cjs,mjs,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

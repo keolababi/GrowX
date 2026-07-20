@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  SYSTEM
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("USER")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  profile       Profile?
+  podcasts      Podcast[]      @relation("PodcastAuthor")
+  reels         Reel[]         @relation("ReelAuthor")
+  communities   Community[]    @relation("CommunityOwner")
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  notifications Notification[] @relation("NotificationRecipient")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  displayName String?
+  bio       String?  @db.VarChar(500)
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Podcast {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  coverUrl    String?
+  authorId    String
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User      @relation("PodcastAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  episodes    Episode[]
+}
+
+model Episode {
+  id          String   @id @default(cuid())
+  podcastId   String
+  title       String
+  description String?  @db.Text
+  audioUrl    String
+  durationSec Int?
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  podcast     Podcast  @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+}
+
+model Reel {
+  id        String   @id @default(cuid())
+  authorId  String
+  caption   String?  @db.VarChar(1000)
+  videoUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation("ReelAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User     @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  posts       Post[]
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  authorId    String
+  communityId String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  authorId  String
+  postId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  recipientId String
+  type      NotificationType
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  recipient User             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+}

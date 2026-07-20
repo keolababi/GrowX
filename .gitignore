@@ -1,0 +1,35 @@
+# Dependencies and builds
+node_modules/
+.bun/
+dist/
+.expo/
+web-build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Expo native outputs
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Logs and OS files
+*.log
+.DS_Store
+coverage/
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

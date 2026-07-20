@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Startup Platform",
+    "slug": "startup-platform",
+    "version": "1.0.0",
+    "scheme": "startupplatform",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": true },
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#ffffff" } },
+    "web": { "bundler": "metro", "output": "static" }
+  }
+}
