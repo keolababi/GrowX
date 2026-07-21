@@ -177,7 +177,7 @@ export default function MentorScreen() {
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="◯" label="Мессеж" />
-        <NavItem icon="♙" label="Профайл" />
+        <NavItem icon="♙" label="Профайл" onPress={() => router.push('/profile')} />
       </View>
     </SafeAreaView>
   );
