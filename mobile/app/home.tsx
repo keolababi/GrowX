@@ -1,4 +1,5 @@
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const lime = '#8ee817';
 
@@ -13,12 +14,23 @@ const icons: Record<IconName, string> = {
   grid: '⌘',
 };
 
-function QuickLink({ icon, label }: { icon: IconName; label: string }) {
+function QuickLink({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  onPress?: () => void;
+}) {
   return (
-    <View style={styles.quickLink}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.quickLink, pressed && styles.quickLinkPressed]}
+    >
       <Text style={styles.quickIcon}>{icons[icon]}</Text>
       <Text style={styles.quickLabel}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -70,7 +82,7 @@ export default function HomeScreen() {
 
         <View style={styles.quickRow}>
           <QuickLink icon="book" label="Мэдлэг" />
-          <QuickLink icon="person" label="Ментор" />
+          <QuickLink icon="person" label="Ментор" onPress={() => router.push('/mentor')} />
           <QuickLink icon="people" label="Community" />
           <QuickLink icon="chat" label="Хэлэлцэх" />
         </View>
@@ -229,6 +241,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#0d1c22',
   },
+  quickLinkPressed: { opacity: 0.72, transform: [{ scale: 0.97 }] },
   quickIcon: { color: lime, fontSize: 31, lineHeight: 33 },
   quickLabel: { color: '#d9dcde', fontSize: 12, fontWeight: '600' },
   sectionHeader: {
