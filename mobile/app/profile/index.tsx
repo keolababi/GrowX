@@ -63,7 +63,7 @@ export default function ProfileScreen() {
         <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
-        <NavItem icon="◯" label="Мессеж" />
+        <NavItem icon="◯" label="Мессеж" onPress={() => router.push('/messages')} />
         <NavItem icon="♙" label="Профайл" active />
       </View>
     </SafeAreaView>
