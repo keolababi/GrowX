@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { colors, Logo, Screen } from '@/components/Screen';
 
@@ -10,17 +10,17 @@ const targetImage = require('../assets/onboarding-target.png');
 
 const slides = [
   {
-    image: rocketImage,
+    image: targetImage,
     title: 'Бизнесээ эхлүүлэх,\nмөрөөдлөө биелүүл.',
     body: 'Мэдлэг, туршлага, зөвлөгөө,\nхамтын сүлжээ — бүгд нэг дор.',
   },
   {
-    image: communityImage,
+    image: rocketImage,
     title: 'Туршлагатай менторуудаас\nзөвлөгөө аваарай.',
     body: 'Бизнесийн өсөлтөд хэрэгтэй бодит\nтуршлага, практик зөвлөгөөнүүд.',
   },
   {
-    image: targetImage,
+    image: communityImage,
     title: 'Community-д нэгдэж,\nхөгжлийн боломжоо нээгээрэй.',
     body: 'Ижил зорилготой хүмүүстэй холбогдож,\nхамтдаа өсөх хөгжилцгөөе.',
   },
@@ -33,6 +33,17 @@ export default function Index() {
     const id = setTimeout(() => setSplash(false), 1500);
     return () => clearTimeout(id);
   }, []);
+
+  useEffect(() => {
+    if (splash || page === 0) return;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setPage((currentPage) => Math.max(0, currentPage - 1));
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [page, splash]);
 
   if (splash)
     return (
@@ -57,9 +68,23 @@ export default function Index() {
   const slide = slides[page];
   return (
     <Screen>
-      <Pressable style={styles.skip} onPress={() => router.replace('/login')}>
-        <Text style={styles.skipText}>Алгасах</Text>
-      </Pressable>
+      <View style={styles.topActions}>
+        {page > 0 ? (
+          <Pressable
+            accessibilityLabel="Өмнөх хуудас"
+            hitSlop={12}
+            style={styles.back}
+            onPress={() => setPage((currentPage) => currentPage - 1)}
+          >
+            <Text style={styles.backText}>‹</Text>
+          </Pressable>
+        ) : (
+          <View />
+        )}
+        <Pressable style={styles.skip} onPress={() => router.push('/login')}>
+          <Text style={styles.skipText}>Алгасах</Text>
+        </Pressable>
+      </View>
       <View style={styles.illustration}>
         <Image source={slide.image} resizeMode="contain" style={styles.image} />
       </View>
@@ -73,7 +98,11 @@ export default function Index() {
       <View style={styles.bottom}>
         <Pressable
           style={styles.button}
-          onPress={() => (page < 2 ? setPage(page + 1) : router.replace('/login'))}
+          onPress={() =>
+            page < slides.length - 1
+              ? setPage((currentPage) => currentPage + 1)
+              : router.push('/login')
+          }
         >
           <Text style={styles.buttonText}>{page === 2 ? 'Эхлэх' : 'Дараах'}</Text>
           <Text style={styles.arrow}>{page === 2 ? '' : '→'}</Text>
@@ -151,7 +180,16 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colors.lime,
   },
-  skip: { alignSelf: 'flex-end', paddingVertical: 6, paddingLeft: 15, zIndex: 2 },
+  topActions: {
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 2,
+  },
+  back: { minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
+  backText: { color: '#FFFFFF', fontSize: 34, lineHeight: 34, fontWeight: '300' },
+  skip: { paddingVertical: 6, paddingLeft: 15 },
   skipText: { color: '#FFFFFF', fontSize: 13 },
   illustration: { height: 350, alignItems: 'center', justifyContent: 'center' },
   image: { width: '116%', height: '100%' },
