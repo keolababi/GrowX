@@ -152,7 +152,7 @@ export default function HomeScreen() {
         <View style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </View>
-        <BottomItem icon="chat" label="Мессеж" />
+        <BottomItem icon="chat" label="Мессеж" onPress={() => router.push('/messages')} />
         <BottomItem icon="person" label="Профайл" onPress={() => router.push('/profile')} />
       </View>
     </SafeAreaView>
