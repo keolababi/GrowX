@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "Startup Platform",
-    "slug": "startup-platform",
+    "name": "GrowX",
+    "slug": "growx",
     "version": "1.0.0",
-    "scheme": "startupplatform",
+    "scheme": "growx",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "plugins": ["expo-router", "expo-secure-store"],
     "experiments": { "typedRoutes": true },
     "ios": { "supportsTablet": true },
     "android": { "adaptiveIcon": { "backgroundColor": "#ffffff" } },
-    "web": { "bundler": "metro", "output": "static" }
+    "web": { "bundler": "metro", "output": "single" }
   }
 }
