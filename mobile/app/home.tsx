@@ -34,12 +34,22 @@ function QuickLink({
   );
 }
 
-function BottomItem({ icon, label, active }: { icon: IconName; label: string; active?: boolean }) {
+function BottomItem({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  active?: boolean;
+  onPress?: () => void;
+}) {
   return (
-    <View style={styles.bottomItem}>
+    <Pressable onPress={onPress} style={styles.bottomItem}>
       <Text style={[styles.bottomIcon, active && styles.bottomIconActive]}>{icons[icon]}</Text>
       <Text style={[styles.bottomLabel, active && styles.bottomLabelActive]}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -143,7 +153,7 @@ export default function HomeScreen() {
           <Text style={styles.addIcon}>＋</Text>
         </View>
         <BottomItem icon="chat" label="Мессеж" />
-        <BottomItem icon="person" label="Профайл" />
+        <BottomItem icon="person" label="Профайл" onPress={() => router.push('/profile')} />
       </View>
     </SafeAreaView>
   );
