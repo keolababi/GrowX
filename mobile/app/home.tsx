@@ -99,10 +99,15 @@ export default function HomeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Санал болгох контент</Text>
-          <View style={styles.seeAll}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Бүх podcast үзэх"
+            onPress={() => router.push('/podcast')}
+            style={({ pressed }) => [styles.seeAll, pressed && styles.quickLinkPressed]}
+          >
             <Text style={styles.seeAllText}>Бүгдийг үзэх</Text>
             <Text style={styles.greenArrow}>→</Text>
-          </View>
+          </Pressable>
         </View>
 
         <View style={styles.cards}>
@@ -127,7 +132,12 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={styles.podcastCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="BizTalk Podcast нээх"
+            onPress={() => router.push('/podcast')}
+            style={({ pressed }) => [styles.podcastCard, pressed && styles.cardPressed]}
+          >
             <View style={styles.podcastGlow} />
             <View style={[styles.badge, styles.podcastBadge]}>
               <Text style={styles.badgeText}>PODCAST</Text>
@@ -142,7 +152,7 @@ export default function HomeScreen() {
             <View style={styles.play}>
               <Text style={styles.playIcon}>▶</Text>
             </View>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -339,6 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#38208b',
     paddingLeft: 18,
   },
+  cardPressed: { opacity: 0.82, transform: [{ scale: 0.98 }] },
   podcastGlow: {
     position: 'absolute',
     width: 180,

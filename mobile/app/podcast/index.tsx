@@ -1,5 +1,14 @@
-import { Stack } from 'expo-router';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { router, Stack } from 'expo-router';
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 const lime = '#8EE817';
 
@@ -10,6 +19,7 @@ const episodes = [
     duration: '32:10',
     listens: '840 сонссон',
     tone: '#2d1688',
+    category: 'BizTalk',
   },
   {
     number: '11',
@@ -17,6 +27,7 @@ const episodes = [
     duration: '28:45',
     listens: '760 сонссон',
     tone: '#142870',
+    category: 'Business Voice',
   },
   {
     number: '10',
@@ -24,8 +35,27 @@ const episodes = [
     duration: '21:30',
     listens: '1.1K сонссон',
     tone: '#24160f',
+    category: 'Startup',
+  },
+  {
+    number: '09',
+    title: 'Багаа зөв бүрдүүлэх нь',
+    duration: '26:18',
+    listens: '690 сонссон',
+    tone: '#19453d',
+    category: 'BizTalk',
+  },
+  {
+    number: '08',
+    title: 'Бизнесийн мөнгөн урсгал',
+    duration: '35:02',
+    listens: '920 сонссон',
+    tone: '#573019',
+    category: 'Business Voice',
   },
 ];
+
+const categories = ['Бүгд', 'BizTalk', 'Business Voice', 'Startup'];
 
 function Microphone({ small = false }: { small?: boolean }) {
   return (
@@ -54,9 +84,26 @@ function Waveform() {
   );
 }
 
-function EpisodeRow({ episode }: { episode: (typeof episodes)[number] }) {
+function EpisodeRow({
+  episode,
+  selected,
+  onPress,
+}: {
+  episode: (typeof episodes)[number];
+  selected?: boolean;
+  onPress: () => void;
+}) {
   return (
-    <View style={styles.episodeRow}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${episode.title} дугаарыг сонгох`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.episodeRow,
+        selected && styles.episodeRowSelected,
+        pressed && styles.episodeRowPressed,
+      ]}
+    >
       <View style={[styles.thumbnail, { backgroundColor: episode.tone }]}>
         <View style={styles.thumbGlow} />
         <Microphone small />
@@ -69,74 +116,148 @@ function EpisodeRow({ episode }: { episode: (typeof episodes)[number] }) {
           {episode.duration} · {episode.listens}
         </Text>
       </View>
-    </View>
+      <Text style={[styles.rowPlay, selected && styles.rowPlaySelected]}>
+        {selected ? '▶' : '›'}
+      </Text>
+    </Pressable>
   );
 }
 
-function NavItem({ icon, label, active }: { icon: string; label: string; active?: boolean }) {
+function NavItem({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: string;
+  label: string;
+  active?: boolean;
+  onPress?: () => void;
+}) {
   return (
-    <View style={styles.navItem}>
+    <Pressable onPress={onPress} style={styles.navItem}>
       <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
       <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
 export default function PodcastScreen() {
+  const [category, setCategory] = useState('Бүгд');
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState('');
+  const [selectedNumber, setSelectedNumber] = useState(episodes[0].number);
+  const [playing, setPlaying] = useState(false);
+
+  const selectedEpisode =
+    episodes.find((episode) => episode.number === selectedNumber) ?? episodes[0];
+  const visibleEpisodes = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    return episodes.filter((episode) => {
+      const matchesCategory = category === 'Бүгд' || episode.category === category;
+      const matchesQuery =
+        !normalizedQuery ||
+        episode.title.toLocaleLowerCase().includes(normalizedQuery) ||
+        episode.category.toLocaleLowerCase().includes(normalizedQuery);
+      return matchesCategory && matchesQuery;
+    });
+  }, [category, query]);
+
+  const selectEpisode = (number: string) => {
+    setSelectedNumber(number);
+    setPlaying(true);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.heading}>Podcast</Text>
-          <Text style={styles.search}>⌕</Text>
+          <Pressable
+            accessibilityLabel="Podcast хайх"
+            hitSlop={12}
+            onPress={() => {
+              setSearching((current) => !current);
+              if (searching) setQuery('');
+            }}
+          >
+            <Text style={styles.search}>⌕</Text>
+          </Pressable>
         </View>
 
-        <View style={styles.categories}>
-          <View style={[styles.category, styles.categoryActive]}>
-            <Text style={styles.categoryActiveText}>Бүгд</Text>
-          </View>
-          <View style={styles.category}>
-            <Text style={styles.categoryText}>BizTalk</Text>
-          </View>
-          <View style={[styles.category, styles.categoryWide]}>
-            <Text style={styles.categoryText}>Business Voice</Text>
-          </View>
-          <View style={styles.category}>
-            <Text style={styles.categoryText}>Startup</Text>
-          </View>
-        </View>
+        {searching && (
+          <TextInput
+            autoFocus
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Podcast хайх..."
+            placeholderTextColor="#687278"
+            style={styles.searchInput}
+          />
+        )}
+
+        <ScrollView
+          horizontal
+          contentContainerStyle={styles.categories}
+          showsHorizontalScrollIndicator={false}
+        >
+          {categories.map((item) => (
+            <Pressable
+              key={item}
+              onPress={() => setCategory(item)}
+              style={[styles.category, category === item && styles.categoryActive]}
+            >
+              <Text style={category === item ? styles.categoryActiveText : styles.categoryText}>
+                {item}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         <View style={styles.featured}>
           <View style={styles.featuredGlow} />
           <Text style={styles.featuredTitle}>BizTalk Podcast</Text>
-          <Text style={styles.featuredSubtitle}>#12 Стартапын нууц</Text>
+          <Text style={styles.featuredSubtitle}>
+            #{selectedEpisode.number} {selectedEpisode.title}
+          </Text>
           <Waveform />
-          <Text style={styles.featuredDuration}>32:10</Text>
+          <Text style={styles.featuredDuration}>{selectedEpisode.duration}</Text>
           <View style={styles.largeMic}>
             <Microphone />
           </View>
-          <View style={styles.playButton}>
-            <Text style={styles.playIcon}>▶</Text>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={playing ? 'Podcast түр зогсоох' : 'Podcast тоглуулах'}
+            onPress={() => setPlaying((current) => !current)}
+            style={({ pressed }) => [styles.playButton, pressed && styles.playButtonPressed]}
+          >
+            <Text style={styles.playIcon}>{playing ? 'Ⅱ' : '▶'}</Text>
+          </Pressable>
         </View>
 
         <Text style={styles.allTitle}>Бүх дугаар</Text>
         <View style={styles.episodeList}>
-          {episodes.map((episode) => (
-            <EpisodeRow key={episode.number} episode={episode} />
+          {visibleEpisodes.map((episode) => (
+            <EpisodeRow
+              key={episode.number}
+              episode={episode}
+              selected={selectedNumber === episode.number}
+              onPress={() => selectEpisode(episode.number)}
+            />
           ))}
+          {visibleEpisodes.length === 0 && <Text style={styles.empty}>Podcast олдсонгүй.</Text>}
         </View>
       </ScrollView>
 
       <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" active />
-        <NavItem icon="⌘" label="Мэдлэг" />
-        <View style={styles.addButton}>
+        <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
+        <NavItem icon="⌘" label="Мэдлэг" active />
+        <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
-        </View>
-        <NavItem icon="○" label="Мессеж" />
-        <NavItem icon="♙" label="Профайл" />
+        </Pressable>
+        <NavItem icon="○" label="Мессеж" onPress={() => router.push('/messages')} />
+        <NavItem icon="♙" label="Профайл" onPress={() => router.push('/profile')} />
       </View>
     </SafeAreaView>
   );
@@ -153,16 +274,26 @@ const styles = StyleSheet.create({
   },
   heading: { color: '#f7f7f7', fontSize: 31, fontWeight: '800', letterSpacing: -0.7 },
   search: { color: '#f7f7f7', fontSize: 42, lineHeight: 44, transform: [{ rotate: '-20deg' }] },
-  categories: { flexDirection: 'row', gap: 10, marginTop: 13, marginBottom: 31 },
+  searchInput: {
+    height: 46,
+    marginTop: 8,
+    paddingHorizontal: 15,
+    borderRadius: 13,
+    color: '#fff',
+    backgroundColor: '#0b171d',
+    borderWidth: 1,
+    borderColor: '#1a292f',
+    fontSize: 15,
+  },
+  categories: { gap: 10, paddingTop: 13, paddingBottom: 31 },
   category: {
-    flex: 1,
     height: 43,
+    paddingHorizontal: 18,
     borderRadius: 13,
     backgroundColor: '#0b171d',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoryWide: { flex: 1.65 },
   categoryActive: { backgroundColor: lime },
   categoryText: { color: '#e4e5e6', fontSize: 12, fontWeight: '700' },
   categoryActiveText: { color: '#152000', fontSize: 13, fontWeight: '800' },
@@ -261,6 +392,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   playIcon: { color: '#342181', fontSize: 25, marginLeft: 4 },
+  playButtonPressed: { opacity: 0.8, transform: [{ scale: 0.94 }] },
   allTitle: { color: '#f5f5f5', fontSize: 23, fontWeight: '800', marginTop: 36, marginBottom: 17 },
   episodeList: { gap: 12 },
   episodeRow: {
@@ -271,6 +403,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 7,
   },
+  episodeRowSelected: { borderWidth: 1, borderColor: '#486a2a', backgroundColor: '#0c1d1a' },
+  episodeRowPressed: { opacity: 0.76 },
   thumbnail: {
     width: 70,
     height: 65,
@@ -290,6 +424,9 @@ const styles = StyleSheet.create({
   episodeCopy: { flex: 1, marginLeft: 15 },
   episodeTitle: { color: '#f1f1f1', fontSize: 15, fontWeight: '700' },
   episodeMeta: { color: '#9ba2a7', fontSize: 12, marginTop: 8 },
+  rowPlay: { color: '#8c969b', fontSize: 30, marginRight: 12 },
+  rowPlaySelected: { color: lime, fontSize: 17 },
+  empty: { color: '#899399', textAlign: 'center', paddingVertical: 28, fontSize: 14 },
   bottomNav: {
     position: 'absolute',
     left: 0,
