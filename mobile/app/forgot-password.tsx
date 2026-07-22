@@ -1,9 +1,34 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
 import { BackButton, Field, FooterLink, PrimaryButton } from '@/components/AuthUI';
+import { api } from '@/services/api';
+import { getApiError } from '@/utils/auth';
 
 export default function ForgotPassword() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const submit = async () => {
+    if (!email.includes('@')) return setError('Зөв и-мэйл хаяг оруулна уу.');
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await api.post<{ debugCode?: string }>('/auth/forgot-password', {
+        email: email.trim(),
+      });
+      if (data.debugCode) Alert.alert('Development reset code', data.debugCode);
+      router.push({
+        pathname: '/verify-code',
+        params: { email: email.trim(), code: data.debugCode ?? '' },
+      });
+    } catch (value) {
+      setError(getApiError(value));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Screen>
       <AuthHeader
@@ -24,8 +49,13 @@ export default function ForgotPassword() {
         placeholder="yourname@example.com"
         keyboardType="email-address"
         autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
       />
-      <PrimaryButton onPress={() => router.push('/verify-code')}>Сэргээх линк илгээх</PrimaryButton>
+      {!!error && <Text style={{ color: '#ff7777', fontSize: 13 }}>{error}</Text>}
+      <PrimaryButton disabled={loading} onPress={submit}>
+        {loading ? 'Илгээж байна...' : 'Сэргээх код авах'}
+      </PrimaryButton>
       <FooterLink
         prefix="Нэвтрэх хэсэг рүү буцах уу?"
         action="Нэвтрэх"

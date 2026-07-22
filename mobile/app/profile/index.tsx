@@ -1,5 +1,15 @@
 import { router } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useUser } from '@/providers/UserProvider';
 
 const lime = '#8EE817';
 
@@ -9,9 +19,26 @@ const menuItems = [
   { icon: '▣', label: 'Миний төсөл' },
   { icon: '♧', label: 'Миний зөвлөлүүд' },
   { icon: '⚙', label: 'Тохиргоо' },
+  { icon: '↪', label: 'Гарах' },
 ];
 
 export default function ProfileScreen() {
+  const { user, logout: clearSession } = useUser();
+  const logout = async () => {
+    await clearSession();
+    router.replace('/login');
+  };
+  const confirmLogout = () => {
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Энэ төхөөрөмж дээрх хадгалсан нэвтрэлтийг цэвэрлэж гарах уу?'))
+        void logout();
+      return;
+    }
+    Alert.alert('Бүртгэлээс гарах', 'Энэ төхөөрөмж дээрх хадгалсан нэвтрэлтийг цэвэрлэх үү?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Гарах', style: 'destructive', onPress: () => void logout() },
+    ]);
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -29,8 +56,21 @@ export default function ProfileScreen() {
             <View style={styles.shirt} />
             <View style={styles.tie} />
           </View>
-          <Text style={styles.name}>Бат-Эрдэнэ</Text>
+          <Text style={styles.name}>{user?.displayName ?? 'GrowX хэрэглэгч'}</Text>
           <Text style={styles.role}>Startup Founder</Text>
+        </View>
+
+        <View style={styles.accountCard}>
+          <View style={styles.accountIcon}>
+            <Text style={styles.accountIconText}>✉</Text>
+          </View>
+          <View style={styles.accountCopy}>
+            <Text style={styles.accountLabel}>Нэвтэрсэн бүртгэл</Text>
+            <Text numberOfLines={1} style={styles.accountEmail}>
+              {user?.email ?? 'И-мэйл ачаалж байна...'}
+            </Text>
+          </View>
+          <View style={styles.activeDot} />
         </View>
 
         <View style={styles.stats}>
@@ -45,12 +85,15 @@ export default function ProfileScreen() {
           {menuItems.map((item) => (
             <Pressable
               key={item.label}
+              onPress={item.label === 'Гарах' ? confirmLogout : undefined}
               style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
             >
               <View style={styles.menuIconWrap}>
                 <Text style={styles.menuIcon}>{item.icon}</Text>
               </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Text style={[styles.menuLabel, item.label === 'Гарах' && styles.logoutLabel]}>
+                {item.label}
+              </Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           ))}
@@ -197,6 +240,30 @@ const styles = StyleSheet.create({
   },
   name: { color: '#F6F8F7', fontSize: 26, fontWeight: '800', marginTop: 17, letterSpacing: -0.4 },
   role: { color: '#9AA5A1', fontSize: 15, fontWeight: '500', marginTop: 6 },
+  accountCard: {
+    height: 70,
+    marginTop: 24,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#17382C',
+    backgroundColor: '#071A14',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  accountIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#112B20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountIconText: { color: lime, fontSize: 18 },
+  accountCopy: { flex: 1, marginLeft: 12 },
+  accountLabel: { color: '#87958F', fontSize: 11, fontWeight: '600' },
+  accountEmail: { color: '#F0F5F2', fontSize: 14, fontWeight: '700', marginTop: 4 },
+  activeDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: lime },
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -219,6 +286,7 @@ const styles = StyleSheet.create({
   menuIconWrap: { width: 43, height: 43, alignItems: 'center', justifyContent: 'center' },
   menuIcon: { color: '#EFF3F1', fontSize: 27 },
   menuLabel: { flex: 1, color: '#F0F3F2', fontSize: 17, fontWeight: '700', marginLeft: 9 },
+  logoutLabel: { color: '#FF7777' },
   chevron: { color: '#B8C1BE', fontSize: 35, fontWeight: '300', marginRight: 3, marginTop: -3 },
   bottomNav: {
     position: 'absolute',
