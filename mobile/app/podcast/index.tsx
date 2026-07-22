@@ -252,7 +252,7 @@ export default function PodcastScreen() {
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" active />
+        <NavItem icon="⌘" label="Мэдлэг" active onPress={() => router.push('/medlege')} />
         <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>

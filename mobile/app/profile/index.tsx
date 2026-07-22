@@ -59,12 +59,12 @@ export default function ProfileScreen() {
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" />
+        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.push('/medlege')} />
         <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="◯" label="Мессеж" onPress={() => router.push('/messages')} />
-        <NavItem icon="♙" label="Профайл" active />
+        <NavItem icon="♙" label="Профайл" active onPress={() => router.replace('/profile')} />
       </View>
     </SafeAreaView>
   );

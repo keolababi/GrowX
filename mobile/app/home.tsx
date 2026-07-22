@@ -73,10 +73,10 @@ export default function HomeScreen() {
             <Text style={styles.heroSubtitle}>
               түвшинд <Text style={styles.greenText}>хүргэе.</Text>
             </Text>
-            <View style={styles.startButton}>
+            <Pressable style={styles.startButton} onPress={() => router.push('/medlege')}>
               <Text style={styles.startText}>Эхлэх</Text>
               <Text style={styles.darkArrow}>→</Text>
-            </View>
+            </Pressable>
           </View>
           <View style={styles.growthGraphic}>
             <View style={[styles.ring, styles.ringTop]} />
@@ -91,10 +91,10 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.quickRow}>
-          <QuickLink icon="book" label="Мэдлэг" />
+          <QuickLink icon="book" label="Мэдлэг" onPress={() => router.push('/medlege')} />
           <QuickLink icon="person" label="Ментор" onPress={() => router.push('/mentor')} />
-          <QuickLink icon="people" label="Community" />
-          <QuickLink icon="chat" label="Хэлэлцэх" />
+          <QuickLink icon="people" label="Community" onPress={() => router.push('/messages')} />
+          <QuickLink icon="chat" label="Хэлэлцэх" onPress={() => router.push('/messages')} />
         </View>
 
         <View style={styles.sectionHeader}>
@@ -157,8 +157,8 @@ export default function HomeScreen() {
       </ScrollView>
 
       <View style={styles.bottomNav}>
-        <BottomItem icon="home" label="Нүүр" active />
-        <BottomItem icon="grid" label="Мэдлэг" />
+        <BottomItem icon="home" label="Нүүр" active onPress={() => router.replace('/home')} />
+        <BottomItem icon="grid" label="Мэдлэг" onPress={() => router.push('/medlege')} />
         <View style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </View>

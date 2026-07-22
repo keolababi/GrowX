@@ -41,9 +41,9 @@ export default function LoginScreen() {
       <Pressable onPress={() => router.push('/forgot-password')} style={styles.forgot}>
         <Text style={styles.forgotText}>Нууц үгээ мартсан уу?</Text>
       </Pressable>
-      <PrimaryButton onPress={() => undefined}>Нэвтрэх</PrimaryButton>
+      <PrimaryButton onPress={() => router.replace('/home')}>Нэвтрэх</PrimaryButton>
       <Divider />
-      <GoogleButton onPress={() => undefined} />
+      <GoogleButton onPress={() => router.replace('/home')} />
       <FooterLink
         prefix="Бүртгэлгүй юу?"
         action="Бүртгүүлэх"
