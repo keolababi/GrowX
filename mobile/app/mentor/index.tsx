@@ -172,7 +172,7 @@ export default function MentorScreen() {
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" active onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" />
+        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.push('/medlege')} />
         <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
