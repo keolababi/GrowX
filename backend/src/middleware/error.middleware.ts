@@ -7,6 +7,7 @@ export const notFound: RequestHandler = (_req, res) => {
 };
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  void _next;
   if (error instanceof ZodError) {
     res.status(400).json({ message: 'Invalid request data.', issues: error.flatten() });
     return;

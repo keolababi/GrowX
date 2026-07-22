@@ -1,11 +1,16 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
 import { BackButton, PrimaryButton } from '@/components/AuthUI';
+import { api } from '@/services/api';
+import { getApiError } from '@/utils/auth';
 
 export default function VerifyCode() {
-  const [code, setCode] = useState('248713');
+  const params = useLocalSearchParams<{ email: string; code?: string }>();
+  const [code, setCode] = useState(params.code ?? '');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const input = useRef<TextInput>(null);
   return (
     <Screen>
@@ -33,8 +38,25 @@ export default function VerifyCode() {
       <Text style={styles.timer}>
         Код дахин илгээх <Text style={styles.green}>00:45</Text>
       </Text>
-      <PrimaryButton disabled={code.length !== 6} onPress={() => router.push('/new-password')}>
-        Баталгаажуулах
+      {!!error && (
+        <Text style={{ color: '#ff7777', textAlign: 'center', marginBottom: 8 }}>{error}</Text>
+      )}
+      <PrimaryButton
+        disabled={code.length !== 6 || loading}
+        onPress={async () => {
+          setLoading(true);
+          setError('');
+          try {
+            await api.post('/auth/verify-reset-code', { email: params.email, code });
+            router.push({ pathname: '/new-password', params: { email: params.email, code } });
+          } catch (value) {
+            setError(getApiError(value, 'Код буруу эсвэл хугацаа дууссан.'));
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        {loading ? 'Шалгаж байна...' : 'Баталгаажуулах'}
       </PrimaryButton>
       <View style={styles.keypad}>
         {[
