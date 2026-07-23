@@ -177,12 +177,12 @@ export default function MessagesScreen() {
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.push('/medlege')} />
+        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
         <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="◉" label="Мессеж" active onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" onPress={() => router.push('/profile')} />
+        <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
       </View>
     </SafeAreaView>
   );

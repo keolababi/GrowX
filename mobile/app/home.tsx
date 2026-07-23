@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useUser } from '@/providers/UserProvider';
 
 const lime = '#8ee817';
 
@@ -54,6 +55,9 @@ function BottomItem({
 }
 
 export default function HomeScreen() {
+  const { user } = useUser();
+  const profileInitial = (user?.displayName?.trim() || user?.email || 'G').charAt(0).toUpperCase();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -64,7 +68,14 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.brandText}>GrowX</Text>
           </View>
-          <Text style={styles.bell}>♧</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Профайл нээх"
+            onPress={() => router.replace('/profile')}
+            style={({ pressed }) => [styles.profileButton, pressed && styles.profileButtonPressed]}
+          >
+            <Text style={styles.profileInitial}>{profileInitial}</Text>
+          </Pressable>
         </View>
 
         <View style={styles.hero}>
@@ -158,12 +169,12 @@ export default function HomeScreen() {
 
       <View style={styles.bottomNav}>
         <BottomItem icon="home" label="Нүүр" active onPress={() => router.replace('/home')} />
-        <BottomItem icon="grid" label="Мэдлэг" onPress={() => router.push('/medlege')} />
+        <BottomItem icon="grid" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
         <View style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </View>
-        <BottomItem icon="chat" label="Мессеж" onPress={() => router.push('/messages')} />
-        <BottomItem icon="person" label="Профайл" onPress={() => router.push('/profile')} />
+        <BottomItem icon="chat" label="Мессеж" onPress={() => router.replace('/messages')} />
+        <BottomItem icon="person" label="Профайл" onPress={() => router.replace('/profile')} />
       </View>
     </SafeAreaView>
   );
@@ -182,7 +193,18 @@ const styles = StyleSheet.create({
   brandMark: { transform: [{ rotate: '-25deg' }] },
   logoIcon: { color: lime, fontSize: 36, fontWeight: '900' },
   brandText: { color: lime, fontSize: 29, fontWeight: '800', letterSpacing: -1 },
-  bell: { color: '#f2f4f5', fontSize: 32, transform: [{ rotate: '180deg' }] },
+  profileButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 2,
+    borderColor: lime,
+    backgroundColor: '#13251D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileButtonPressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
+  profileInitial: { color: '#F4F8F5', fontSize: 18, fontWeight: '800' },
   hero: {
     height: 252,
     marginTop: 16,

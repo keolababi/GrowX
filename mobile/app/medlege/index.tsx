@@ -169,8 +169,8 @@ export default function KnowledgeScreen() {
         <View style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </View>
-        <NavItem icon="○" label="Мессеж" onPress={() => router.push('/messages')} />
-        <NavItem icon="♙" label="Профайл" onPress={() => router.push('/profile')} />
+        <NavItem icon="○" label="Мессеж" onPress={() => router.replace('/messages')} />
+        <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
       </View>
     </SafeAreaView>
   );
