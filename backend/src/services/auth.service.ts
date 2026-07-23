@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
-import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/prisma.js';
 import { env } from '../config/env.js';
 import { HttpError } from '../utils/http-error.js';
@@ -8,8 +7,6 @@ import { signAccessToken } from '../utils/jwt.js';
 
 type RegisterInput = { email: string; password: string; displayName?: string };
 type LoginInput = { email: string; password: string };
-
-const googleClient = new OAuth2Client();
 
 function serializeUser(user: {
   id: string;
@@ -106,25 +103,4 @@ export async function resetPassword(email: string, code: string, password: strin
     },
   });
   return { message: 'Password updated successfully.' };
-}
-
-export async function googleSignIn(idToken: string) {
-  if (!env.GOOGLE_CLIENT_ID) throw new HttpError(503, 'Google sign-in is not configured.');
-  const ticket = await googleClient.verifyIdToken({ idToken, audience: env.GOOGLE_CLIENT_ID });
-  const payload = ticket.getPayload();
-  if (!payload?.email || !payload.email_verified)
-    throw new HttpError(401, 'Invalid Google account.');
-
-  const email = payload.email.toLowerCase();
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
-      profile: { create: { displayName: payload.name ?? email.split('@')[0] } },
-    },
-    include: { profile: { select: { displayName: true } } },
-  });
-  return { user: serializeUser(user), token: signAccessToken({ userId: user.id, email }) };
 }

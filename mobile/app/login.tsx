@@ -2,18 +2,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
-import {
-  BackButton,
-  Divider,
-  Field,
-  FooterLink,
-  GoogleButton,
-  PrimaryButton,
-} from '@/components/AuthUI';
+import { BackButton, Field, FooterLink, PrimaryButton } from '@/components/AuthUI';
 import { api } from '@/services/api';
 import type { AuthResponse } from '@/types/auth';
 import { getApiError } from '@/utils/auth';
-import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { useUser } from '@/providers/UserProvider';
 
 export default function LoginScreen() {
@@ -22,7 +14,6 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { saveSession } = useUser();
-  const googleSignIn = useGoogleAuth();
 
   const submit = async () => {
     if (!email.trim() || password.length < 8)
@@ -73,17 +64,6 @@ export default function LoginScreen() {
       <PrimaryButton disabled={loading} onPress={submit}>
         {loading ? 'Түр хүлээнэ үү...' : 'Нэвтрэх'}
       </PrimaryButton>
-      <Divider />
-      <GoogleButton
-        onPress={async () => {
-          setError('');
-          try {
-            await googleSignIn();
-          } catch (value) {
-            setError(value instanceof Error ? value.message : getApiError(value));
-          }
-        }}
-      />
       <FooterLink
         prefix="Бүртгэлгүй юу?"
         action="Бүртгүүлэх"

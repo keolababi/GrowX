@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { AuthHeader, Screen } from '@/components/Screen';
-import { BackButton, Field, FooterLink, GoogleButton, PrimaryButton } from '@/components/AuthUI';
+import { BackButton, Field, FooterLink, PrimaryButton } from '@/components/AuthUI';
 import { api } from '@/services/api';
 import type { AuthResponse } from '@/types/auth';
 import { getApiError } from '@/utils/auth';
-import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { useUser } from '@/providers/UserProvider';
 
 export default function RegisterScreen() {
@@ -17,7 +16,6 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { saveSession } = useUser();
-  const googleSignIn = useGoogleAuth();
   const submit = async () => {
     if (!displayName.trim() || !email.trim())
       return setError('Нэр болон и-мэйлээ бүрэн оруулна уу.');
@@ -83,16 +81,6 @@ export default function RegisterScreen() {
         {loading ? 'Түр хүлээнэ үү...' : 'Бүртгүүлэх'}
       </PrimaryButton>
       <View style={{ height: 14 }} />
-      <GoogleButton
-        onPress={async () => {
-          setError('');
-          try {
-            await googleSignIn();
-          } catch (value) {
-            setError(value instanceof Error ? value.message : getApiError(value));
-          }
-        }}
-      />
       <FooterLink
         prefix="Бүртгэлтэй юу?"
         action="Нэвтрэх"

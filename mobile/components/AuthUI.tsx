@@ -64,25 +64,6 @@ export function PrimaryButton({
   );
 }
 
-export function Divider() {
-  return (
-    <View style={styles.dividerRow}>
-      <View style={styles.line} />
-      <Text style={styles.or}>эсвэл</Text>
-      <View style={styles.line} />
-    </View>
-  );
-}
-
-export function GoogleButton({ onPress }: { onPress?: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={styles.google}>
-      <Text style={styles.googleG}>G</Text>
-      <Text style={styles.googleText}>Google-ээр үргэлжлүүлэх</Text>
-    </Pressable>
-  );
-}
-
 export function FooterLink({
   prefix,
   action,
@@ -145,21 +126,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
   disabled: { opacity: 0.45 },
   primaryText: { color: '#071000', fontSize: 15, fontWeight: '800' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 22 },
-  line: { flex: 1, height: 1, backgroundColor: '#293235' },
-  or: { color: '#A7AEB0', fontSize: 13, paddingHorizontal: 18 },
-  google: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 11,
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleG: { color: '#4285F4', fontSize: 20, fontWeight: '900', marginRight: 10 },
-  googleText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   footerText: { color: '#A7AEB0', fontSize: 13 },
   link: { color: colors.lime, fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },

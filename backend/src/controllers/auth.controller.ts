@@ -20,7 +20,6 @@ const emailSchema = z.object({
 });
 const codeSchema = emailSchema.extend({ code: z.string().regex(/^\d{6}$/) });
 const resetSchema = codeSchema.extend({ password: z.string().min(8).max(72) });
-const googleSchema = z.object({ idToken: z.string().min(1) });
 
 export async function register(req: Request, res: Response): Promise<void> {
   const result = await authService.register(registerSchema.parse(req.body));
@@ -48,8 +47,4 @@ export async function verifyResetCode(req: Request, res: Response): Promise<void
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   const input = resetSchema.parse(req.body);
   res.status(200).json(await authService.resetPassword(input.email, input.code, input.password));
-}
-
-export async function google(req: Request, res: Response): Promise<void> {
-  res.status(200).json(await authService.googleSignIn(googleSchema.parse(req.body).idToken));
 }
