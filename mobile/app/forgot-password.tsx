@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
 import { BackButton, Field, FooterLink, PrimaryButton } from '@/components/AuthUI';
@@ -15,13 +15,12 @@ export default function ForgotPassword() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.post<{ debugCode?: string }>('/auth/forgot-password', {
+      await api.post('/auth/forgot-password', {
         email: email.trim(),
       });
-      if (data.debugCode) Alert.alert('Development reset code', data.debugCode);
       router.push({
         pathname: '/verify-code',
-        params: { email: email.trim(), code: data.debugCode ?? '' },
+        params: { email: email.trim() },
       });
     } catch (value) {
       setError(getApiError(value));
