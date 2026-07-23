@@ -7,8 +7,8 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 
 export default function VerifyCode() {
-  const params = useLocalSearchParams<{ email: string; code?: string }>();
-  const [code, setCode] = useState(params.code ?? '');
+  const params = useLocalSearchParams<{ email: string }>();
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const input = useRef<TextInput>(null);
@@ -17,7 +17,7 @@ export default function VerifyCode() {
       <AuthHeader
         title="Кодоо оруулна уу"
         subtitle={'Таны и-мэйл рүү 6 оронтой код\nилгээсэн болно.'}
-        back={<BackButton onPress={() => router.back()} />}
+        back={<BackButton onPress={() => router.replace('/forgot-password')} />}
       />
       <Pressable onPress={() => input.current?.focus()} style={styles.codes}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -35,9 +35,7 @@ export default function VerifyCode() {
         style={styles.hidden}
         autoFocus
       />
-      <Text style={styles.timer}>
-        Код дахин илгээх <Text style={styles.green}>00:45</Text>
-      </Text>
+      <Text style={styles.timer}>Код 10 минутын хугацаанд хүчинтэй</Text>
       {!!error && (
         <Text style={{ color: '#ff7777', textAlign: 'center', marginBottom: 8 }}>{error}</Text>
       )}

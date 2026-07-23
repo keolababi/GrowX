@@ -10,6 +10,7 @@ export function getApiError(error: unknown, fallback = 'Алдаа гарлаа.
   if (axios.isAxiosError(error)) {
     const message = error.response?.data?.message;
     if (typeof message === 'string') return message;
+    if (error.code === 'ECONNABORTED') return 'Серверийн хариу удаж байна. Дахин оролдоно уу.';
     if (!error.response) return 'Backend-тэй холбогдож чадсангүй.';
   }
   return fallback;

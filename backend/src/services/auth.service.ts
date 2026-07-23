@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
 import { prisma } from '../config/prisma.js';
-import { env } from '../config/env.js';
 import { HttpError } from '../utils/http-error.js';
 import { signAccessToken } from '../utils/jwt.js';
+import { sendPasswordResetCode } from './mail.service.js';
 
 type RegisterInput = { email: string; password: string; displayName?: string };
 type LoginInput = { email: string; password: string };
@@ -61,6 +61,9 @@ export async function getCurrentUser(userId: string) {
 export async function requestPasswordReset(email: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return { message: 'If the account exists, a reset code has been sent.' };
+  if (user.resetCodeHash && user.resetCodeExpiresAt && user.resetCodeExpiresAt > new Date()) {
+    return { message: 'If the account exists, a reset code has been sent.' };
+  }
 
   const code = crypto.randomInt(100000, 1000000).toString();
   await prisma.user.update({
@@ -70,10 +73,17 @@ export async function requestPasswordReset(email: string) {
       resetCodeExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
     },
   });
-  return {
-    message: 'If the account exists, a reset code has been sent.',
-    ...(env.NODE_ENV === 'development' ? { debugCode: code } : {}),
-  };
+  try {
+    await sendPasswordResetCode(user.email, code);
+  } catch (error) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetCodeHash: null, resetCodeExpiresAt: null },
+    });
+    console.error('Failed to send password reset email:', error);
+    throw new HttpError(503, 'Сэргээх код илгээж чадсангүй. Түр хүлээгээд дахин оролдоно уу.');
+  }
+  return { message: 'If the account exists, a reset code has been sent.' };
 }
 
 async function findValidReset(email: string, code: string) {
