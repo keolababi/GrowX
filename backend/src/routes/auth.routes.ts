@@ -10,4 +10,3 @@ authRouter.get('/me', requireAuth, asyncHandler(authController.me));
 authRouter.post('/forgot-password', asyncHandler(authController.forgotPassword));
 authRouter.post('/verify-reset-code', asyncHandler(authController.verifyResetCode));
 authRouter.post('/reset-password', asyncHandler(authController.resetPassword));
-authRouter.post('/google', asyncHandler(authController.google));

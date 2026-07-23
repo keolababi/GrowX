@@ -6,7 +6,7 @@
     "scheme": "growx",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "plugins": ["expo-router", "expo-secure-store", "expo-web-browser"],
+    "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },

@@ -8,7 +8,6 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().default('http://localhost:8081'),
-  GOOGLE_CLIENT_ID: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
