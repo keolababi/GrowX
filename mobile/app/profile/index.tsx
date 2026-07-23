@@ -42,8 +42,14 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Pressable accessibilityLabel="Тохиргоо" hitSlop={12} style={styles.settingsButton}>
-          <Text style={styles.settingsIcon}>⚙</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Бүртгэлээс гарах"
+          hitSlop={12}
+          onPress={confirmLogout}
+          style={({ pressed }) => [styles.logoutButton, pressed && styles.menuItemPressed]}
+        >
+          <Text style={styles.logoutButtonText}>Гарах</Text>
         </Pressable>
 
         <View style={styles.profileHeader}>
@@ -102,11 +108,11 @@ export default function ProfileScreen() {
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.push('/medlege')} />
+        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
         <Pressable style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
-        <NavItem icon="◯" label="Мессеж" onPress={() => router.push('/messages')} />
+        <NavItem icon="◯" label="Мессеж" onPress={() => router.replace('/messages')} />
         <NavItem icon="♙" label="Профайл" active onPress={() => router.replace('/profile')} />
       </View>
     </SafeAreaView>
@@ -150,17 +156,21 @@ const styles = StyleSheet.create({
     paddingBottom: 116,
     backgroundColor: '#02110D',
   },
-  settingsButton: {
+  logoutButton: {
     position: 'absolute',
     zIndex: 3,
     right: 27,
     top: 22,
-    width: 40,
-    height: 40,
+    height: 38,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#61302F',
+    backgroundColor: '#241615',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  settingsIcon: { color: '#F4F7F5', fontSize: 27 },
+  logoutButtonText: { color: '#FF8B86', fontSize: 13, fontWeight: '800' },
   profileHeader: { alignItems: 'center' },
   avatar: {
     width: 116,
