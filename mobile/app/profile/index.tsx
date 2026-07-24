@@ -1,14 +1,5 @@
 import { router } from 'expo-router';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useUser } from '@/providers/UserProvider';
 
 const lime = '#8EE817';
@@ -19,39 +10,13 @@ const menuItems = [
   { icon: '▣', label: 'Миний төсөл' },
   { icon: '♧', label: 'Миний зөвлөлүүд' },
   { icon: '⚙', label: 'Тохиргоо' },
-  { icon: '↪', label: 'Гарах' },
 ];
 
 export default function ProfileScreen() {
-  const { user, logout: clearSession } = useUser();
-  const logout = async () => {
-    await clearSession();
-    router.replace('/login');
-  };
-  const confirmLogout = () => {
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Энэ төхөөрөмж дээрх хадгалсан нэвтрэлтийг цэвэрлэж гарах уу?'))
-        void logout();
-      return;
-    }
-    Alert.alert('Бүртгэлээс гарах', 'Энэ төхөөрөмж дээрх хадгалсан нэвтрэлтийг цэвэрлэх үү?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Гарах', style: 'destructive', onPress: () => void logout() },
-    ]);
-  };
+  const { user } = useUser();
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Бүртгэлээс гарах"
-          hitSlop={12}
-          onPress={confirmLogout}
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.menuItemPressed]}
-        >
-          <Text style={styles.logoutButtonText}>Гарах</Text>
-        </Pressable>
-
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <View style={styles.hair} />
@@ -91,15 +56,12 @@ export default function ProfileScreen() {
           {menuItems.map((item) => (
             <Pressable
               key={item.label}
-              onPress={item.label === 'Гарах' ? confirmLogout : undefined}
               style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
             >
               <View style={styles.menuIconWrap}>
                 <Text style={styles.menuIcon}>{item.icon}</Text>
               </View>
-              <Text style={[styles.menuLabel, item.label === 'Гарах' && styles.logoutLabel]}>
-                {item.label}
-              </Text>
+              <Text style={styles.menuLabel}>{item.label}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           ))}
@@ -156,21 +118,6 @@ const styles = StyleSheet.create({
     paddingBottom: 116,
     backgroundColor: '#02110D',
   },
-  logoutButton: {
-    position: 'absolute',
-    zIndex: 3,
-    right: 27,
-    top: 22,
-    height: 38,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#61302F',
-    backgroundColor: '#241615',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutButtonText: { color: '#FF8B86', fontSize: 13, fontWeight: '800' },
   profileHeader: { alignItems: 'center' },
   avatar: {
     width: 116,
@@ -296,7 +243,6 @@ const styles = StyleSheet.create({
   menuIconWrap: { width: 43, height: 43, alignItems: 'center', justifyContent: 'center' },
   menuIcon: { color: '#EFF3F1', fontSize: 27 },
   menuLabel: { flex: 1, color: '#F0F3F2', fontSize: 17, fontWeight: '700', marginLeft: 9 },
-  logoutLabel: { color: '#FF7777' },
   chevron: { color: '#B8C1BE', fontSize: 35, fontWeight: '300', marginRight: 3, marginTop: -3 },
   bottomNav: {
     position: 'absolute',

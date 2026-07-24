@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { GrowXLogo } from './GrowXLogo';
 
 export const colors = {
   background: '#020B0D',
@@ -27,14 +28,7 @@ export function Screen({ children }: PropsWithChildren) {
 }
 
 export function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <View style={styles.logoRow}>
-      <Text style={[styles.mark, compact && { fontSize: 24 }]}>✣</Text>
-      <Text style={[styles.logo, compact && { fontSize: 21 }]}>
-        Grow<Text style={styles.logoX}>X</Text>
-      </Text>
-    </View>
-  );
+  return <GrowXLogo compact={compact} />;
 }
 
 export function AuthHeader({
@@ -62,11 +56,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 18, paddingBottom: 28 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  mark: { color: colors.lime, fontSize: 32, fontWeight: '900', marginRight: 6 },
-  logo: { color: '#FFFFFF', fontSize: 30, fontWeight: '800', letterSpacing: -1 },
-  logoX: { color: colors.lime },
-  topbar: { minHeight: 42, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
+  topbar: { minHeight: 120, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
   title: {
     color: '#FFFFFF',
     fontSize: 26,
