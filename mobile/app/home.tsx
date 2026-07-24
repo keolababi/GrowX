@@ -1,6 +1,17 @@
+import { useState } from 'react';
 import { router } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useUser } from '@/providers/UserProvider';
+import { GrowXLogo, GrowXMark } from '@/components/GrowXLogo';
 
 const lime = '#8ee817';
 
@@ -55,27 +66,82 @@ function BottomItem({
 }
 
 export default function HomeScreen() {
-  const { user } = useUser();
+  const { user, logout } = useUser();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileInitial = (user?.displayName?.trim() || user?.email || 'G').charAt(0).toUpperCase();
+
+  const signOut = async () => {
+    setProfileMenuOpen(false);
+    await logout();
+    router.replace('/login');
+  };
+
+  const confirmSignOut = () => {
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Бүртгэлээс гарах уу?')) void signOut();
+      return;
+    }
+    Alert.alert('Бүртгэлээс гарах', 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Гарах', style: 'destructive', onPress: () => void signOut() },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View style={styles.brand}>
-            <View style={styles.brandMark}>
-              <Text style={styles.logoIcon}>✣</Text>
-            </View>
-            <Text style={styles.brandText}>GrowX</Text>
+          <GrowXLogo compact />
+          <View style={styles.profileMenuWrap}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Профайлын цэс нээх"
+              accessibilityState={{ expanded: profileMenuOpen }}
+              onPress={() => setProfileMenuOpen((open) => !open)}
+              style={({ pressed }) => [
+                styles.profileButton,
+                pressed && styles.profileButtonPressed,
+              ]}
+            >
+              <Text style={styles.profileInitial}>{profileInitial}</Text>
+            </Pressable>
+            {profileMenuOpen && (
+              <View style={styles.profileMenu}>
+                <View style={styles.profileMenuAccount}>
+                  <Text numberOfLines={1} style={styles.profileMenuName}>
+                    {user?.displayName ?? 'GrowX хэрэглэгч'}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.profileMenuEmail}>
+                    {user?.email}
+                  </Text>
+                </View>
+                <View style={styles.profileMenuDivider} />
+                <Pressable
+                  onPress={() => {
+                    setProfileMenuOpen(false);
+                    router.replace('/profile');
+                  }}
+                  style={({ pressed }) => [
+                    styles.profileMenuItem,
+                    pressed && styles.menuItemPressed,
+                  ]}
+                >
+                  <Text style={styles.profileMenuIcon}>♙</Text>
+                  <Text style={styles.profileMenuItemText}>Профайл</Text>
+                </Pressable>
+                <Pressable
+                  onPress={confirmSignOut}
+                  style={({ pressed }) => [
+                    styles.profileMenuItem,
+                    pressed && styles.menuItemPressed,
+                  ]}
+                >
+                  <Text style={[styles.profileMenuIcon, styles.signOutText]}>↪</Text>
+                  <Text style={[styles.profileMenuItemText, styles.signOutText]}>Гарах</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Профайл нээх"
-            onPress={() => router.replace('/profile')}
-            style={({ pressed }) => [styles.profileButton, pressed && styles.profileButtonPressed]}
-          >
-            <Text style={styles.profileInitial}>{profileInitial}</Text>
-          </Pressable>
         </View>
 
         <View style={styles.hero}>
@@ -90,14 +156,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.growthGraphic}>
-            <View style={[styles.ring, styles.ringTop]} />
-            <View style={[styles.ring, styles.ringBottom]} />
-            <View style={styles.bars}>
-              <View style={[styles.bar, { height: 28 }]} />
-              <View style={[styles.bar, { height: 47 }]} />
-              <View style={[styles.bar, { height: 69 }]} />
-            </View>
-            <Text style={styles.trendIcon}>↗</Text>
+            <GrowXMark size={190} />
           </View>
         </View>
 
@@ -184,15 +243,13 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#031015' },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 116 },
   header: {
-    height: 58,
+    height: 120,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    zIndex: 10,
   },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandMark: { transform: [{ rotate: '-25deg' }] },
-  logoIcon: { color: lime, fontSize: 36, fontWeight: '900' },
-  brandText: { color: lime, fontSize: 29, fontWeight: '800', letterSpacing: -1 },
+  profileMenuWrap: { position: 'relative', zIndex: 20 },
   profileButton: {
     width: 42,
     height: 42,
@@ -205,6 +262,37 @@ const styles = StyleSheet.create({
   },
   profileButtonPressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
   profileInitial: { color: '#F4F8F5', fontSize: 18, fontWeight: '800' },
+  profileMenu: {
+    position: 'absolute',
+    right: 0,
+    top: 50,
+    width: 230,
+    padding: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#244136',
+    backgroundColor: '#091914',
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  profileMenuAccount: { paddingHorizontal: 10, paddingVertical: 9 },
+  profileMenuName: { color: '#F4F8F5', fontSize: 14, fontWeight: '800' },
+  profileMenuEmail: { color: '#91A09A', fontSize: 11, marginTop: 3 },
+  profileMenuDivider: { height: 1, backgroundColor: '#1A342A', marginVertical: 4 },
+  profileMenuItem: {
+    height: 43,
+    paddingHorizontal: 10,
+    borderRadius: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemPressed: { backgroundColor: '#10271E' },
+  profileMenuIcon: { width: 28, color: '#EAF0ED', fontSize: 20 },
+  profileMenuItemText: { color: '#EAF0ED', fontSize: 14, fontWeight: '700' },
+  signOutText: { color: '#FF817B' },
   hero: {
     height: 252,
     marginTop: 16,
@@ -233,44 +321,6 @@ const styles = StyleSheet.create({
   startText: { color: '#142000', fontSize: 16, fontWeight: '700' },
   darkArrow: { color: '#142000', fontSize: 20, fontWeight: '800' },
   growthGraphic: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  ring: {
-    position: 'absolute',
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 12,
-    borderColor: lime,
-  },
-  ringTop: {
-    top: 45,
-    right: 22,
-    borderBottomColor: 'transparent',
-    transform: [{ rotate: '-12deg' }],
-  },
-  ringBottom: {
-    top: 74,
-    right: 22,
-    borderTopColor: 'transparent',
-    transform: [{ rotate: '-20deg' }],
-  },
-  bars: {
-    position: 'absolute',
-    bottom: 58,
-    right: 42,
-    height: 75,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 5,
-  },
-  bar: { width: 24, backgroundColor: '#4b9d1b' },
-  trendIcon: {
-    position: 'absolute',
-    right: 15,
-    top: 56,
-    color: lime,
-    fontSize: 90,
-    fontWeight: '900',
-  },
   quickRow: { flexDirection: 'row', gap: 10, marginTop: 22 },
   quickLink: {
     flex: 1,

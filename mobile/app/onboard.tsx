@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BackHandler, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { colors, Logo, Screen } from '@/components/Screen';
+import { GrowXMark } from '@/components/GrowXLogo';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const rocketImage = require('../assets/onboarding-rocket.png');
@@ -54,7 +55,7 @@ export default function Index() {
           <Text style={styles.tagline}>Бизнесээс дараагийн{`\n`}түвшинд хүргэ.</Text>
           <View style={styles.steps}>
             <View style={styles.stepLogo}>
-              <Text style={styles.stepX}>✣</Text>
+              <GrowXMark size={72} />
             </View>
             <View style={styles.barTall} />
             <View style={styles.barMid} />
@@ -143,13 +144,6 @@ const styles = StyleSheet.create({
     left: 35,
     top: 38,
     transform: [{ rotate: '-38deg' }],
-  },
-  stepX: {
-    color: colors.lime,
-    fontSize: 64,
-    fontWeight: '900',
-    textShadowColor: colors.lime,
-    textShadowRadius: 15,
   },
   barTall: {
     width: 66,
