@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Image,
   KeyboardAvoidingView,
@@ -14,6 +15,7 @@ import {
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
+import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import type { SocialPost } from '@/types/post';
 
 const lime = '#8EE817';
@@ -21,8 +23,8 @@ const lime = '#8EE817';
 export default function CreatePostScreen() {
   const { user } = useUser();
   const [content, setContent] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [showImageInput, setShowImageInput] = useState(false);
+  const [media, setMedia] = useState<(LocalUploadAsset & { type: 'image' | 'video' }) | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -32,16 +34,43 @@ export default function CreatePostScreen() {
     setSubmitting(true);
     setError('');
     try {
-      await api.post<{ post: SocialPost }>('/posts', {
-        content: trimmedContent,
-        ...(imageUrl.trim() ? { imageUrl: imageUrl.trim() } : {}),
-      });
-      router.replace('/posts');
+      let mediaUrl: string | undefined;
+      if (media) {
+        const blob = await uploadMedia(media, media.type, setUploadProgress);
+        mediaUrl = blob.url;
+      }
+      if (media?.type === 'video' && mediaUrl) {
+        await api.post('/media/reels', { caption: trimmedContent, videoUrl: mediaUrl });
+        router.replace('/reels');
+      } else {
+        await api.post<{ post: SocialPost }>('/posts', {
+          content: trimmedContent,
+          ...(mediaUrl ? { imageUrl: mediaUrl } : {}),
+        });
+        router.replace('/posts');
+      }
     } catch (value) {
       setError(getApiError(value, 'Post оруулж чадсангүй.'));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const pickMedia = async (type: 'image' | 'video') => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: [type === 'image' ? 'images' : 'videos'],
+      quality: 1,
+    });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if (!asset) return;
+    setMedia({
+      type,
+      uri: asset.uri,
+      name: asset.fileName || `${type}-${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`,
+      mimeType: asset.mimeType || (type === 'image' ? 'image/jpeg' : 'video/mp4'),
+      file: asset.file,
+    });
   };
 
   return (
@@ -82,31 +111,41 @@ export default function CreatePostScreen() {
               placeholderTextColor="#73807B"
               style={styles.contentInput}
             />
-            {!!imageUrl.trim() && (
-              <Image source={{ uri: imageUrl.trim() }} resizeMode="cover" style={styles.preview} />
+            {media?.type === 'image' && (
+              <Image source={{ uri: media.uri }} resizeMode="cover" style={styles.preview} />
+            )}
+            {media?.type === 'video' && (
+              <View style={styles.videoPreview}>
+                <Text style={styles.videoPreviewIcon}>▶</Text>
+                <Text numberOfLines={1} style={styles.videoPreviewName}>
+                  {media.name}
+                </Text>
+              </View>
             )}
           </View>
         </View>
 
         {!!error && <Text style={styles.error}>{error}</Text>}
-
-        {showImageInput && (
-          <TextInput
-            autoCapitalize="none"
-            keyboardType="url"
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="Зургийн URL оруулах"
-            placeholderTextColor="#71807A"
-            style={styles.imageInput}
-          />
+        {submitting && media && (
+          <Text style={styles.progress}>Файл хуулж байна: {Math.round(uploadProgress)}%</Text>
         )}
 
         <View style={styles.toolbar}>
-          <Pressable onPress={() => setShowImageInput((visible) => !visible)} style={styles.tool}>
-            <Text style={styles.toolIcon}>▧</Text>
-            <Text style={styles.toolText}>Зураг</Text>
-          </Pressable>
+          <View style={styles.tools}>
+            <Pressable onPress={() => void pickMedia('image')} style={styles.tool}>
+              <Text style={styles.toolIcon}>▧</Text>
+              <Text style={styles.toolText}>Зураг</Text>
+            </Pressable>
+            <Pressable onPress={() => void pickMedia('video')} style={styles.tool}>
+              <Text style={styles.toolIcon}>▶</Text>
+              <Text style={styles.toolText}>Reel</Text>
+            </Pressable>
+            {!!media && (
+              <Pressable onPress={() => setMedia(null)}>
+                <Text style={styles.removeMedia}>Арилгах</Text>
+              </Pressable>
+            )}
+          </View>
           <Text style={styles.counter}>{content.length}/5000</Text>
         </View>
       </KeyboardAvoidingView>
@@ -169,17 +208,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A171D',
   },
   error: { color: '#FF817B', fontSize: 13, paddingHorizontal: 22, paddingTop: 12 },
-  imageInput: {
-    height: 48,
-    marginHorizontal: 22,
-    marginTop: 18,
-    paddingHorizontal: 14,
-    borderRadius: 13,
-    color: '#F1F4F3',
-    backgroundColor: '#08191A',
-    borderWidth: 1,
-    borderColor: '#183029',
+  videoPreview: {
+    height: 90,
+    marginTop: 12,
+    paddingHorizontal: 16,
+    borderRadius: 17,
+    backgroundColor: '#0A171D',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
+  videoPreviewIcon: { color: lime, fontSize: 26 },
+  videoPreviewName: { flex: 1, color: '#E9EEEC', fontSize: 14, fontWeight: '700' },
+  progress: { color: lime, fontSize: 13, paddingHorizontal: 22, paddingTop: 12 },
   toolbar: {
     height: 66,
     marginTop: 'auto',
@@ -190,8 +231,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#13242A',
   },
+  tools: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   tool: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   toolIcon: { color: lime, fontSize: 25 },
   toolText: { color: '#DDE4E1', fontSize: 14, fontWeight: '700' },
+  removeMedia: { color: '#FF817B', fontSize: 12, fontWeight: '700' },
   counter: { color: '#71807A', fontSize: 12 },
 });

@@ -38,6 +38,7 @@ function serializePost(post: {
   authorId: string;
   content: string;
   imageUrl: string | null;
+  videoUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
   author: Parameters<typeof serializeAuthor>[0];
@@ -56,6 +57,7 @@ function serializePost(post: {
     authorId: post.authorId,
     content: post.content,
     imageUrl: post.imageUrl,
+    videoUrl: post.videoUrl,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     author: serializeAuthor(post.author),
@@ -90,7 +92,7 @@ export async function getPost(userId: string, postId: string) {
 
 export async function createPost(
   userId: string,
-  input: { content: string; imageUrl?: string; communityId?: string },
+  input: { content: string; imageUrl?: string; videoUrl?: string; communityId?: string },
 ) {
   if (input.communityId) {
     const community = await prisma.community.findUnique({ where: { id: input.communityId } });
@@ -101,6 +103,7 @@ export async function createPost(
       authorId: userId,
       content: input.content,
       imageUrl: input.imageUrl,
+      videoUrl: input.videoUrl,
       communityId: input.communityId,
     },
     include: postInclude(userId),

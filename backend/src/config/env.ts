@@ -1,5 +1,8 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { z } from 'zod';
+
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -13,6 +16,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().email(),
   SMTP_PASSWORD: z.string().min(1),
   MAIL_FROM: z.string().optional(),
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

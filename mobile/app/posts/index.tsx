@@ -159,9 +159,14 @@ export default function PostsScreen() {
           <Text style={styles.back}>‹</Text>
         </Pressable>
         <Text style={styles.title}>Post</Text>
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.createButton}>
-          <Text style={styles.createButtonText}>＋</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable onPress={() => router.push('/reels')} style={styles.reelsButton}>
+            <Text style={styles.reelsButtonText}>Reels</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/posts/create')} style={styles.createButton}>
+            <Text style={styles.createButtonText}>＋</Text>
+          </Pressable>
+        </View>
       </View>
 
       {loading ? (
@@ -293,6 +298,16 @@ const styles = StyleSheet.create({
   headerButton: { width: 42, height: 42, justifyContent: 'center' },
   back: { color: '#F4F7F6', fontSize: 44, lineHeight: 44, fontWeight: '300' },
   title: { color: '#F5F7F6', fontSize: 28, fontWeight: '900' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  reelsButton: {
+    height: 38,
+    paddingHorizontal: 12,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: '#315345',
+    justifyContent: 'center',
+  },
+  reelsButtonText: { color: lime, fontSize: 12, fontWeight: '800' },
   createButton: {
     width: 42,
     height: 42,

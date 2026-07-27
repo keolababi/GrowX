@@ -6,6 +6,7 @@ const postIdSchema = z.object({ postId: z.string().min(1) });
 const createPostSchema = z.object({
   content: z.string().trim().min(1).max(5000),
   imageUrl: z.string().url().max(2048).optional(),
+  videoUrl: z.string().url().max(2048).optional(),
   communityId: z.string().min(1).optional(),
 });
 const commentSchema = z.object({ content: z.string().trim().min(1).max(1000) });

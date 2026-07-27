@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import * as mediaController from '../controllers/media.controller.js';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { requireAuth } from '../middleware/auth.middleware.js';
+
+export const mediaRouter = Router();
+mediaRouter.use(requireAuth);
+mediaRouter.get('/podcasts', asyncHandler(mediaController.listPodcasts));
+mediaRouter.post('/podcasts', asyncHandler(mediaController.createPodcast));
+mediaRouter.delete('/podcasts/:podcastId', asyncHandler(mediaController.removePodcast));
+mediaRouter.get('/reels', asyncHandler(mediaController.listReels));
+mediaRouter.post('/reels', asyncHandler(mediaController.createReel));
