@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, Stack } from 'expo-router';
+import { useAudioPlayer } from 'expo-audio';
 import {
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -9,6 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { api } from '@/services/api';
+import type { Podcast } from '@/types/media';
 
 const lime = '#8EE817';
 
@@ -142,12 +146,58 @@ function NavItem({
   );
 }
 
+function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
+  const episode = podcast.episodes[0];
+  const player = useAudioPlayer(episode?.audioUrl ?? null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  if (!episode) return null;
+  const toggle = () => {
+    if (isPlaying) player.pause();
+    else player.play();
+    setIsPlaying((value) => !value);
+  };
+  return (
+    <Pressable onPress={toggle} style={styles.uploadedRow}>
+      {podcast.coverUrl ? (
+        <Image source={{ uri: podcast.coverUrl }} style={styles.uploadedCover} />
+      ) : (
+        <View style={styles.uploadedCover} />
+      )}
+      <View style={styles.uploadedCopy}>
+        <Text numberOfLines={1} style={styles.uploadedTitle}>
+          {podcast.title}
+        </Text>
+        <Text numberOfLines={2} style={styles.uploadedDescription}>
+          {podcast.description || 'Тайлбаргүй'}
+        </Text>
+      </View>
+      <View style={styles.uploadedPlay}>
+        <Text style={styles.uploadedPlayText}>{isPlaying ? 'Ⅱ' : '▶'}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function PodcastScreen() {
   const [category, setCategory] = useState('Бүгд');
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedNumber, setSelectedNumber] = useState(episodes[0].number);
   const [playing, setPlaying] = useState(false);
+  const [uploadedPodcasts, setUploadedPodcasts] = useState<Podcast[]>([]);
+
+  const loadUploadedPodcasts = useCallback(async () => {
+    try {
+      const { data } = await api.get<{ podcasts: Podcast[] }>('/media/podcasts');
+      setUploadedPodcasts(data.podcasts);
+    } catch {
+      setUploadedPodcasts([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadUploadedPodcasts();
+  }, [loadUploadedPodcasts]);
 
   const selectedEpisode =
     episodes.find((episode) => episode.number === selectedNumber) ?? episodes[0];
@@ -174,16 +224,21 @@ export default function PodcastScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.heading}>Podcast</Text>
-          <Pressable
-            accessibilityLabel="Podcast хайх"
-            hitSlop={12}
-            onPress={() => {
-              setSearching((current) => !current);
-              if (searching) setQuery('');
-            }}
-          >
-            <Text style={styles.search}>⌕</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              accessibilityLabel="Podcast хайх"
+              hitSlop={12}
+              onPress={() => {
+                setSearching((current) => !current);
+                if (searching) setQuery('');
+              }}
+            >
+              <Text style={styles.search}>⌕</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/podcast/create')} style={styles.headerAdd}>
+              <Text style={styles.headerAddText}>＋</Text>
+            </Pressable>
+          </View>
         </View>
 
         {searching && (
@@ -236,6 +291,16 @@ export default function PodcastScreen() {
           </Pressable>
         </View>
 
+        {!!uploadedPodcasts.length && (
+          <>
+            <Text style={styles.allTitle}>Шинэ podcast</Text>
+            <View style={styles.uploadedList}>
+              {uploadedPodcasts.map((podcast) => (
+                <UploadedPodcastRow key={podcast.id} podcast={podcast} />
+              ))}
+            </View>
+          </>
+        )}
         <Text style={styles.allTitle}>Бүх дугаар</Text>
         <View style={styles.episodeList}>
           {visibleEpisodes.map((episode) => (
@@ -273,6 +338,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heading: { color: '#f7f7f7', fontSize: 31, fontWeight: '800', letterSpacing: -0.7 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  headerAdd: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAddText: { color: '#152000', fontSize: 27, lineHeight: 29 },
   search: { color: '#f7f7f7', fontSize: 42, lineHeight: 44, transform: [{ rotate: '-20deg' }] },
   searchInput: {
     height: 46,
@@ -394,6 +469,28 @@ const styles = StyleSheet.create({
   playIcon: { color: '#342181', fontSize: 25, marginLeft: 4 },
   playButtonPressed: { opacity: 0.8, transform: [{ scale: 0.94 }] },
   allTitle: { color: '#f5f5f5', fontSize: 23, fontWeight: '800', marginTop: 36, marginBottom: 17 },
+  uploadedList: { gap: 11 },
+  uploadedRow: {
+    minHeight: 90,
+    padding: 10,
+    borderRadius: 16,
+    backgroundColor: '#07161B',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  uploadedCover: { width: 76, height: 70, borderRadius: 12, backgroundColor: '#173029' },
+  uploadedCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
+  uploadedTitle: { color: '#F1F4F3', fontSize: 15, fontWeight: '800' },
+  uploadedDescription: { color: '#8F9B97', fontSize: 12, lineHeight: 17, marginTop: 6 },
+  uploadedPlay: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadedPlayText: { color: '#162000', fontSize: 15, fontWeight: '900' },
   episodeList: { gap: 12 },
   episodeRow: {
     height: 79,

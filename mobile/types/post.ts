@@ -17,6 +17,7 @@ export type SocialPost = {
   authorId: string;
   content: string;
   imageUrl: string | null;
+  videoUrl: string | null;
   createdAt: string;
   updatedAt: string;
   author: PostAuthor;
