@@ -1,17 +1,8 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useUser } from '@/providers/UserProvider';
-import { GrowXLogo, GrowXMark } from '@/components/GrowXLogo';
+import { GrowXMark } from '@/components/GrowXLogo';
 
 const lime = '#8ee817';
 
@@ -66,32 +57,17 @@ function BottomItem({
 }
 
 export default function HomeScreen() {
-  const { user, logout } = useUser();
+  const { user } = useUser();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileInitial = (user?.displayName?.trim() || user?.email || 'G').charAt(0).toUpperCase();
-
-  const signOut = async () => {
-    setProfileMenuOpen(false);
-    await logout();
-    router.replace('/login');
-  };
-
-  const confirmSignOut = () => {
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Бүртгэлээс гарах уу?')) void signOut();
-      return;
-    }
-    Alert.alert('Бүртгэлээс гарах', 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Гарах', style: 'destructive', onPress: () => void signOut() },
-    ]);
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <GrowXLogo compact />
+          <Text style={styles.wordmark}>
+            Grow<Text style={styles.wordmarkX}>X</Text>
+          </Text>
           <View style={styles.profileMenuWrap}>
             <Pressable
               accessibilityRole="button"
@@ -128,16 +104,6 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.profileMenuIcon}>♙</Text>
                   <Text style={styles.profileMenuItemText}>Профайл</Text>
-                </Pressable>
-                <Pressable
-                  onPress={confirmSignOut}
-                  style={({ pressed }) => [
-                    styles.profileMenuItem,
-                    pressed && styles.menuItemPressed,
-                  ]}
-                >
-                  <Text style={[styles.profileMenuIcon, styles.signOutText]}>↪</Text>
-                  <Text style={[styles.profileMenuItemText, styles.signOutText]}>Гарах</Text>
                 </Pressable>
               </View>
             )}
@@ -181,10 +147,15 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.cards}>
-          <View style={styles.reelCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Post хэсэг нээх"
+            onPress={() => router.push('/posts')}
+            style={({ pressed }) => [styles.reelCard, pressed && styles.cardPressed]}
+          >
             <View style={styles.reelGlow} />
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>REEL</Text>
+              <Text style={styles.badgeText}>POST</Text>
             </View>
             <View style={styles.portrait}>
               <View style={styles.hair} />
@@ -200,7 +171,7 @@ export default function HomeScreen() {
                 <Text style={styles.statText}>128</Text>
               </View>
             </View>
-          </View>
+          </Pressable>
 
           <Pressable
             accessibilityRole="button"
@@ -229,9 +200,9 @@ export default function HomeScreen() {
       <View style={styles.bottomNav}>
         <BottomItem icon="home" label="Нүүр" active onPress={() => router.replace('/home')} />
         <BottomItem icon="grid" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <View style={styles.addButton}>
+        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
-        </View>
+        </Pressable>
         <BottomItem icon="chat" label="Мессеж" onPress={() => router.replace('/messages')} />
         <BottomItem icon="person" label="Профайл" onPress={() => router.replace('/profile')} />
       </View>
@@ -241,14 +212,21 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#031015' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 116 },
+  content: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 116 },
   header: {
-    height: 120,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 10,
   },
+  wordmark: {
+    color: '#F4F8F5',
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -1.2,
+  },
+  wordmarkX: { color: lime },
   profileMenuWrap: { position: 'relative', zIndex: 20 },
   profileButton: {
     width: 42,
@@ -292,7 +270,6 @@ const styles = StyleSheet.create({
   menuItemPressed: { backgroundColor: '#10271E' },
   profileMenuIcon: { width: 28, color: '#EAF0ED', fontSize: 20 },
   profileMenuItemText: { color: '#EAF0ED', fontSize: 14, fontWeight: '700' },
-  signOutText: { color: '#FF817B' },
   hero: {
     height: 252,
     marginTop: 16,
@@ -457,30 +434,30 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 91,
-    paddingBottom: 11,
-    backgroundColor: '#07141a',
+    height: 94,
+    paddingBottom: 9,
+    backgroundColor: '#061712',
     borderTopWidth: 1,
-    borderTopColor: '#142127',
+    borderTopColor: '#132822',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
   },
-  bottomItem: { width: 58, alignItems: 'center', gap: 5 },
-  bottomIcon: { color: '#d7dadd', fontSize: 27, lineHeight: 29 },
+  bottomItem: { width: 69, alignItems: 'center', gap: 4 },
+  bottomIcon: { color: '#d7dadd', fontSize: 29, lineHeight: 31 },
   bottomIconActive: { color: lime },
-  bottomLabel: { color: '#c7cacc', fontSize: 11, fontWeight: '600' },
+  bottomLabel: { color: '#c7cacc', fontSize: 12, fontWeight: '600' },
   bottomLabelActive: { color: lime },
   addButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 61,
+    height: 61,
+    borderRadius: 31,
     backgroundColor: lime,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -27,
     borderWidth: 4,
-    borderColor: '#07141a',
+    borderColor: '#061712',
   },
   addIcon: { color: '#142000', fontSize: 40, lineHeight: 42, fontWeight: '300' },
 });

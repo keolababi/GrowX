@@ -127,6 +127,7 @@ export default function MessagesScreen() {
 
       <ScrollView
         horizontal
+        style={styles.filterScroller}
         contentContainerStyle={styles.filters}
         showsHorizontalScrollIndicator={false}
       >
@@ -178,7 +179,7 @@ export default function MessagesScreen() {
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
         <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable style={styles.addButton}>
+        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="◉" label="Мессеж" active onPress={() => router.replace('/messages')} />
@@ -260,7 +261,8 @@ const styles = StyleSheet.create({
     borderColor: '#1A292F',
     fontSize: 15,
   },
-  filters: { height: 67, paddingHorizontal: 22, paddingVertical: 11, gap: 12 },
+  filterScroller: { flexGrow: 0, flexShrink: 0, height: 67 },
+  filters: { paddingHorizontal: 22, paddingVertical: 11, gap: 12 },
   filter: {
     height: 43,
     minWidth: 91,
@@ -354,9 +356,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 94,
     paddingBottom: 9,
-    backgroundColor: '#071319',
+    backgroundColor: '#061712',
     borderTopWidth: 1,
-    borderTopColor: '#142229',
+    borderTopColor: '#132822',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -374,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
-    borderColor: '#071319',
+    borderColor: '#061712',
   },
   addIcon: { color: '#142000', fontSize: 38, lineHeight: 40, fontWeight: '300' },
 });

@@ -16,22 +16,22 @@ enum NotificationType {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  passwordHash  String
-  resetCodeHash String?
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  passwordHash       String
+  resetCodeHash      String?
   resetCodeExpiresAt DateTime?
-  role          String         @default("USER")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  profile       Profile?
-  podcasts      Podcast[]      @relation("PodcastAuthor")
-  reels         Reel[]         @relation("ReelAuthor")
-  communities   Community[]    @relation("CommunityOwner")
-  posts         Post[]
-  comments      Comment[]
-  likes         Like[]
-  notifications Notification[] @relation("NotificationRecipient")
+  role               String         @default("USER")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  profile            Profile?
+  podcasts           Podcast[]      @relation("PodcastAuthor")
+  reels              Reel[]         @relation("ReelAuthor")
+  communities        Community[]    @relation("CommunityOwner")
+  posts              Post[]
+  comments           Comment[]
+  likes              Like[]
+  notifications      Notification[] @relation("NotificationRecipient")
 
   @@index([createdAt])
 }
@@ -103,14 +103,15 @@ model Community {
 }
 
 model Post {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   authorId    String
-  communityId String
-  content     String    @db.Text
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId String?
+  content     String     @db.Text
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
   comments    Comment[]
   likes       Like[]
 

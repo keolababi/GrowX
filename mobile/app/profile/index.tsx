@@ -1,5 +1,14 @@
 import { router } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useUser } from '@/providers/UserProvider';
 
 const lime = '#8EE817';
@@ -13,7 +22,24 @@ const menuItems = [
 ];
 
 export default function ProfileScreen() {
-  const { user } = useUser();
+  const { user, logout } = useUser();
+
+  const signOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
+  const confirmSignOut = () => {
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Бүртгэлээс гарах уу?')) void signOut();
+      return;
+    }
+    Alert.alert('Бүртгэлээс гарах', 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Гарах', style: 'destructive', onPress: () => void signOut() },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -56,6 +82,7 @@ export default function ProfileScreen() {
           {menuItems.map((item) => (
             <Pressable
               key={item.label}
+              onPress={item.label === 'Миний контент' ? () => router.push('/posts') : undefined}
               style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
             >
               <View style={styles.menuIconWrap}>
@@ -65,13 +92,25 @@ export default function ProfileScreen() {
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           ))}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Бүртгэлээс гарах"
+            onPress={confirmSignOut}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+          >
+            <View style={styles.menuIconWrap}>
+              <Text style={[styles.menuIcon, styles.signOutText]}>↪</Text>
+            </View>
+            <Text style={[styles.menuLabel, styles.signOutText]}>Гарах</Text>
+            <Text style={[styles.chevron, styles.signOutText]}>›</Text>
+          </Pressable>
         </View>
       </ScrollView>
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
         <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable style={styles.addButton}>
+        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="◯" label="Мессеж" onPress={() => router.replace('/messages')} />
@@ -113,7 +152,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#02110D' },
   content: {
     flexGrow: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: 22,
     paddingTop: 18,
     paddingBottom: 116,
     backgroundColor: '#02110D',
@@ -244,6 +283,7 @@ const styles = StyleSheet.create({
   menuIcon: { color: '#EFF3F1', fontSize: 27 },
   menuLabel: { flex: 1, color: '#F0F3F2', fontSize: 17, fontWeight: '700', marginLeft: 9 },
   chevron: { color: '#B8C1BE', fontSize: 35, fontWeight: '300', marginRight: 3, marginTop: -3 },
+  signOutText: { color: '#FF817B' },
   bottomNav: {
     position: 'absolute',
     left: 0,

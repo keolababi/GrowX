@@ -253,7 +253,7 @@ export default function PodcastScreen() {
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
         <NavItem icon="⌘" label="Мэдлэг" active onPress={() => router.replace('/medlege')} />
-        <Pressable style={styles.addButton}>
+        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="○" label="Мессеж" onPress={() => router.replace('/messages')} />
@@ -432,27 +432,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 91,
-    paddingBottom: 10,
-    backgroundColor: '#07141a',
+    height: 94,
+    paddingBottom: 9,
+    backgroundColor: '#061712',
     borderTopWidth: 1,
-    borderTopColor: '#132229',
+    borderTopColor: '#132822',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
   },
-  navItem: { width: 59, alignItems: 'center', gap: 4 },
-  navIcon: { color: '#d9dddf', fontSize: 28, lineHeight: 31 },
-  navLabel: { color: '#d0d3d5', fontSize: 11, fontWeight: '600' },
+  navItem: { width: 69, alignItems: 'center', gap: 4 },
+  navIcon: { color: '#d9dddf', fontSize: 29, lineHeight: 31 },
+  navLabel: { color: '#d0d3d5', fontSize: 12, fontWeight: '600' },
   navActive: { color: lime },
   addButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 61,
+    height: 61,
+    borderRadius: 31,
     marginTop: -28,
     backgroundColor: lime,
     borderWidth: 4,
-    borderColor: '#07141a',
+    borderColor: '#061712',
     alignItems: 'center',
     justifyContent: 'center',
   },
