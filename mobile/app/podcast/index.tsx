@@ -224,21 +224,16 @@ export default function PodcastScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.heading}>Podcast</Text>
-          <View style={styles.headerActions}>
-            <Pressable
-              accessibilityLabel="Podcast хайх"
-              hitSlop={12}
-              onPress={() => {
-                setSearching((current) => !current);
-                if (searching) setQuery('');
-              }}
-            >
-              <Text style={styles.search}>⌕</Text>
-            </Pressable>
-            <Pressable onPress={() => router.push('/podcast/create')} style={styles.headerAdd}>
-              <Text style={styles.headerAddText}>＋</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            accessibilityLabel="Podcast хайх"
+            hitSlop={12}
+            onPress={() => {
+              setSearching((current) => !current);
+              if (searching) setQuery('');
+            }}
+          >
+            <Text style={styles.search}>⌕</Text>
+          </Pressable>
         </View>
 
         {searching && (
@@ -338,16 +333,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heading: { color: '#f7f7f7', fontSize: 31, fontWeight: '800', letterSpacing: -0.7 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  headerAdd: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerAddText: { color: '#152000', fontSize: 27, lineHeight: 29 },
   search: { color: '#f7f7f7', fontSize: 42, lineHeight: 44, transform: [{ rotate: '-20deg' }] },
   searchInput: {
     height: 46,

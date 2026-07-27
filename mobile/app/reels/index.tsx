@@ -68,7 +68,10 @@ export default function ReelsScreen() {
           <Text style={styles.back}>‹</Text>
         </Pressable>
         <Text style={styles.title}>Reels</Text>
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.add}>
+        <Pressable
+          onPress={() => router.push({ pathname: '/posts/create', params: { type: 'reel' } })}
+          style={styles.add}
+        >
           <Text style={styles.addText}>＋</Text>
         </Pressable>
       </View>

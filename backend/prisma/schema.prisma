@@ -16,22 +16,23 @@ enum NotificationType {
 }
 
 model User {
-  id                 String         @id @default(cuid())
-  email              String         @unique
-  passwordHash       String
-  resetCodeHash      String?
-  resetCodeExpiresAt DateTime?
-  role               String         @default("USER")
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  profile            Profile?
-  podcasts           Podcast[]      @relation("PodcastAuthor")
-  reels              Reel[]         @relation("ReelAuthor")
-  communities        Community[]    @relation("CommunityOwner")
-  posts              Post[]
-  comments           Comment[]
-  likes              Like[]
-  notifications      Notification[] @relation("NotificationRecipient")
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  passwordHash         String
+  resetCodeHash        String?
+  resetCodeExpiresAt   DateTime?
+  role                 String            @default("USER")
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  profile              Profile?
+  podcasts             Podcast[]         @relation("PodcastAuthor")
+  reels                Reel[]            @relation("ReelAuthor")
+  communities          Community[]       @relation("CommunityOwner")
+  posts                Post[]
+  comments             Comment[]
+  likes                Like[]
+  notifications        Notification[]    @relation("NotificationRecipient")
+  communityMemberships CommunityMember[]
 
   @@index([createdAt])
 }
@@ -90,16 +91,29 @@ model Reel {
 }
 
 model Community {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   ownerId     String
-  name        String   @unique
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  owner       User     @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String            @unique
+  description String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  owner       User              @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   posts       Post[]
+  members     CommunityMember[]
 
   @@index([ownerId])
+}
+
+model CommunityMember {
+  id          String    @id @default(cuid())
+  userId      String
+  communityId String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([communityId, createdAt])
 }
 
 model Post {
