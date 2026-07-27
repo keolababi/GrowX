@@ -129,7 +129,7 @@ export default function HomeScreen() {
         <View style={styles.quickRow}>
           <QuickLink icon="book" label="Мэдлэг" onPress={() => router.push('/medlege')} />
           <QuickLink icon="person" label="Ментор" onPress={() => router.push('/mentor')} />
-          <QuickLink icon="people" label="Community" onPress={() => router.push('/messages')} />
+          <QuickLink icon="people" label="Community" onPress={() => router.push('/community')} />
           <QuickLink icon="chat" label="Хэлэлцэх" onPress={() => router.push('/messages')} />
         </View>
 

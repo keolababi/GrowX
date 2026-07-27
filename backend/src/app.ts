@@ -8,6 +8,7 @@ import { healthRouter } from './routes/health.routes.js';
 import { postRouter } from './routes/post.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
 import { uploadRouter } from './routes/upload.routes.js';
+import { communityRouter } from './routes/community.routes.js';
 
 export const app = express();
 
@@ -38,5 +39,6 @@ app.use('/api/auth', authRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/uploads', uploadRouter);
+app.use('/api/communities', communityRouter);
 app.use(notFound);
 app.use(errorHandler);
