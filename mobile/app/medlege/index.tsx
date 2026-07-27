@@ -166,9 +166,9 @@ export default function KnowledgeScreen() {
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
         <NavItem icon="⌘" label="Мэдлэг" active onPress={() => router.replace('/medlege')} />
-        <View style={styles.addButton}>
+        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
-        </View>
+        </Pressable>
         <NavItem icon="○" label="Мессеж" onPress={() => router.replace('/messages')} />
         <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
       </View>
@@ -181,14 +181,14 @@ const styles = StyleSheet.create({
   content: { paddingTop: 18, paddingBottom: 115 },
   header: {
     height: 64,
-    paddingHorizontal: 23,
+    paddingHorizontal: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   heading: { color: '#f5f6f6', fontSize: 33, fontWeight: '800', letterSpacing: -0.8 },
   search: { color: '#f4f5f5', fontSize: 43, lineHeight: 45, transform: [{ rotate: '-20deg' }] },
-  categories: { gap: 11, paddingHorizontal: 23, paddingTop: 21, paddingBottom: 29 },
+  categories: { gap: 11, paddingHorizontal: 22, paddingTop: 21, paddingBottom: 29 },
   category: {
     minWidth: 103,
     height: 47,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   categoryActive: { minWidth: 88, backgroundColor: lime },
   categoryText: { color: '#d8dadd', fontSize: 14, fontWeight: '700' },
   categoryActiveText: { color: '#152000', fontSize: 14, fontWeight: '800' },
-  list: { paddingHorizontal: 23, gap: 12 },
+  list: { paddingHorizontal: 22, gap: 12 },
   card: {
     height: 110,
     borderRadius: 19,
@@ -326,17 +326,17 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 94,
-    paddingBottom: 11,
-    backgroundColor: '#07141a',
+    paddingBottom: 9,
+    backgroundColor: '#061712',
     borderTopWidth: 1,
-    borderTopColor: '#14232a',
+    borderTopColor: '#132822',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
   },
-  navItem: { width: 61, alignItems: 'center', gap: 4 },
+  navItem: { width: 69, alignItems: 'center', gap: 4 },
   navIcon: { color: '#d8dcde', fontSize: 29, lineHeight: 31 },
-  navLabel: { color: '#d0d3d5', fontSize: 11, fontWeight: '600' },
+  navLabel: { color: '#d0d3d5', fontSize: 12, fontWeight: '600' },
   navActive: { color: lime },
   addButton: {
     width: 61,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     marginTop: -28,
     backgroundColor: lime,
     borderWidth: 4,
-    borderColor: '#07141a',
+    borderColor: '#061712',
     alignItems: 'center',
     justifyContent: 'center',
   },

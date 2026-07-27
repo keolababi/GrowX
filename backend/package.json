@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
     "build": "bun build ./src/server.ts --outdir ./dist --target bun",

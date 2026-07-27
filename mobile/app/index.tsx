@@ -19,5 +19,5 @@ export default function IndexScreen() {
       </View>
     );
   }
-  return <Redirect href={token ? '/home' : '/login'} />;
+  return <Redirect href={token ? '/home' : '/onboard'} />;
 }

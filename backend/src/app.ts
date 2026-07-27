@@ -5,6 +5,7 @@ import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 import { authRouter } from './routes/auth.routes.js';
 import { healthRouter } from './routes/health.routes.js';
+import { postRouter } from './routes/post.routes.js';
 
 export const app = express();
 
@@ -32,5 +33,6 @@ app.use(multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 
 
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/posts', postRouter);
 app.use(notFound);
 app.use(errorHandler);

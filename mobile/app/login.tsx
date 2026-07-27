@@ -38,7 +38,7 @@ export default function LoginScreen() {
       <AuthHeader
         title="Welcome Back 👋"
         subtitle="Бизнесээ дараагийн түвшинд хүргэ."
-        back={<BackButton onPress={() => router.back()} />}
+        back={<BackButton onPress={() => router.replace('/onboard')} />}
       />
       <Field
         label="И-мэйл хаяг"
