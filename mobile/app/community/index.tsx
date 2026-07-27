@@ -14,6 +14,7 @@ import {
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { Community } from '@/types/community';
+import { NotificationBell } from '@/components/NotificationBell';
 import type { SocialPost } from '@/types/post';
 
 const lime = '#8EE817';
@@ -150,7 +151,10 @@ export default function CommunityScreen() {
       <View style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.heading}>Community</Text>
-          <Text style={styles.searchIcon}>⌕</Text>
+          <View style={styles.headerActions}>
+            <NotificationBell />
+            <Text style={styles.searchIcon}>⌕</Text>
+          </View>
         </View>
 
         <View style={styles.tabs}>
@@ -328,6 +332,7 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   safeArea: { flex: 1, backgroundColor: '#020D12' },
   page: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', paddingBottom: 94 },
   header: {

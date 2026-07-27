@@ -112,27 +112,70 @@ export async function createPost(
 }
 
 export async function toggleLike(userId: string, postId: string) {
-  const post = await prisma.post.findUnique({ where: { id: postId }, select: { id: true } });
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, authorId: true },
+  });
   if (!post) throw new HttpError(404, 'Post олдсонгүй.');
 
-  const existing = await prisma.like.findUnique({
-    where: { userId_postId: { userId, postId } },
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.like.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+    if (existing) {
+      await tx.like.delete({ where: { id: existing.id } });
+      await tx.notification.deleteMany({
+        where: { recipientId: post.authorId, actorId: userId, postId, type: 'LIKE' },
+      });
+    } else {
+      await tx.like.create({ data: { userId, postId } });
+      if (post.authorId !== userId) {
+        const actor = await tx.user.findUnique({
+          where: { id: userId },
+          select: { email: true, profile: { select: { displayName: true } } },
+        });
+        const actorName = actor?.profile?.displayName || actor?.email.split('@')[0] || 'Хэрэглэгч';
+        await tx.notification.create({
+          data: {
+            recipientId: post.authorId,
+            actorId: userId,
+            postId,
+            type: 'LIKE',
+            message: `${actorName} таны постод лайк дарлаа.`,
+          },
+        });
+      }
+    }
+    const likeCount = await tx.like.count({ where: { postId } });
+    return { liked: !existing, likeCount };
   });
-  if (existing) {
-    await prisma.like.delete({ where: { id: existing.id } });
-  } else {
-    await prisma.like.create({ data: { userId, postId } });
-  }
-  const likeCount = await prisma.like.count({ where: { postId } });
-  return { liked: !existing, likeCount };
 }
 
 export async function addComment(userId: string, postId: string, content: string) {
-  const post = await prisma.post.findUnique({ where: { id: postId }, select: { id: true } });
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, authorId: true },
+  });
   if (!post) throw new HttpError(404, 'Post олдсонгүй.');
-  const comment = await prisma.comment.create({
-    data: { authorId: userId, postId, content },
-    include: { author: { select: authorSelect } },
+  const comment = await prisma.$transaction(async (tx) => {
+    const created = await tx.comment.create({
+      data: { authorId: userId, postId, content },
+      include: { author: { select: authorSelect } },
+    });
+    if (post.authorId !== userId) {
+      const actorName =
+        created.author.profile?.displayName || created.author.email.split('@')[0] || 'Хэрэглэгч';
+      await tx.notification.create({
+        data: {
+          recipientId: post.authorId,
+          actorId: userId,
+          postId,
+          type: 'COMMENT',
+          message: `${actorName} таны постод сэтгэгдэл үлдээлээ.`,
+        },
+      });
+    }
+    return created;
   });
   return {
     comment: {

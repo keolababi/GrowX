@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+dotenv.config({ path: new URL('../../.env.local', import.meta.url) });
+dotenv.config({ path: new URL('../../.env', import.meta.url) });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

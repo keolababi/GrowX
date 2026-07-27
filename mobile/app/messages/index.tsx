@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
-import { router } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
 import {
+  ActivityIndicator,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -9,346 +11,309 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { NotificationBell } from '@/components/NotificationBell';
+import { api } from '@/services/api';
+import type { ChatUser, Conversation } from '@/types/chat';
+import { getApiError } from '@/utils/auth';
 
 const lime = '#8EE817';
-const filters = ['Бүгд', 'Unread', 'Mentor', 'Community'];
 
-type Conversation = {
-  id: number;
-  name: string;
-  preview: string;
-  time: string;
-  type: 'Mentor' | 'Community';
-  unread?: number;
-  initials: string;
-  tone: string;
-};
+function relativeTime(value: string) {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  if (seconds < 60) return 'одоо';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}м`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}ц`;
+  return `${Math.floor(seconds / 86400)}ө`;
+}
 
-const conversations: Conversation[] = [
-  {
-    id: 1,
-    name: 'Г. Энхбаяр',
-    preview: 'Сайн уу? Таны төсөлтэй танилцлаа.',
-    time: '11:20',
-    type: 'Mentor',
-    unread: 2,
-    initials: 'ГЭ',
-    tone: '#5B3829',
-  },
-  {
-    id: 2,
-    name: 'Д. Энхтуяа',
-    preview: 'Маркетингийн стратегийн талаар ярилцах уу?',
-    time: '10:45',
-    type: 'Mentor',
-    initials: 'ДЭ',
-    tone: '#6D4A43',
-  },
-  {
-    id: 3,
-    name: 'Startup Mongolia',
-    preview: 'Шинэ арга хэмжээ зарлагдлаа 🎉',
-    time: 'Өчигдөр',
-    type: 'Community',
-    initials: 'SM',
-    tone: '#5B50A9',
-  },
-  {
-    id: 4,
-    name: 'Болд',
-    preview: 'Төсөл дээр хамтран ажиллая!',
-    time: 'Өчигдөр',
-    type: 'Mentor',
-    initials: 'Б',
-    tone: '#4B4039',
-  },
-  {
-    id: 5,
-    name: 'Community Group',
-    preview: 'Бат: Бүртгүүлэгчдийн шинэ санал...',
-    time: '2 өдрийн өмнө',
-    type: 'Community',
-    initials: 'CG',
-    tone: '#725140',
-  },
-];
+function displayName(user: ChatUser | null) {
+  return user?.displayName || user?.email.split('@')[0] || 'GrowX хэрэглэгч';
+}
 
 export default function MessagesScreen() {
-  const [filter, setFilter] = useState('Бүгд');
-  const [searching, setSearching] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [users, setUsers] = useState<ChatUser[]>([]);
   const [query, setQuery] = useState('');
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
 
-  const visibleConversations = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-    return conversations.filter((conversation) => {
-      const matchesFilter =
-        filter === 'Бүгд' ||
-        (filter === 'Unread' && Boolean(conversation.unread)) ||
-        conversation.type === filter;
-      const matchesQuery =
-        !normalizedQuery ||
-        conversation.name.toLocaleLowerCase().includes(normalizedQuery) ||
-        conversation.preview.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesFilter && matchesQuery;
+  const loadConversations = useCallback(async () => {
+    try {
+      const { data } = await api.get<{ conversations: Conversation[] }>('/conversations');
+      setConversations(data.conversations);
+      setError('');
+    } catch (value) {
+      setError(getApiError(value, 'Chat жагсаалтыг авч чадсангүй.'));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  const loadUsers = useCallback(async (search = '') => {
+    const { data } = await api.get<{ users: ChatUser[] }>('/conversations/users', {
+      params: { q: search },
     });
-  }, [filter, query]);
+    setUsers(data.users);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadConversations();
+      const timer = setInterval(() => void loadConversations(), 3_000);
+      return () => clearInterval(timer);
+    }, [loadConversations]),
+  );
+
+  useEffect(() => {
+    if (!newChatOpen) return;
+    const timer = setTimeout(() => {
+      void loadUsers(query).catch(() => setUsers([]));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [loadUsers, newChatOpen, query]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized || newChatOpen) return conversations;
+    return conversations.filter((conversation) => {
+      const user = conversation.otherUser;
+      return (
+        displayName(user).toLocaleLowerCase().includes(normalized) ||
+        user?.email.toLocaleLowerCase().includes(normalized)
+      );
+    });
+  }, [conversations, newChatOpen, query]);
+
+  const startChat = async (recipientId: string) => {
+    try {
+      const { data } = await api.post<{ conversationId: string }>('/conversations', {
+        recipientId,
+      });
+      setNewChatOpen(false);
+      setQuery('');
+      router.push(`/messages/${data.conversationId}`);
+    } catch (value) {
+      setError(getApiError(value, 'Chat эхлүүлж чадсангүй.'));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.title}>Мессеж</Text>
+        <Text style={styles.title}>{newChatOpen ? 'Шинэ чат' : 'Мессеж'}</Text>
         <View style={styles.headerActions}>
+          <NotificationBell />
           <Pressable
-            accessibilityLabel="Мессеж хайх"
-            hitSlop={10}
+            accessibilityLabel={newChatOpen ? 'Буцах' : 'Шинэ чат'}
             onPress={() => {
-              setSearching((current) => !current);
-              if (searching) setQuery('');
+              setNewChatOpen((open) => !open);
+              setQuery('');
+              setError('');
             }}
+            style={styles.newButton}
           >
-            <Text style={styles.searchIcon}>⌕</Text>
-          </Pressable>
-          <Pressable accessibilityLabel="Шинэ мессеж" hitSlop={10}>
-            <Text style={styles.composeIcon}>▧</Text>
+            <Text style={styles.newButtonText}>{newChatOpen ? '×' : '＋'}</Text>
           </Pressable>
         </View>
       </View>
 
-      {searching && (
+      <View style={styles.search}>
+        <Text style={styles.searchIcon}>⌕</Text>
         <TextInput
-          autoFocus
           value={query}
           onChangeText={setQuery}
-          placeholder="Харилцагч хайх..."
-          placeholderTextColor="#69747A"
+          autoCapitalize="none"
+          placeholder={newChatOpen ? 'Нэр эсвэл и-мэйлээр хайх' : 'Chat хайх'}
+          placeholderTextColor="#718079"
           style={styles.searchInput}
         />
+      </View>
+
+      {!!error && <Text style={styles.error}>{error}</Text>}
+      {loading ? (
+        <ActivityIndicator color={lime} style={styles.loader} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              tintColor={lime}
+              onRefresh={() => {
+                setRefreshing(true);
+                void loadConversations();
+              }}
+            />
+          }
+        >
+          {newChatOpen
+            ? users.map((user) => (
+                <Pressable
+                  key={user.id}
+                  onPress={() => void startChat(user.id)}
+                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                >
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {displayName(user).charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.rowCopy}>
+                    <Text style={styles.name}>{displayName(user)}</Text>
+                    <Text style={styles.preview}>{user.email}</Text>
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
+              ))
+            : filtered.map((conversation) => (
+                <Pressable
+                  key={conversation.id}
+                  onPress={() => router.push(`/messages/${conversation.id}`)}
+                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                >
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {displayName(conversation.otherUser).charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.rowCopy}>
+                    <Text style={styles.name}>{displayName(conversation.otherUser)}</Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.preview, conversation.unreadCount > 0 && styles.unreadPreview]}
+                    >
+                      {conversation.lastMessage?.content || 'Шинэ chat'}
+                    </Text>
+                  </View>
+                  <View style={styles.rowMeta}>
+                    <Text style={styles.time}>{relativeTime(conversation.updatedAt)}</Text>
+                    {conversation.unreadCount > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadText}>
+                          {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+              ))}
+
+          {((newChatOpen && !users.length) || (!newChatOpen && !filtered.length)) && (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>
+                {newChatOpen ? 'Хэрэглэгч олдсонгүй' : 'Одоогоор chat алга'}
+              </Text>
+              <Text style={styles.emptyCopy}>
+                {newChatOpen ? 'Өөр нэр эсвэл и-мэйл хайгаарай.' : '＋ дарж шинэ chat эхлүүлээрэй.'}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
       )}
 
-      <ScrollView
-        horizontal
-        style={styles.filterScroller}
-        contentContainerStyle={styles.filters}
-        showsHorizontalScrollIndicator={false}
-      >
-        {filters.map((item) => (
-          <Pressable
-            key={item}
-            onPress={() => setFilter(item)}
-            style={[styles.filter, filter === item && styles.filterActive]}
-          >
-            <Text style={[styles.filterText, filter === item && styles.filterTextActive]}>
-              {item}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {visibleConversations.map((conversation) => (
-          <Pressable
-            key={conversation.id}
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-          >
-            <Avatar
-              initials={conversation.initials}
-              tone={conversation.tone}
-              community={conversation.type === 'Community'}
-            />
-            <View style={styles.messageInfo}>
-              <Text numberOfLines={1} style={styles.name}>
-                {conversation.name}
-              </Text>
-              <Text numberOfLines={2} style={styles.preview}>
-                {conversation.preview}
-              </Text>
-            </View>
-            <View style={styles.meta}>
-              <Text style={styles.time}>{conversation.time}</Text>
-              {conversation.unread ? (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{conversation.unread}</Text>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
-        ))}
-        {visibleConversations.length === 0 && <Text style={styles.empty}>Мессеж олдсонгүй.</Text>}
-      </ScrollView>
-
       <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
-          <Text style={styles.addIcon}>＋</Text>
+        <Pressable onPress={() => router.replace('/home')} style={styles.navItem}>
+          <Text style={styles.navIcon}>⌂</Text>
+          <Text style={styles.navText}>Нүүр</Text>
         </Pressable>
-        <NavItem icon="◉" label="Мессеж" active onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
+        <Pressable onPress={() => router.replace('/medlege')} style={styles.navItem}>
+          <Text style={styles.navIcon}>⌘</Text>
+          <Text style={styles.navText}>Мэдлэг</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
+          <Text style={styles.addText}>＋</Text>
+        </Pressable>
+        <View style={styles.navItem}>
+          <Text style={[styles.navIcon, styles.active]}>○</Text>
+          <Text style={[styles.navText, styles.active]}>Мессеж</Text>
+        </View>
+        <Pressable onPress={() => router.replace('/profile')} style={styles.navItem}>
+          <Text style={styles.navIcon}>♙</Text>
+          <Text style={styles.navText}>Профайл</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-function Avatar({
-  initials,
-  tone,
-  community,
-}: {
-  initials: string;
-  tone: string;
-  community?: boolean;
-}) {
-  return (
-    <View style={[styles.avatar, { backgroundColor: tone }]}>
-      {community ? (
-        <>
-          <View style={styles.communityBubbleOne} />
-          <View style={styles.communityBubbleTwo} />
-        </>
-      ) : (
-        <>
-          <View style={styles.avatarHead} />
-          <View style={styles.avatarBody} />
-        </>
-      )}
-      <Text style={styles.initials}>{initials}</Text>
-    </View>
-  );
-}
-
-function NavItem({
-  icon,
-  label,
-  active,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={styles.navItem}>
-      <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
-      <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
+  safeArea: { flex: 1, backgroundColor: '#031015' },
   header: {
-    height: 72,
-    paddingHorizontal: 22,
-    paddingTop: 15,
+    height: 66,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: { color: '#F5F7F7', fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 19 },
-  searchIcon: { color: '#F3F6F6', fontSize: 38, lineHeight: 40, transform: [{ rotate: '-20deg' }] },
-  composeIcon: { color: '#F3F6F6', fontSize: 29, lineHeight: 32 },
-  searchInput: {
-    height: 46,
-    marginHorizontal: 22,
-    marginBottom: 8,
-    paddingHorizontal: 15,
-    borderRadius: 13,
-    color: '#FFFFFF',
-    backgroundColor: '#0A171D',
-    borderWidth: 1,
-    borderColor: '#1A292F',
-    fontSize: 15,
-  },
-  filterScroller: { flexGrow: 0, flexShrink: 0, height: 67 },
-  filters: { paddingHorizontal: 22, paddingVertical: 11, gap: 12 },
-  filter: {
-    height: 43,
-    minWidth: 91,
-    paddingHorizontal: 18,
-    borderRadius: 15,
-    backgroundColor: '#0A171D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#0D1D23',
-  },
-  filterActive: { backgroundColor: lime, borderColor: '#A2F733' },
-  filterText: { color: '#E2E6E7', fontSize: 14, fontWeight: '700' },
-  filterTextActive: { color: '#132000' },
-  list: { paddingHorizontal: 22, paddingBottom: 120 },
-  row: {
-    minHeight: 112,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#112129',
-    borderRadius: 10,
-  },
-  rowPressed: { backgroundColor: '#071820' },
-  avatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    borderWidth: 2,
-    borderColor: '#26363C',
-  },
-  avatarHead: {
-    position: 'absolute',
-    top: 10,
-    width: 28,
-    height: 32,
-    borderRadius: 15,
-    backgroundColor: '#D5A486',
-  },
-  avatarBody: {
-    width: 53,
-    height: 30,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: '#111A20',
-  },
-  communityBubbleOne: {
-    position: 'absolute',
-    width: 35,
-    height: 43,
-    borderRadius: 20,
-    top: 11,
-    left: 8,
-    backgroundColor: '#68A3D6',
-    transform: [{ rotate: '-28deg' }],
-  },
-  communityBubbleTwo: {
-    position: 'absolute',
-    width: 33,
+  title: { color: '#F4F8F5', fontSize: 29, fontWeight: '900' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  newButton: {
+    width: 42,
     height: 42,
-    borderRadius: 18,
-    top: 12,
-    right: 7,
-    backgroundColor: '#7256D4',
-    transform: [{ rotate: '28deg' }],
-  },
-  initials: { position: 'absolute', bottom: 6, color: '#F5F6F6', fontSize: 9, fontWeight: '900' },
-  messageInfo: { flex: 1, minWidth: 0, marginLeft: 15, marginRight: 8 },
-  name: { color: '#F4F6F6', fontSize: 18, fontWeight: '800' },
-  preview: { color: '#9CA6AA', fontSize: 13, lineHeight: 19, marginTop: 5 },
-  meta: { minWidth: 70, alignSelf: 'stretch', alignItems: 'flex-end', paddingTop: 24 },
-  time: { color: '#929CA1', fontSize: 12 },
-  unreadBadge: {
-    width: 31,
-    height: 31,
-    borderRadius: 16,
+    borderRadius: 21,
     backgroundColor: lime,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
   },
-  unreadText: { color: '#152000', fontSize: 14, fontWeight: '900' },
-  empty: { color: '#899399', textAlign: 'center', paddingTop: 50, fontSize: 15 },
+  newButtonText: { color: '#142000', fontSize: 26, lineHeight: 28, fontWeight: '800' },
+  search: {
+    height: 48,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A191A',
+    borderWidth: 1,
+    borderColor: '#19302B',
+  },
+  searchIcon: { color: '#A5B0AB', fontSize: 25, marginRight: 9 },
+  searchInput: { flex: 1, color: '#F1F5F3', fontSize: 14 },
+  error: { color: '#FF7777', paddingHorizontal: 20, paddingVertical: 7 },
+  loader: { marginTop: 60 },
+  list: { paddingHorizontal: 14, paddingBottom: 116 },
+  row: {
+    minHeight: 78,
+    paddingHorizontal: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#142824',
+  },
+  rowPressed: { backgroundColor: '#0B1E1A' },
+  avatar: {
+    width: 51,
+    height: 51,
+    borderRadius: 26,
+    backgroundColor: '#173126',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: lime, fontSize: 20, fontWeight: '900' },
+  rowCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
+  name: { color: '#F2F5F4', fontSize: 15, fontWeight: '800' },
+  preview: { color: '#83908B', fontSize: 13, marginTop: 5 },
+  unreadPreview: { color: '#DCE5E1', fontWeight: '700' },
+  rowMeta: { alignItems: 'flex-end', gap: 7, marginLeft: 8 },
+  time: { color: '#6F7D77', fontSize: 11 },
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    backgroundColor: lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadText: { color: '#142000', fontSize: 10, fontWeight: '900' },
+  chevron: { color: '#89968F', fontSize: 30 },
+  empty: { alignItems: 'center', paddingTop: 85 },
+  emptyTitle: { color: '#EDF3F0', fontSize: 17, fontWeight: '800' },
+  emptyCopy: { color: '#7C8983', fontSize: 13, marginTop: 8 },
   bottomNav: {
     position: 'absolute',
     left: 0,
@@ -364,19 +329,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   navItem: { width: 69, alignItems: 'center', gap: 4 },
-  navIcon: { color: '#E0E5E6', fontSize: 29, lineHeight: 31 },
-  navLabel: { color: '#C8CFD1', fontSize: 12, fontWeight: '600' },
-  navActive: { color: lime },
+  navIcon: { color: '#D9DDDF', fontSize: 28, lineHeight: 31 },
+  navText: { color: '#D0D3D5', fontSize: 12, fontWeight: '600' },
+  active: { color: lime },
   addButton: {
     width: 61,
     height: 61,
     borderRadius: 31,
-    marginTop: -27,
+    marginTop: -28,
     backgroundColor: lime,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#061712',
   },
-  addIcon: { color: '#142000', fontSize: 38, lineHeight: 40, fontWeight: '300' },
+  addText: { color: '#173000', fontSize: 39, lineHeight: 42, fontWeight: '300' },
 });

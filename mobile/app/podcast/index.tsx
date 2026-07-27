@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, Stack } from 'expo-router';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import {
   Image,
   Pressable,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { api } from '@/services/api';
 import type { Podcast } from '@/types/media';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const lime = '#8EE817';
 
@@ -60,6 +61,14 @@ const episodes = [
 ];
 
 const categories = ['Бүгд', 'BizTalk', 'Business Voice', 'Startup'];
+
+function formatTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, '0')}`;
+}
 
 function Microphone({ small = false }: { small?: boolean }) {
   return (
@@ -149,32 +158,83 @@ function NavItem({
 function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
   const episode = podcast.episodes[0];
   const player = useAudioPlayer(episode?.audioUrl ?? null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const status = useAudioPlayerStatus(player);
+  const [controlsOpen, setControlsOpen] = useState(false);
   if (!episode) return null;
+
   const toggle = () => {
-    if (isPlaying) player.pause();
+    setControlsOpen(true);
+    if (status.playing) player.pause();
     else player.play();
-    setIsPlaying((value) => !value);
   };
+
+  const seekBy = (seconds: number) => {
+    const nextTime = Math.min(Math.max(status.currentTime + seconds, 0), status.duration || 0);
+    void player.seekTo(nextTime);
+  };
+
+  const progress =
+    status.duration > 0 ? Math.min(Math.max(status.currentTime / status.duration, 0), 1) : 0;
+
   return (
-    <Pressable onPress={toggle} style={styles.uploadedRow}>
-      {podcast.coverUrl ? (
-        <Image source={{ uri: podcast.coverUrl }} style={styles.uploadedCover} />
-      ) : (
-        <View style={styles.uploadedCover} />
+    <View style={[styles.uploadedCard, controlsOpen && styles.uploadedCardActive]}>
+      <Pressable onPress={toggle} style={styles.uploadedRow}>
+        {podcast.coverUrl ? (
+          <Image source={{ uri: podcast.coverUrl }} style={styles.uploadedCover} />
+        ) : (
+          <View style={styles.uploadedCover} />
+        )}
+        <View style={styles.uploadedCopy}>
+          <Text numberOfLines={1} style={styles.uploadedTitle}>
+            {podcast.title}
+          </Text>
+          <Text numberOfLines={2} style={styles.uploadedDescription}>
+            {podcast.description || 'Тайлбаргүй'}
+          </Text>
+        </View>
+        <View style={styles.uploadedPlay}>
+          <Text style={styles.uploadedPlayText}>{status.playing ? 'Ⅱ' : '▶'}</Text>
+        </View>
+      </Pressable>
+
+      {controlsOpen && (
+        <View style={styles.playerControls}>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          </View>
+          <View style={styles.timeRow}>
+            <Text style={styles.playerTime}>{formatTime(status.currentTime)}</Text>
+            <Text style={styles.playerTime}>{formatTime(status.duration)}</Text>
+          </View>
+          <View style={styles.controlRow}>
+            <Pressable
+              accessibilityLabel="10 секунд ухрах"
+              onPress={() => seekBy(-10)}
+              style={({ pressed }) => [styles.skipButton, pressed && styles.controlPressed]}
+            >
+              <Text style={styles.skipValue}>−10</Text>
+              <Text style={styles.skipUnit}>сек</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel={status.playing ? 'Түр зогсоох' : 'Тоглуулах'}
+              onPress={toggle}
+              style={({ pressed }) => [styles.mainControl, pressed && styles.controlPressed]}
+            >
+              <Text style={styles.mainControlIcon}>{status.playing ? 'Ⅱ' : '▶'}</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="10 секунд урагшлуулах"
+              onPress={() => seekBy(10)}
+              style={({ pressed }) => [styles.skipButton, pressed && styles.controlPressed]}
+            >
+              <Text style={styles.skipValue}>+10</Text>
+              <Text style={styles.skipUnit}>сек</Text>
+            </Pressable>
+          </View>
+          {status.isBuffering && <Text style={styles.buffering}>Ачаалж байна...</Text>}
+        </View>
       )}
-      <View style={styles.uploadedCopy}>
-        <Text numberOfLines={1} style={styles.uploadedTitle}>
-          {podcast.title}
-        </Text>
-        <Text numberOfLines={2} style={styles.uploadedDescription}>
-          {podcast.description || 'Тайлбаргүй'}
-        </Text>
-      </View>
-      <View style={styles.uploadedPlay}>
-        <Text style={styles.uploadedPlayText}>{isPlaying ? 'Ⅱ' : '▶'}</Text>
-      </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -224,16 +284,19 @@ export default function PodcastScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.heading}>Podcast</Text>
-          <Pressable
-            accessibilityLabel="Podcast хайх"
-            hitSlop={12}
-            onPress={() => {
-              setSearching((current) => !current);
-              if (searching) setQuery('');
-            }}
-          >
-            <Text style={styles.search}>⌕</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <NotificationBell />
+            <Pressable
+              accessibilityLabel="Podcast хайх"
+              hitSlop={12}
+              onPress={() => {
+                setSearching((current) => !current);
+                if (searching) setQuery('');
+              }}
+            >
+              <Text style={styles.search}>⌕</Text>
+            </Pressable>
+          </View>
         </View>
 
         {searching && (
@@ -324,6 +387,7 @@ export default function PodcastScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   safeArea: { flex: 1, backgroundColor: '#020d12' },
   content: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 112 },
   header: {
@@ -455,11 +519,20 @@ const styles = StyleSheet.create({
   playButtonPressed: { opacity: 0.8, transform: [{ scale: 0.94 }] },
   allTitle: { color: '#f5f5f5', fontSize: 23, fontWeight: '800', marginTop: 36, marginBottom: 17 },
   uploadedList: { gap: 11 },
+  uploadedCard: {
+    borderRadius: 18,
+    backgroundColor: '#07161B',
+    borderWidth: 1,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+  },
+  uploadedCardActive: {
+    borderColor: '#315B3C',
+    backgroundColor: '#091B17',
+  },
   uploadedRow: {
     minHeight: 90,
     padding: 10,
-    borderRadius: 16,
-    backgroundColor: '#07161B',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -476,6 +549,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   uploadedPlayText: { color: '#162000', fontSize: 15, fontWeight: '900' },
+  playerControls: {
+    paddingHorizontal: 18,
+    paddingTop: 5,
+    paddingBottom: 17,
+    borderTopWidth: 1,
+    borderTopColor: '#173027',
+  },
+  progressTrack: {
+    height: 5,
+    borderRadius: 3,
+    overflow: 'hidden',
+    backgroundColor: '#24352F',
+  },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: lime },
+  timeRow: {
+    marginTop: 7,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  playerTime: { color: '#819089', fontSize: 11, fontWeight: '600' },
+  controlRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 29,
+  },
+  skipButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    borderColor: '#50635B',
+    backgroundColor: '#10231D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skipValue: { color: '#F0F5F2', fontSize: 14, lineHeight: 16, fontWeight: '900' },
+  skipUnit: { color: '#87958F', fontSize: 8, lineHeight: 10, fontWeight: '700' },
+  mainControl: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: lime,
+    shadowColor: lime,
+    shadowOpacity: 0.25,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+  mainControlIcon: { color: '#142000', fontSize: 22, fontWeight: '900', marginLeft: 2 },
+  controlPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+  buffering: { color: '#A8B4AF', fontSize: 11, textAlign: 'center', marginTop: 5 },
   episodeList: { gap: 12 },
   episodeRow: {
     height: 79,

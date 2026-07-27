@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useUser } from '@/providers/UserProvider';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const lime = '#8EE817';
 
@@ -43,6 +44,9 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.notificationRow}>
+          <NotificationBell />
+        </View>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <View style={styles.hair} />
@@ -149,6 +153,7 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
+  notificationRow: { flexDirection: 'row', justifyContent: 'flex-end' },
   safeArea: { flex: 1, backgroundColor: '#02110D' },
   content: {
     flexGrow: 1,

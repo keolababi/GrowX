@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { api } from '@/services/api';
 import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
+import { NotificationBell } from '@/components/NotificationBell';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
 
@@ -168,11 +169,14 @@ export default function CreateContentScreen() {
             <Text style={styles.closeText}>×</Text>
           </Pressable>
           <Text style={styles.headerTitle}>Шинэ контент</Text>
-          <Pressable disabled={!canPublish || submitting} onPress={() => void publish()}>
-            <Text style={[styles.share, (!canPublish || submitting) && styles.shareDisabled]}>
-              {submitting ? `${Math.round(uploadProgress)}%` : 'Нийтлэх'}
-            </Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <NotificationBell />
+            <Pressable disabled={!canPublish || submitting} onPress={() => void publish()}>
+              <Text style={[styles.share, (!canPublish || submitting) && styles.shareDisabled]}>
+                {submitting ? `${Math.round(uploadProgress)}%` : 'Нийтлэх'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.tabs}>
@@ -319,6 +323,7 @@ export default function CreateContentScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   safeArea: { flex: 1, backgroundColor: '#020D12' },
   keyboard: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center' },
   header: {

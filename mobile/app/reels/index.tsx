@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { api } from '@/services/api';
+import { NotificationBell } from '@/components/NotificationBell';
 
 type Reel = {
   id: string;
@@ -68,12 +69,15 @@ export default function ReelsScreen() {
           <Text style={styles.back}>‹</Text>
         </Pressable>
         <Text style={styles.title}>Reels</Text>
-        <Pressable
-          onPress={() => router.push({ pathname: '/posts/create', params: { type: 'reel' } })}
-          style={styles.add}
-        >
-          <Text style={styles.addText}>＋</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <NotificationBell />
+          <Pressable
+            onPress={() => router.push({ pathname: '/posts/create', params: { type: 'reel' } })}
+            style={styles.add}
+          >
+            <Text style={styles.addText}>＋</Text>
+          </Pressable>
+        </View>
       </View>
       {loading ? (
         <View style={styles.center}>
@@ -92,6 +96,7 @@ export default function ReelsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   safeArea: { flex: 1, backgroundColor: '#020D12' },
   header: {
     height: 76,

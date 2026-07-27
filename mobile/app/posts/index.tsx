@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { NotificationBell } from '@/components/NotificationBell';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
@@ -160,6 +161,7 @@ export default function PostsScreen() {
         </Pressable>
         <Text style={styles.title}>Post</Text>
         <View style={styles.headerActions}>
+          <NotificationBell />
           <Pressable onPress={() => router.push('/reels')} style={styles.reelsButton}>
             <Text style={styles.reelsButtonText}>Reels</Text>
           </Pressable>

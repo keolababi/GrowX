@@ -7,7 +7,7 @@
   ],
   "packageManager": "bun@1.2.17",
   "scripts": {
-    "start": "cd mobile && bun run start",
+    "start": "bun run dev",
     "dev": "bun run dev:backend & BACKEND_PID=$!; trap 'kill $BACKEND_PID' EXIT INT TERM; cd mobile && bun run start --clear",
     "dev:backend": "bun --filter backend dev",
     "dev:mobile": "bun --filter mobile start --clear",

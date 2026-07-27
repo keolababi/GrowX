@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const lime = '#8EE817';
 const categories = ['Бүгд', 'Маркетинг', 'Санхүү', 'Бизнес хөгжил'];
@@ -93,16 +94,19 @@ export default function MentorScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.title}>Менторууд</Text>
-        <Pressable
-          accessibilityLabel="Ментор хайх"
-          hitSlop={12}
-          onPress={() => {
-            setSearching((current) => !current);
-            if (searching) setQuery('');
-          }}
-        >
-          <Text style={styles.searchIcon}>⌕</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <NotificationBell />
+          <Pressable
+            accessibilityLabel="Ментор хайх"
+            hitSlop={12}
+            onPress={() => {
+              setSearching((current) => !current);
+              if (searching) setQuery('');
+            }}
+          >
+            <Text style={styles.searchIcon}>⌕</Text>
+          </Pressable>
+        </View>
       </View>
 
       {searching && (
@@ -204,6 +208,7 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   safeArea: { flex: 1, backgroundColor: '#020D12' },
   header: {
     paddingHorizontal: 22,
