@@ -249,9 +249,13 @@ export default function CreateContentScreen() {
           ) : (
             <View style={styles.postEditor}>
               <View style={styles.authorRow}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{userInitial}</Text>
-                </View>
+                {user?.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{userInitial}</Text>
+                  </View>
+                )}
                 <Text style={styles.authorName}>{displayName}</Text>
               </View>
 

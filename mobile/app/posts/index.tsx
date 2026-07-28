@@ -39,12 +39,28 @@ function initials(name: string | null, email: string) {
 function CommentRow({ comment }: { comment: PostComment }) {
   return (
     <View style={styles.commentRow}>
-      <Pressable onPress={() => router.push(`/users/${comment.author.id}` as Href)}>
-        <Text style={styles.commentAuthor}>
-          {comment.author.displayName || comment.author.email.split('@')[0]}
-        </Text>
+      <Pressable
+        onPress={() => router.push(`/users/${comment.author.id}` as Href)}
+        style={styles.commentProfile}
+      >
+        {comment.author.avatarUrl ? (
+          <Image source={{ uri: comment.author.avatarUrl }} style={styles.commentAvatar} />
+        ) : (
+          <View style={styles.commentAvatarFallback}>
+            <Text style={styles.commentAvatarText}>
+              {initials(comment.author.displayName, comment.author.email)}
+            </Text>
+          </View>
+        )}
       </Pressable>
-      <Text style={styles.commentText}>{comment.content}</Text>
+      <View style={styles.commentBubble}>
+        <Pressable onPress={() => router.push(`/users/${comment.author.id}` as Href)}>
+          <Text style={styles.commentAuthor}>
+            {comment.author.displayName || comment.author.email.split('@')[0]}
+          </Text>
+        </Pressable>
+        <Text style={styles.commentText}>{comment.content}</Text>
+      </View>
     </View>
   );
 }
@@ -388,7 +404,19 @@ const styles = StyleSheet.create({
   liked: { color: lime },
   shareAction: { marginLeft: 'auto' },
   share: { color: '#DDE4E1', fontSize: 24 },
-  commentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, paddingTop: 10 },
+  commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingTop: 10 },
+  commentProfile: { marginTop: 1 },
+  commentAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#13251D' },
+  commentAvatarFallback: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#183127',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentAvatarText: { color: lime, fontSize: 9, fontWeight: '900' },
+  commentBubble: { flex: 1, minWidth: 0 },
   commentAuthor: { color: '#F1F4F3', fontSize: 13, fontWeight: '800' },
   commentText: { color: '#BBC4C0', fontSize: 13, lineHeight: 18, flexShrink: 1 },
   commentComposer: {

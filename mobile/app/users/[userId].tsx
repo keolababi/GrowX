@@ -162,7 +162,7 @@ export default function PublicUserProfileScreen() {
             {!!profile.user.company && <Text style={styles.company}>{profile.user.company}</Text>}
 
             <View style={styles.stats}>
-              <Stat value={profile.counts.posts} label="Нийтлэл" />
+              <Stat value={profile.counts.posts} label="Posts" />
               <Pressable
                 onPress={() =>
                   router.push(
@@ -207,7 +207,7 @@ export default function PublicUserProfileScreen() {
             )}
 
             <View style={styles.postsSection}>
-              <Text style={styles.postsTitle}>Нийтлэлүүд</Text>
+              <Text style={styles.postsTitle}>Posts</Text>
               {posts.map((post) => (
                 <View key={post.id} style={styles.postCard}>
                   <View style={styles.postMetaRow}>

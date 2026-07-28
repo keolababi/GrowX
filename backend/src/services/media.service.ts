@@ -5,7 +5,7 @@ export async function listPodcasts() {
   const podcasts = await prisma.podcast.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      author: { include: { profile: { select: { displayName: true } } } },
+      author: { include: { profile: { select: { displayName: true, avatarUrl: true } } } },
       episodes: { orderBy: { createdAt: 'desc' } },
     },
   });
@@ -15,6 +15,7 @@ export async function listPodcasts() {
       author: {
         id: podcast.author.id,
         displayName: podcast.author.profile?.displayName ?? null,
+        avatarUrl: podcast.author.profile?.avatarUrl ?? null,
       },
     })),
   };

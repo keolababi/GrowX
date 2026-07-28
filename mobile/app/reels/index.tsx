@@ -3,6 +3,7 @@ import { router, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -39,7 +40,19 @@ function ReelCard({ reel }: { reel: Reel }) {
       <Pressable onPress={toggle} style={styles.videoWrap}>
         <VideoView player={player} style={styles.video} nativeControls contentFit="cover" />
       </Pressable>
-      <Pressable onPress={() => router.push(`/users/${reel.author.id}` as Href)}>
+      <Pressable
+        onPress={() => router.push(`/users/${reel.author.id}` as Href)}
+        style={styles.authorRow}
+      >
+        {reel.author.profile?.avatarUrl ? (
+          <Image source={{ uri: reel.author.profile.avatarUrl }} style={styles.authorAvatar} />
+        ) : (
+          <View style={styles.authorAvatarFallback}>
+            <Text style={styles.authorAvatarText}>
+              {(reel.author.profile?.displayName || reel.author.email).charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
         <Text style={styles.author}>
           {reel.author.profile?.displayName || reel.author.email.split('@')[0]}
         </Text>
@@ -125,12 +138,22 @@ const styles = StyleSheet.create({
   card: { borderRadius: 20, overflow: 'hidden', backgroundColor: '#08171C', paddingBottom: 16 },
   videoWrap: { width: '100%', aspectRatio: 9 / 14, backgroundColor: '#000' },
   video: { width: '100%', height: '100%' },
+  authorRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 14 },
+  authorAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#173126' },
+  authorAvatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#173126',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  authorAvatarText: { color: '#8EE817', fontSize: 12, fontWeight: '900' },
   author: {
     color: '#F3F6F5',
     fontSize: 15,
     fontWeight: '900',
-    marginHorizontal: 16,
-    marginTop: 14,
+    marginLeft: 9,
   },
   caption: { color: '#C7D0CC', fontSize: 14, lineHeight: 20, marginHorizontal: 16, marginTop: 7 },
   empty: { color: '#84928D', textAlign: 'center', paddingTop: 80 },

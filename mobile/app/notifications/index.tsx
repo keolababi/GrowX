@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, router, type Href } from 'expo-router';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -100,9 +101,13 @@ export default function NotificationsScreen() {
                 onPress={() => void openNotification(notification)}
                 style={[styles.item, !notification.readAt && styles.unreadItem]}
               >
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{actorName.charAt(0).toUpperCase()}</Text>
-                </View>
+                {notification.actor?.avatarUrl ? (
+                  <Image source={{ uri: notification.actor.avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{actorName.charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
                 <View style={styles.itemCopy}>
                   <Text style={styles.message}>{notification.message}</Text>
                   <Text style={styles.time}>{relativeTime(notification.createdAt)}</Text>

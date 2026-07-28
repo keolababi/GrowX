@@ -96,7 +96,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.stats}>
-          <Stat value={String(counts.posts)} label="Нийтлэл" />
+          <Stat value={String(counts.posts)} label="Posts" />
           <Pressable
             onPress={() =>
               router.push(`/profile/connections?userId=${user?.id}&tab=followers` as Href)

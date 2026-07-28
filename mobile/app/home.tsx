@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useUser } from '@/providers/UserProvider';
 import { GrowXMark } from '@/components/GrowXLogo';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -84,7 +84,11 @@ export default function HomeScreen() {
                   pressed && styles.profileButtonPressed,
                 ]}
               >
-                <Text style={styles.profileInitial}>{profileInitial}</Text>
+                {user?.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={styles.profileImage} />
+                ) : (
+                  <Text style={styles.profileInitial}>{profileInitial}</Text>
+                )}
               </Pressable>
               {profileMenuOpen && (
                 <View style={styles.profileMenu}>
@@ -246,6 +250,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileButtonPressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
+  profileImage: { width: '100%', height: '100%', borderRadius: 19 },
   profileInitial: { color: '#F4F8F5', fontSize: 18, fontWeight: '800' },
   profileMenu: {
     position: 'absolute',

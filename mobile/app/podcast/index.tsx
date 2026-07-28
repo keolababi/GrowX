@@ -198,7 +198,17 @@ function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
               event.stopPropagation();
               router.push(`/users/${podcast.author.id}` as Href);
             }}
+            style={styles.uploadedAuthorRow}
           >
+            {podcast.author.avatarUrl ? (
+              <Image source={{ uri: podcast.author.avatarUrl }} style={styles.uploadedAvatar} />
+            ) : (
+              <View style={styles.uploadedAvatarFallback}>
+                <Text style={styles.uploadedAvatarText}>
+                  {(podcast.author.displayName || 'G').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
             <Text style={styles.uploadedAuthor}>
               {podcast.author.displayName || 'GrowX хэрэглэгч'}
             </Text>
@@ -552,7 +562,18 @@ const styles = StyleSheet.create({
   uploadedCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
   uploadedTitle: { color: '#F1F4F3', fontSize: 15, fontWeight: '800' },
   uploadedDescription: { color: '#8F9B97', fontSize: 12, lineHeight: 17, marginTop: 6 },
-  uploadedAuthor: { color: lime, fontSize: 10, fontWeight: '800', marginTop: 5 },
+  uploadedAuthorRow: { flexDirection: 'row', alignItems: 'center', marginTop: 7, gap: 6 },
+  uploadedAvatar: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#173126' },
+  uploadedAvatarFallback: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#173126',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadedAvatarText: { color: lime, fontSize: 8, fontWeight: '900' },
+  uploadedAuthor: { color: lime, fontSize: 10, fontWeight: '800' },
   uploadedPlay: {
     width: 38,
     height: 38,

@@ -13,6 +13,6 @@ export type Podcast = {
   description: string | null;
   coverUrl: string | null;
   createdAt: string;
-  author: { id: string; displayName: string | null };
+  author: { id: string; displayName: string | null; avatarUrl: string | null };
   episodes: PodcastEpisode[];
 };

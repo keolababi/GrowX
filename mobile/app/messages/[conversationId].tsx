@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -108,11 +109,15 @@ export default function ConversationScreen() {
             onPress={() => otherUser && router.push(`/users/${otherUser.id}` as Href)}
             style={styles.profileLink}
           >
-            <View style={styles.headerAvatar}>
-              <Text style={styles.headerAvatarText}>
-                {displayName(otherUser).charAt(0).toUpperCase()}
-              </Text>
-            </View>
+            {otherUser?.avatarUrl ? (
+              <Image source={{ uri: otherUser.avatarUrl }} style={styles.headerAvatar} />
+            ) : (
+              <View style={styles.headerAvatar}>
+                <Text style={styles.headerAvatarText}>
+                  {displayName(otherUser).charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
             <View style={styles.headerCopy}>
               <Text numberOfLines={1} style={styles.name}>
                 {displayName(otherUser)}

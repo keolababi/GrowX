@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -29,6 +30,35 @@ function relativeTime(value: string) {
 
 function displayName(user: ChatUser | null) {
   return user?.displayName || user?.email.split('@')[0] || 'GrowX хэрэглэгч';
+}
+
+function isUserActive(user: ChatUser | null) {
+  return Boolean(user?.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 60_000);
+}
+
+function Presence({ user }: { user: ChatUser | null }) {
+  const active = isUserActive(user);
+  return (
+    <Text style={[styles.presenceText, active && styles.activeText]}>
+      {active ? 'Идэвхтэй' : 'Офлайн'}
+    </Text>
+  );
+}
+
+function UserAvatar({ user }: { user: ChatUser | null }) {
+  const active = isUserActive(user);
+  return (
+    <View style={styles.avatarWrap}>
+      {user?.avatarUrl ? (
+        <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+      ) : (
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{displayName(user).charAt(0).toUpperCase()}</Text>
+        </View>
+      )}
+      <View style={[styles.avatarPresence, !active && styles.offlineDot]} />
+    </View>
+  );
 }
 
 export default function MessagesScreen() {
@@ -157,13 +187,14 @@ export default function MessagesScreen() {
                   onPress={() => void startChat(user.id)}
                   style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                 >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {displayName(user).charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
+                  <UserAvatar user={user} />
                   <View style={styles.rowCopy}>
-                    <Text style={styles.name}>{displayName(user)}</Text>
+                    <View style={styles.nameRow}>
+                      <Text numberOfLines={1} style={styles.name}>
+                        {displayName(user)}
+                      </Text>
+                      <Presence user={user} />
+                    </View>
                     <Text style={styles.preview}>{user.email}</Text>
                   </View>
                   <Text style={styles.chevron}>›</Text>
@@ -175,13 +206,14 @@ export default function MessagesScreen() {
                   onPress={() => router.push(`/messages/${conversation.id}`)}
                   style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                 >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {displayName(conversation.otherUser).charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
+                  <UserAvatar user={conversation.otherUser} />
                   <View style={styles.rowCopy}>
-                    <Text style={styles.name}>{displayName(conversation.otherUser)}</Text>
+                    <View style={styles.nameRow}>
+                      <Text numberOfLines={1} style={styles.name}>
+                        {displayName(conversation.otherUser)}
+                      </Text>
+                      <Presence user={conversation.otherUser} />
+                    </View>
                     <Text
                       numberOfLines={1}
                       style={[styles.preview, conversation.unreadCount > 0 && styles.unreadPreview]}
@@ -287,6 +319,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#142824',
   },
   rowPressed: { backgroundColor: '#0B1E1A' },
+  avatarWrap: { position: 'relative' },
   avatar: {
     width: 51,
     height: 51,
@@ -296,8 +329,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: lime, fontSize: 20, fontWeight: '900' },
+  avatarPresence: {
+    position: 'absolute',
+    right: 1,
+    bottom: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: '#031015',
+    backgroundColor: lime,
+  },
   rowCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
-  name: { color: '#F2F5F4', fontSize: 15, fontWeight: '800' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, gap: 9 },
+  name: { color: '#F2F5F4', fontSize: 15, fontWeight: '800', flexShrink: 1 },
+  offlineDot: { backgroundColor: '#68756F' },
+  presenceText: { color: '#75837D', fontSize: 10, fontWeight: '600' },
+  activeText: { color: lime },
   preview: { color: '#83908B', fontSize: 13, marginTop: 5 },
   unreadPreview: { color: '#DCE5E1', fontWeight: '700' },
   rowMeta: { alignItems: 'flex-end', gap: 7, marginLeft: 8 },
