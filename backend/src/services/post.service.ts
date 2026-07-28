@@ -81,6 +81,18 @@ export async function listPosts(userId: string) {
   return { posts: posts.map(serializePost) };
 }
 
+export async function listUserPosts(viewerId: string, authorId: string) {
+  const author = await prisma.user.findUnique({ where: { id: authorId }, select: { id: true } });
+  if (!author) throw new HttpError(404, 'Хэрэглэгч олдсонгүй.');
+  const posts = await prisma.post.findMany({
+    where: { authorId },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    include: postInclude(viewerId),
+  });
+  return { posts: posts.map(serializePost) };
+}
+
 export async function getPost(userId: string, postId: string) {
   const post = await prisma.post.findUnique({
     where: { id: postId },

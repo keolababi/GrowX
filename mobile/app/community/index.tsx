@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
@@ -230,23 +230,28 @@ export default function CommunityScreen() {
                 {filteredPosts.map((post) => (
                   <View key={post.id} style={styles.post}>
                     <View style={styles.postHeader}>
-                      {post.author.avatarUrl ? (
-                        <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
-                      ) : (
-                        <View style={styles.avatarFallback}>
-                          <Text style={styles.avatarText}>
-                            {(post.author.displayName || post.author.email)
-                              .slice(0, 2)
-                              .toUpperCase()}
+                      <Pressable
+                        onPress={() => router.push(`/users/${post.author.id}` as Href)}
+                        style={styles.profileLink}
+                      >
+                        {post.author.avatarUrl ? (
+                          <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
+                        ) : (
+                          <View style={styles.avatarFallback}>
+                            <Text style={styles.avatarText}>
+                              {(post.author.displayName || post.author.email)
+                                .slice(0, 2)
+                                .toUpperCase()}
+                            </Text>
+                          </View>
+                        )}
+                        <View style={styles.authorCopy}>
+                          <Text style={styles.authorName}>
+                            {post.author.displayName || post.author.email.split('@')[0]}
                           </Text>
+                          <Text style={styles.time}>{relativeTime(post.createdAt)}</Text>
                         </View>
-                      )}
-                      <View style={styles.authorCopy}>
-                        <Text style={styles.authorName}>
-                          {post.author.displayName || post.author.email.split('@')[0]}
-                        </Text>
-                        <Text style={styles.time}>{relativeTime(post.createdAt)}</Text>
-                      </View>
+                      </Pressable>
                       <Text style={styles.more}>•••</Text>
                     </View>
 
@@ -380,6 +385,7 @@ const styles = StyleSheet.create({
   error: { color: '#FF817B', fontSize: 13, paddingVertical: 12 },
   post: { paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#16272C' },
   postHeader: { flexDirection: 'row', alignItems: 'center' },
+  profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 48, height: 48, borderRadius: 24 },
   avatarFallback: {
     width: 48,

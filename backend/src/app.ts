@@ -11,6 +11,7 @@ import { uploadRouter } from './routes/upload.routes.js';
 import { communityRouter } from './routes/community.routes.js';
 import { notificationRouter } from './routes/notification.routes.js';
 import { chatRouter } from './routes/chat.routes.js';
+import { socialRouter } from './routes/social.routes.js';
 
 export const app = express();
 
@@ -44,5 +45,6 @@ app.use('/api/uploads', uploadRouter);
 app.use('/api/communities', communityRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/conversations', chatRouter);
+app.use('/api/users', socialRouter);
 app.use(notFound);
 app.use(errorHandler);

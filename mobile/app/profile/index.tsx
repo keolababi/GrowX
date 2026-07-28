@@ -1,6 +1,8 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   SafeAreaView,
@@ -12,10 +14,13 @@ import {
 import { useUser } from '@/providers/UserProvider';
 import { NotificationBell } from '@/components/NotificationBell';
 import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { api } from '@/services/api';
+import type { SocialProfile } from '@/types/social';
 
 const lime = '#8EE817';
 
-const menuItems = [
+const menuItems: Array<{ icon: string; label: string; route?: Href }> = [
+  { icon: '♙', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
   { icon: '▧', label: 'Миний контент' },
   { icon: '▯', label: 'Хадгалсан контент' },
   { icon: '▣', label: 'Миний төсөл' },
@@ -25,6 +30,17 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const { user, logout } = useUser();
+  const [counts, setCounts] = useState({ posts: 0, followers: 0, following: 0 });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id) return;
+      api
+        .get<SocialProfile>(`/users/${user.id}`)
+        .then(({ data }) => setCounts(data.counts))
+        .catch(() => undefined);
+    }, [user?.id]),
+  );
 
   const signOut = async () => {
     await logout();
@@ -49,17 +65,21 @@ export default function ProfileScreen() {
           <NotificationBell />
         </View>
         <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <View style={styles.hair} />
-            <View style={styles.face} />
-            <View style={styles.ears} />
-            <View style={styles.neck} />
-            <View style={styles.suit} />
-            <View style={styles.shirt} />
-            <View style={styles.tie} />
-          </View>
+          {user?.avatarUrl ? (
+            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <View style={styles.hair} />
+              <View style={styles.face} />
+              <View style={styles.ears} />
+              <View style={styles.neck} />
+              <View style={styles.suit} />
+              <View style={styles.shirt} />
+              <View style={styles.tie} />
+            </View>
+          )}
           <Text style={styles.name}>{user?.displayName ?? 'GrowX хэрэглэгч'}</Text>
-          <Text style={styles.role}>Startup Founder</Text>
+          <Text style={styles.role}>{user?.bio || 'Startup Founder'}</Text>
         </View>
 
         <View style={styles.accountCard}>
@@ -76,9 +96,21 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.stats}>
-          <Stat value="23" label="Нийтлэл" />
-          <Stat value="156" label="Дагагч" />
-          <Stat value="89" label="Дагадаг" />
+          <Stat value={String(counts.posts)} label="Нийтлэл" />
+          <Pressable
+            onPress={() =>
+              router.push(`/profile/connections?userId=${user?.id}&tab=followers` as Href)
+            }
+          >
+            <Stat value={String(counts.followers)} label="Дагагч" />
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              router.push(`/profile/connections?userId=${user?.id}&tab=following` as Href)
+            }
+          >
+            <Stat value={String(counts.following)} label="Дагадаг" />
+          </Pressable>
         </View>
 
         <View style={styles.divider} />
@@ -87,7 +119,13 @@ export default function ProfileScreen() {
           {menuItems.map((item) => (
             <Pressable
               key={item.label}
-              onPress={item.label === 'Миний контент' ? () => router.push('/posts') : undefined}
+              onPress={
+                item.route
+                  ? () => router.push(item.route!)
+                  : item.label === 'Миний контент'
+                    ? () => router.push('/posts')
+                    : undefined
+              }
               style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
             >
               <View style={styles.menuIconWrap}>
@@ -172,6 +210,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     backgroundColor: '#DCE1DF',
+    borderWidth: 3,
+    borderColor: '#F0F3F2',
+  },
+  avatarImage: {
+    width: 116,
+    height: 116,
+    borderRadius: 58,
     borderWidth: 3,
     borderColor: '#F0F3F2',
   },

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -103,22 +103,28 @@ export default function ConversationScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Text style={styles.back}>‹</Text>
           </Pressable>
-          <View style={styles.headerAvatar}>
-            <Text style={styles.headerAvatarText}>
-              {displayName(otherUser).charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.headerCopy}>
-            <Text numberOfLines={1} style={styles.name}>
-              {displayName(otherUser)}
-            </Text>
-            <View style={styles.presenceRow}>
-              <View style={[styles.presenceDot, !isActive && styles.offlineDot]} />
-              <Text style={[styles.status, isActive && styles.activeStatus]}>
-                {isActive ? 'Идэвхтэй' : 'Офлайн'}
+          <Pressable
+            disabled={!otherUser}
+            onPress={() => otherUser && router.push(`/users/${otherUser.id}` as Href)}
+            style={styles.profileLink}
+          >
+            <View style={styles.headerAvatar}>
+              <Text style={styles.headerAvatarText}>
+                {displayName(otherUser).charAt(0).toUpperCase()}
               </Text>
             </View>
-          </View>
+            <View style={styles.headerCopy}>
+              <Text numberOfLines={1} style={styles.name}>
+                {displayName(otherUser)}
+              </Text>
+              <View style={styles.presenceRow}>
+                <View style={[styles.presenceDot, !isActive && styles.offlineDot]} />
+                <Text style={[styles.status, isActive && styles.activeStatus]}>
+                  {isActive ? 'Идэвхтэй' : 'Офлайн'}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
         </View>
 
         {loading ? (
@@ -201,6 +207,7 @@ const styles = StyleSheet.create({
   },
   headerAvatarText: { color: lime, fontSize: 17, fontWeight: '900' },
   headerCopy: { flex: 1, marginLeft: 11 },
+  profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   name: { color: '#F2F6F4', fontSize: 16, fontWeight: '800' },
   presenceRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
   presenceDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: lime },
