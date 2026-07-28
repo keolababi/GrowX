@@ -3,6 +3,7 @@ export type ChatUser = {
   email: string;
   displayName: string | null;
   avatarUrl: string | null;
+  lastSeenAt: string | null;
 };
 
 export type ChatMessage = {

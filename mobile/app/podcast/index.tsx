@@ -14,6 +14,7 @@ import {
 import { api } from '@/services/api';
 import type { Podcast } from '@/types/media';
 import { NotificationBell } from '@/components/NotificationBell';
+import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
 
 const lime = '#8EE817';
 
@@ -150,6 +151,7 @@ function NavItem({
   return (
     <Pressable onPress={onPress} style={styles.navItem}>
       <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
+      {label === 'Мессеж' && <MessageUnreadBadge />}
       <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
     </Pressable>
   );

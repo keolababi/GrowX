@@ -37,6 +37,9 @@ export default function ConversationScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const isActive = Boolean(
+    otherUser?.lastSeenAt && Date.now() - new Date(otherUser.lastSeenAt).getTime() < 60_000,
+  );
 
   const loadMessages = useCallback(
     async (silent = false) => {
@@ -109,7 +112,12 @@ export default function ConversationScreen() {
             <Text numberOfLines={1} style={styles.name}>
               {displayName(otherUser)}
             </Text>
-            <Text style={styles.status}>GrowX chat</Text>
+            <View style={styles.presenceRow}>
+              <View style={[styles.presenceDot, !isActive && styles.offlineDot]} />
+              <Text style={[styles.status, isActive && styles.activeStatus]}>
+                {isActive ? 'Идэвхтэй' : 'Офлайн'}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -194,7 +202,11 @@ const styles = StyleSheet.create({
   headerAvatarText: { color: lime, fontSize: 17, fontWeight: '900' },
   headerCopy: { flex: 1, marginLeft: 11 },
   name: { color: '#F2F6F4', fontSize: 16, fontWeight: '800' },
-  status: { color: '#73827B', fontSize: 11, marginTop: 3 },
+  presenceRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
+  presenceDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: lime },
+  offlineDot: { backgroundColor: '#68756F' },
+  status: { color: '#73827B', fontSize: 11 },
+  activeStatus: { color: lime },
   loader: { flex: 1 },
   messages: { flexGrow: 1, padding: 14, justifyContent: 'flex-end', gap: 7 },
   empty: { alignItems: 'center', marginBottom: 60 },

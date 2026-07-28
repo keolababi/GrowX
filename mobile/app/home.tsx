@@ -4,6 +4,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import { useUser } from '@/providers/UserProvider';
 import { GrowXMark } from '@/components/GrowXLogo';
 import { NotificationBell } from '@/components/NotificationBell';
+import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
 
 const lime = '#8ee817';
 
@@ -52,6 +53,7 @@ function BottomItem({
   return (
     <Pressable onPress={onPress} style={styles.bottomItem}>
       <Text style={[styles.bottomIcon, active && styles.bottomIconActive]}>{icons[icon]}</Text>
+      {label === 'Мессеж' && <MessageUnreadBadge />}
       <Text style={[styles.bottomLabel, active && styles.bottomLabelActive]}>{label}</Text>
     </Pressable>
   );

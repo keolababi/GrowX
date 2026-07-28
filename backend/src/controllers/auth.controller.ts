@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import * as authService from '../services/auth.service.js';
+import { prisma } from '../config/prisma.js';
 
 const registerSchema = z.object({
   email: z
@@ -33,6 +34,15 @@ export async function login(req: Request, res: Response): Promise<void> {
 
 export async function me(req: Request, res: Response): Promise<void> {
   res.status(200).json({ user: await authService.getCurrentUser(req.auth!.userId) });
+}
+
+export async function heartbeat(req: Request, res: Response): Promise<void> {
+  const lastSeenAt = new Date();
+  await prisma.user.update({
+    where: { id: req.auth!.userId },
+    data: { lastSeenAt },
+  });
+  res.status(200).json({ lastSeenAt });
 }
 
 export async function forgotPassword(req: Request, res: Response): Promise<void> {

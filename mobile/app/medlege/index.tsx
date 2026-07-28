@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
+import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
 
 const lime = '#8ee817';
 
@@ -109,6 +110,7 @@ function NavItem({
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.navItem}>
       <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
+      {label === 'Мессеж' && <MessageUnreadBadge />}
       <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
     </Pressable>
   );

@@ -15,6 +15,10 @@ export async function list(req: Request, res: Response): Promise<void> {
   res.status(200).json(await chatService.listConversations(req.auth!.userId));
 }
 
+export async function unreadCount(req: Request, res: Response): Promise<void> {
+  res.status(200).json(await chatService.getUnreadCount(req.auth!.userId));
+}
+
 export async function create(req: Request, res: Response): Promise<void> {
   const { recipientId } = createSchema.parse(req.body);
   res.status(201).json(await chatService.createConversation(req.auth!.userId, recipientId));

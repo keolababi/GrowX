@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
+import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
 import { api } from '@/services/api';
 import type { ChatUser, Conversation } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
@@ -228,6 +229,7 @@ export default function MessagesScreen() {
         </Pressable>
         <View style={styles.navItem}>
           <Text style={[styles.navIcon, styles.active]}>○</Text>
+          <MessageUnreadBadge />
           <Text style={[styles.navText, styles.active]}>Мессеж</Text>
         </View>
         <Pressable onPress={() => router.replace('/profile')} style={styles.navItem}>
