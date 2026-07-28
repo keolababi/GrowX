@@ -1,9 +1,8 @@
-import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import {
-  Alert,
+  ActivityIndicator,
   Image,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,144 +10,184 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useUser } from '@/providers/UserProvider';
-import { NotificationBell } from '@/components/NotificationBell';
 import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { NotificationBell } from '@/components/NotificationBell';
+import { useUser } from '@/providers/UserProvider';
 import { api } from '@/services/api';
+import type { SocialPost } from '@/types/post';
 import type { SocialProfile } from '@/types/social';
+import { getApiError } from '@/utils/auth';
 
 const lime = '#8EE817';
 
-const menuItems: Array<{ icon: string; label: string; route?: Href }> = [
-  { icon: '♙', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
-  { icon: '▧', label: 'Миний контент' },
-  { icon: '▯', label: 'Хадгалсан контент' },
-  { icon: '▣', label: 'Миний төсөл' },
-  { icon: '♧', label: 'Миний зөвлөлүүд' },
-  { icon: '⚙', label: 'Тохиргоо' },
-];
+function relativeTime(value: string) {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  if (seconds < 60) return 'саяхан';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} минутын өмнө`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} цагийн өмнө`;
+  return `${Math.floor(seconds / 86400)} өдрийн өмнө`;
+}
 
 export default function ProfileScreen() {
-  const { user, logout } = useUser();
-  const [counts, setCounts] = useState({ posts: 0, followers: 0, following: 0 });
+  const { user } = useUser();
+  const [profile, setProfile] = useState<SocialProfile | null>(null);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const [{ data }, { data: postsData }] = await Promise.all([
+        api.get<SocialProfile>(`/users/${user.id}`),
+        api.get<{ posts: SocialPost[] }>(`/posts/user/${user.id}`),
+      ]);
+      setProfile(data);
+      setPosts(postsData.posts);
+      setError('');
+    } catch (value) {
+      setError(getApiError(value, 'Профайлыг авч чадсангүй.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!user?.id) return;
-      api
-        .get<SocialProfile>(`/users/${user.id}`)
-        .then(({ data }) => setCounts(data.counts))
-        .catch(() => undefined);
-    }, [user?.id]),
+      void load();
+    }, [load]),
   );
 
-  const signOut = async () => {
-    await logout();
-    router.replace('/login');
-  };
-
-  const confirmSignOut = () => {
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Бүртгэлээс гарах уу?')) void signOut();
-      return;
+  const toggleLike = async (post: SocialPost) => {
+    setPosts((items) =>
+      items.map((item) =>
+        item.id === post.id
+          ? {
+              ...item,
+              likedByMe: !item.likedByMe,
+              likeCount: Math.max(0, item.likeCount + (item.likedByMe ? -1 : 1)),
+            }
+          : item,
+      ),
+    );
+    try {
+      const { data } = await api.post<{ liked: boolean; likeCount: number }>(
+        `/posts/${post.id}/like`,
+      );
+      setPosts((items) =>
+        items.map((item) =>
+          item.id === post.id
+            ? { ...item, likedByMe: data.liked, likeCount: data.likeCount }
+            : item,
+        ),
+      );
+    } catch {
+      void load();
     }
-    Alert.alert('Бүртгэлээс гарах', 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Гарах', style: 'destructive', onPress: () => void signOut() },
-    ]);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.notificationRow}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Профайл</Text>
+        <View style={styles.headerActions}>
           <NotificationBell />
-        </View>
-        <View style={styles.profileHeader}>
-          {user?.avatarUrl ? (
-            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatar}>
-              <View style={styles.hair} />
-              <View style={styles.face} />
-              <View style={styles.ears} />
-              <View style={styles.neck} />
-              <View style={styles.suit} />
-              <View style={styles.shirt} />
-              <View style={styles.tie} />
-            </View>
-          )}
-          <Text style={styles.name}>{user?.displayName ?? 'GrowX хэрэглэгч'}</Text>
-          <Text style={styles.role}>{user?.bio || 'Startup Founder'}</Text>
-        </View>
-
-        <View style={styles.accountCard}>
-          <View style={styles.accountIcon}>
-            <Text style={styles.accountIconText}>✉</Text>
-          </View>
-          <View style={styles.accountCopy}>
-            <Text style={styles.accountLabel}>Нэвтэрсэн бүртгэл</Text>
-            <Text numberOfLines={1} style={styles.accountEmail}>
-              {user?.email ?? 'И-мэйл ачаалж байна...'}
-            </Text>
-          </View>
-          <View style={styles.activeDot} />
-        </View>
-
-        <View style={styles.stats}>
-          <Stat value={String(counts.posts)} label="Posts" />
           <Pressable
-            onPress={() =>
-              router.push(`/profile/connections?userId=${user?.id}&tab=followers` as Href)
-            }
+            onPress={() => router.push('/profile/settings' as Href)}
+            style={styles.settingsButton}
           >
-            <Stat value={String(counts.followers)} label="Дагагч" />
-          </Pressable>
-          <Pressable
-            onPress={() =>
-              router.push(`/profile/connections?userId=${user?.id}&tab=following` as Href)
-            }
-          >
-            <Stat value={String(counts.following)} label="Дагадаг" />
+            <Text style={styles.settingsIcon}>⚙</Text>
           </Pressable>
         </View>
+      </View>
 
-        <View style={styles.divider} />
+      {loading ? (
+        <ActivityIndicator color={lime} style={styles.loader} />
+      ) : (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {!!error && <Text style={styles.error}>{error}</Text>}
+          {profile && (
+            <>
+              {profile.user.avatarUrl ? (
+                <Image source={{ uri: profile.user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarInitial}>
+                    {(profile.user.displayName || profile.user.email).charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <Text style={styles.name}>
+                {profile.user.displayName || profile.user.email.split('@')[0]}
+              </Text>
+              <Text style={styles.bio}>{profile.user.bio || 'GrowX хэрэглэгч'}</Text>
+              {!!profile.user.company && <Text style={styles.company}>{profile.user.company}</Text>}
 
-        <View style={styles.menu}>
-          {menuItems.map((item) => (
-            <Pressable
-              key={item.label}
-              onPress={
-                item.route
-                  ? () => router.push(item.route!)
-                  : item.label === 'Миний контент'
-                    ? () => router.push('/posts')
-                    : undefined
-              }
-              style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
-            >
-              <View style={styles.menuIconWrap}>
-                <Text style={styles.menuIcon}>{item.icon}</Text>
+              <View style={styles.stats}>
+                <Stat value={profile.counts.posts} label="Posts" />
+                <Pressable
+                  onPress={() =>
+                    router.push(
+                      `/profile/connections?userId=${profile.user.id}&tab=followers` as Href,
+                    )
+                  }
+                >
+                  <Stat value={profile.counts.followers} label="Дагагч" />
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    router.push(
+                      `/profile/connections?userId=${profile.user.id}&tab=following` as Href,
+                    )
+                  }
+                >
+                  <Stat value={profile.counts.following} label="Дагадаг" />
+                </Pressable>
               </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-              <Text style={styles.chevron}>›</Text>
-            </Pressable>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Бүртгэлээс гарах"
-            onPress={confirmSignOut}
-            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
-          >
-            <View style={styles.menuIconWrap}>
-              <Text style={[styles.menuIcon, styles.signOutText]}>↪</Text>
-            </View>
-            <Text style={[styles.menuLabel, styles.signOutText]}>Гарах</Text>
-            <Text style={[styles.chevron, styles.signOutText]}>›</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+
+              <View style={styles.postsSection}>
+                <View style={styles.postsHeading}>
+                  <Text style={styles.postsTitle}>Posts</Text>
+                  <Pressable onPress={() => router.push('/posts/create')}>
+                    <Text style={styles.createPost}>＋ Post</Text>
+                  </Pressable>
+                </View>
+                {posts.map((post) => (
+                  <View key={post.id} style={styles.postCard}>
+                    <View style={styles.postMetaRow}>
+                      <Text style={styles.postTime}>{relativeTime(post.createdAt)}</Text>
+                      {!!post.community && (
+                        <Text style={styles.communityName}>{post.community.name}</Text>
+                      )}
+                    </View>
+                    <Text style={styles.postContent}>{post.content}</Text>
+                    {!!post.imageUrl && (
+                      <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
+                    )}
+                    <View style={styles.postActions}>
+                      <Pressable onPress={() => void toggleLike(post)} style={styles.postAction}>
+                        <Text style={[styles.postActionIcon, post.likedByMe && styles.liked]}>
+                          {post.likedByMe ? '♥' : '♡'}
+                        </Text>
+                        <Text style={[styles.postActionText, post.likedByMe && styles.liked]}>
+                          {post.likeCount}
+                        </Text>
+                      </Pressable>
+                      <Pressable onPress={() => router.push('/posts')} style={styles.postAction}>
+                        <Text style={styles.commentIcon}>○</Text>
+                        <Text style={styles.postActionText}>{post.commentCount}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+                {!posts.length && (
+                  <Text style={styles.noPosts}>Одоогоор post оруулаагүй байна.</Text>
+                )}
+              </View>
+            </>
+          )}
+        </ScrollView>
+      )}
 
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
@@ -157,13 +196,13 @@ export default function ProfileScreen() {
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="◯" label="Мессеж" onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" active onPress={() => router.replace('/profile')} />
+        <NavItem icon="♙" label="Профайл" active />
       </View>
     </SafeAreaView>
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label }: { value: number; label: string }) {
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
@@ -193,149 +232,102 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
-  notificationRow: { flexDirection: 'row', justifyContent: 'flex-end' },
-  safeArea: { flex: 1, backgroundColor: '#02110D' },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 116,
-    backgroundColor: '#02110D',
-  },
-  profileHeader: { alignItems: 'center' },
-  avatar: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    overflow: 'hidden',
-    alignItems: 'center',
-    backgroundColor: '#DCE1DF',
-    borderWidth: 3,
-    borderColor: '#F0F3F2',
-  },
-  avatarImage: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    borderWidth: 3,
-    borderColor: '#F0F3F2',
-  },
-  hair: {
-    position: 'absolute',
-    zIndex: 4,
-    top: 15,
-    width: 55,
-    height: 27,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 22,
-    backgroundColor: '#191614',
-    transform: [{ rotate: '-3deg' }],
-  },
-  face: {
-    position: 'absolute',
-    zIndex: 3,
-    top: 27,
-    width: 49,
-    height: 55,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    backgroundColor: '#D89A73',
-  },
-  ears: {
-    position: 'absolute',
-    zIndex: 2,
-    top: 48,
-    width: 59,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#C98664',
-  },
-  neck: {
-    position: 'absolute',
-    zIndex: 2,
-    top: 75,
-    width: 19,
-    height: 18,
-    backgroundColor: '#C98664',
-  },
-  suit: {
-    position: 'absolute',
-    bottom: -18,
-    width: 108,
-    height: 58,
-    borderTopLeftRadius: 39,
-    borderTopRightRadius: 39,
-    backgroundColor: '#11192A',
-  },
-  shirt: {
-    position: 'absolute',
-    zIndex: 2,
-    bottom: 0,
-    width: 28,
-    height: 38,
-    backgroundColor: '#F2F3F3',
-    transform: [{ rotate: '45deg' }],
-  },
-  tie: {
-    position: 'absolute',
-    zIndex: 3,
-    bottom: 0,
-    width: 8,
-    height: 28,
-    backgroundColor: '#20283A',
-  },
-  name: { color: '#F6F8F7', fontSize: 26, fontWeight: '800', marginTop: 17, letterSpacing: -0.4 },
-  role: { color: '#9AA5A1', fontSize: 15, fontWeight: '500', marginTop: 6 },
-  accountCard: {
-    height: 70,
-    marginTop: 24,
-    paddingHorizontal: 15,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#17382C',
-    backgroundColor: '#071A14',
+  safeArea: { flex: 1, backgroundColor: '#031015' },
+  loader: { flex: 1 },
+  header: {
+    height: 68,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#173029',
   },
-  accountIcon: {
+  headerTitle: { color: '#F4F7F6', fontSize: 23, fontWeight: '900' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  settingsButton: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: '#112B20',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#315345',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  accountIconText: { color: lime, fontSize: 18 },
-  accountCopy: { flex: 1, marginLeft: 12 },
-  accountLabel: { color: '#87958F', fontSize: 11, fontWeight: '600' },
-  accountEmail: { color: '#F0F5F2', fontSize: 14, fontWeight: '700', marginTop: 4 },
-  activeDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: lime },
+  settingsIcon: { color: lime, fontSize: 19 },
+  content: { alignItems: 'center', padding: 24, paddingBottom: 125 },
+  error: { color: '#FF7777', marginBottom: 14 },
+  avatar: { width: 116, height: 116, borderRadius: 58, borderWidth: 3, borderColor: lime },
+  avatarFallback: {
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#173126',
+    borderWidth: 3,
+    borderColor: lime,
+  },
+  avatarInitial: { color: lime, fontSize: 39, fontWeight: '900' },
+  name: { color: '#F4F7F6', fontSize: 25, fontWeight: '900', marginTop: 17 },
+  bio: { color: '#9BA7A2', fontSize: 14, marginTop: 7 },
+  company: { color: lime, fontSize: 12, fontWeight: '700', marginTop: 6 },
   stats: {
+    width: '100%',
+    maxWidth: 430,
+    marginTop: 31,
+    paddingVertical: 20,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 34,
-    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#173029',
   },
   stat: { minWidth: 75, alignItems: 'center' },
-  statValue: { color: '#F3F6F5', fontSize: 22, fontWeight: '800' },
-  statLabel: { color: '#A0AAA7', fontSize: 14, fontWeight: '600', marginTop: 6 },
-  divider: { height: 1, backgroundColor: '#173028', marginTop: 30, marginBottom: 18 },
-  menu: { gap: 2 },
-  menuItem: {
-    height: 67,
+  statValue: { color: '#F3F6F5', fontSize: 22, fontWeight: '900' },
+  statLabel: { color: '#8F9C96', fontSize: 12, fontWeight: '600', marginTop: 5 },
+  postsSection: { width: '100%', maxWidth: 520, marginTop: 34 },
+  postsHeading: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 5,
+    justifyContent: 'space-between',
+    marginBottom: 13,
   },
-  menuItemPressed: { backgroundColor: '#092019' },
-  menuIconWrap: { width: 43, height: 43, alignItems: 'center', justifyContent: 'center' },
-  menuIcon: { color: '#EFF3F1', fontSize: 27 },
-  menuLabel: { flex: 1, color: '#F0F3F2', fontSize: 17, fontWeight: '700', marginLeft: 9 },
-  chevron: { color: '#B8C1BE', fontSize: 35, fontWeight: '300', marginRight: 3, marginTop: -3 },
-  signOutText: { color: '#FF817B' },
+  postsTitle: { color: '#F4F7F6', fontSize: 20, fontWeight: '900' },
+  createPost: { color: lime, fontSize: 12, fontWeight: '900' },
+  postCard: {
+    marginBottom: 12,
+    padding: 15,
+    borderRadius: 16,
+    backgroundColor: '#09171A',
+    borderWidth: 1,
+    borderColor: '#162B29',
+  },
+  postMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  postTime: { color: '#74817B', fontSize: 10 },
+  communityName: { color: lime, fontSize: 10, fontWeight: '800' },
+  postContent: { color: '#EDF3F0', fontSize: 14, lineHeight: 21, marginTop: 10 },
+  postImage: { width: '100%', aspectRatio: 1.35, borderRadius: 13, marginTop: 12 },
+  postActions: {
+    marginTop: 13,
+    paddingTop: 11,
+    borderTopWidth: 1,
+    borderTopColor: '#172B28',
+    flexDirection: 'row',
+    gap: 24,
+  },
+  postAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  postActionIcon: { color: '#D2DBD7', fontSize: 21 },
+  commentIcon: { color: '#D2DBD7', fontSize: 21 },
+  postActionText: { color: '#A4B0AA', fontSize: 12, fontWeight: '700' },
+  liked: { color: lime },
+  noPosts: {
+    color: '#78867F',
+    textAlign: 'center',
+    paddingVertical: 35,
+    borderRadius: 15,
+    backgroundColor: '#081512',
+  },
   bottomNav: {
     position: 'absolute',
     left: 0,
