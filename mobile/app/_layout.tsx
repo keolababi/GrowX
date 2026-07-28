@@ -2,6 +2,7 @@ import { router, Stack, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import '../global.css';
 import { UserProvider, useUser } from '@/providers/UserProvider';
+import { PresenceHeartbeat } from '@/components/PresenceHeartbeat';
 
 export default function RootLayout() {
   return (
@@ -33,12 +34,15 @@ function AppNavigator() {
     if (token && ['login', 'register', 'onboard'].includes(first ?? '')) router.replace('/home');
   }, [loading, segments, token]);
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: 'fade',
-        contentStyle: { backgroundColor: '#020B0D' },
-      }}
-    />
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          contentStyle: { backgroundColor: '#020B0D' },
+        }}
+      />
+      {!!token && <PresenceHeartbeat />}
+    </>
   );
 }

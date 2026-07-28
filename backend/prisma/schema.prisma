@@ -21,6 +21,7 @@ model User {
   passwordHash         String
   resetCodeHash        String?
   resetCodeExpiresAt   DateTime?
+  lastSeenAt           DateTime?
   role                 String               @default("USER")
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
@@ -38,6 +39,7 @@ model User {
   sentMessages         Message[]
 
   @@index([createdAt])
+  @@index([lastSeenAt])
 }
 
 model Profile {

@@ -4,17 +4,20 @@ import { HttpError } from '../utils/http-error.js';
 const userSelect = {
   id: true,
   email: true,
+  lastSeenAt: true,
   profile: { select: { displayName: true, avatarUrl: true } },
 } as const;
 
 function serializeUser(user: {
   id: string;
   email: string;
+  lastSeenAt: Date | null;
   profile: { displayName: string | null; avatarUrl: string | null } | null;
 }) {
   return {
     id: user.id,
     email: user.email,
+    lastSeenAt: user.lastSeenAt,
     displayName: user.profile?.displayName ?? null,
     avatarUrl: user.profile?.avatarUrl ?? null,
   };
@@ -83,6 +86,26 @@ export async function listConversations(userId: string) {
       }),
     ),
   };
+}
+
+export async function getUnreadCount(userId: string) {
+  const memberships = await prisma.conversationMember.findMany({
+    where: { userId },
+    select: { conversationId: true, lastReadAt: true },
+  });
+  const counts = await Promise.all(
+    memberships.map((member) =>
+      prisma.message.count({
+        where: {
+          conversationId: member.conversationId,
+          senderId: { not: userId },
+          createdAt: { gt: member.lastReadAt },
+          deletedAt: null,
+        },
+      }),
+    ),
+  );
+  return { unreadCount: counts.reduce((total, count) => total + count, 0) };
 }
 
 export async function createConversation(userId: string, recipientId: string) {
