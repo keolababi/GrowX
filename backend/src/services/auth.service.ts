@@ -7,14 +7,43 @@ import { sendPasswordResetCode } from './mail.service.js';
 
 type RegisterInput = { email: string; password: string; displayName?: string };
 type LoginInput = { email: string; password: string };
+type ProfileInput = {
+  displayName?: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  phone?: string | null;
+  company?: string | null;
+};
 
 function serializeUser(user: {
   id: string;
   email: string;
-  profile: { displayName: string | null } | null;
+  profile: {
+    displayName: string | null;
+    bio: string | null;
+    avatarUrl: string | null;
+    phone: string | null;
+    company: string | null;
+  } | null;
 }) {
-  return { id: user.id, email: user.email, displayName: user.profile?.displayName ?? null };
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.profile?.displayName ?? null,
+    bio: user.profile?.bio ?? null,
+    avatarUrl: user.profile?.avatarUrl ?? null,
+    phone: user.profile?.phone ?? null,
+    company: user.profile?.company ?? null,
+  };
 }
+
+const profileSelect = {
+  displayName: true,
+  bio: true,
+  avatarUrl: true,
+  phone: true,
+  company: true,
+} as const;
 
 export async function register(input: RegisterInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
@@ -27,7 +56,7 @@ export async function register(input: RegisterInput) {
       passwordHash,
       profile: { create: { displayName: input.displayName } },
     },
-    include: { profile: { select: { displayName: true } } },
+    include: { profile: { select: profileSelect } },
   });
   return {
     user: serializeUser(user),
@@ -38,7 +67,7 @@ export async function register(input: RegisterInput) {
 export async function login(input: LoginInput) {
   const user = await prisma.user.findUnique({
     where: { email: input.email },
-    include: { profile: { select: { displayName: true } } },
+    include: { profile: { select: profileSelect } },
   });
   if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
     throw new HttpError(401, 'Invalid email or password.');
@@ -52,9 +81,25 @@ export async function login(input: LoginInput) {
 export async function getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { profile: { select: { displayName: true } } },
+    include: { profile: { select: profileSelect } },
   });
   if (!user) throw new HttpError(404, 'User not found.');
+  return serializeUser(user);
+}
+
+export async function updateProfile(userId: string, input: ProfileInput) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      profile: {
+        upsert: {
+          create: input,
+          update: input,
+        },
+      },
+    },
+    include: { profile: { select: profileSelect } },
+  });
   return serializeUser(user);
 }
 

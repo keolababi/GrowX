@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import {
   ActivityIndicator,
@@ -39,9 +39,11 @@ function ReelCard({ reel }: { reel: Reel }) {
       <Pressable onPress={toggle} style={styles.videoWrap}>
         <VideoView player={player} style={styles.video} nativeControls contentFit="cover" />
       </Pressable>
-      <Text style={styles.author}>
-        {reel.author.profile?.displayName || reel.author.email.split('@')[0]}
-      </Text>
+      <Pressable onPress={() => router.push(`/users/${reel.author.id}` as Href)}>
+        <Text style={styles.author}>
+          {reel.author.profile?.displayName || reel.author.email.split('@')[0]}
+        </Text>
+      </Pressable>
       {!!reel.caption && <Text style={styles.caption}>{reel.caption}</Text>}
     </View>
   );

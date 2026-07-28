@@ -1,0 +1,3 @@
+ALTER TABLE "Profile"
+ADD COLUMN "phone" VARCHAR(30),
+ADD COLUMN "company" VARCHAR(120);

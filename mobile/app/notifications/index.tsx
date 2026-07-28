@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useFocusEffect, router } from 'expo-router';
+import { useFocusEffect, router, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   Pressable,
@@ -54,6 +54,9 @@ export default function NotificationsScreen() {
       await api.patch(`/notifications/${notification.id}/read`).catch(() => undefined);
     }
     if (notification.postId) router.push('/posts');
+    else if (notification.type === 'FOLLOW' && notification.actor) {
+      router.push(`/users/${notification.actor.id}` as Href);
+    }
   };
 
   const markAllRead = async () => {

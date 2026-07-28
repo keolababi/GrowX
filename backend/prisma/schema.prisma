@@ -37,6 +37,8 @@ model User {
   communityMemberships CommunityMember[]
   conversationMembers  ConversationMember[]
   sentMessages         Message[]
+  followers            Follow[]             @relation("UserFollowers")
+  following            Follow[]             @relation("UserFollowing")
 
   @@index([createdAt])
   @@index([lastSeenAt])
@@ -48,6 +50,8 @@ model Profile {
   displayName String?
   bio         String?  @db.VarChar(500)
   avatarUrl   String?
+  phone       String?  @db.VarChar(30)
+  company     String?  @db.VarChar(120)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -220,4 +224,17 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId, createdAt])
+  @@index([followerId, createdAt])
 }

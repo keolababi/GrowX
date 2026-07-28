@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
@@ -39,9 +39,11 @@ function initials(name: string | null, email: string) {
 function CommentRow({ comment }: { comment: PostComment }) {
   return (
     <View style={styles.commentRow}>
-      <Text style={styles.commentAuthor}>
-        {comment.author.displayName || comment.author.email.split('@')[0]}
-      </Text>
+      <Pressable onPress={() => router.push(`/users/${comment.author.id}` as Href)}>
+        <Text style={styles.commentAuthor}>
+          {comment.author.displayName || comment.author.email.split('@')[0]}
+        </Text>
+      </Pressable>
       <Text style={styles.commentText}>{comment.content}</Text>
     </View>
   );
@@ -202,24 +204,29 @@ export default function PostsScreen() {
           {posts.map((post) => (
             <View key={post.id} style={styles.card}>
               <View style={styles.authorRow}>
-                {post.author.avatarUrl ? (
-                  <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarFallback}>
-                    <Text style={styles.avatarText}>
-                      {initials(post.author.displayName, post.author.email)}
+                <Pressable
+                  onPress={() => router.push(`/users/${post.author.id}` as Href)}
+                  style={styles.profileLink}
+                >
+                  {post.author.avatarUrl ? (
+                    <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarFallback}>
+                      <Text style={styles.avatarText}>
+                        {initials(post.author.displayName, post.author.email)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.authorCopy}>
+                    <Text style={styles.authorName}>
+                      {post.author.displayName || post.author.email.split('@')[0]}
+                    </Text>
+                    <Text style={styles.postMeta}>
+                      {relativeTime(post.createdAt)}
+                      {post.community ? ` · ${post.community.name}` : ''}
                     </Text>
                   </View>
-                )}
-                <View style={styles.authorCopy}>
-                  <Text style={styles.authorName}>
-                    {post.author.displayName || post.author.email.split('@')[0]}
-                  </Text>
-                  <Text style={styles.postMeta}>
-                    {relativeTime(post.createdAt)}
-                    {post.community ? ` · ${post.community.name}` : ''}
-                  </Text>
-                </View>
+                </Pressable>
                 {post.authorId === user?.id && (
                   <Pressable
                     accessibilityLabel="Post устгах"
@@ -341,6 +348,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#15272C',
   },
   authorRow: { flexDirection: 'row', alignItems: 'center' },
+  profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#13251D' },
   avatarFallback: {
     width: 46,

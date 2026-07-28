@@ -21,6 +21,13 @@ const emailSchema = z.object({
 });
 const codeSchema = emailSchema.extend({ code: z.string().regex(/^\d{6}$/) });
 const resetSchema = codeSchema.extend({ password: z.string().min(8).max(72) });
+const profileSchema = z.object({
+  displayName: z.string().trim().min(1).max(100).optional(),
+  bio: z.string().trim().max(500).nullable().optional(),
+  avatarUrl: z.string().url().max(2048).nullable().optional(),
+  phone: z.string().trim().max(30).nullable().optional(),
+  company: z.string().trim().max(120).nullable().optional(),
+});
 
 export async function register(req: Request, res: Response): Promise<void> {
   const result = await authService.register(registerSchema.parse(req.body));
@@ -43,6 +50,11 @@ export async function heartbeat(req: Request, res: Response): Promise<void> {
     data: { lastSeenAt },
   });
   res.status(200).json({ lastSeenAt });
+}
+
+export async function updateProfile(req: Request, res: Response): Promise<void> {
+  const user = await authService.updateProfile(req.auth!.userId, profileSchema.parse(req.body));
+  res.status(200).json({ user });
 }
 
 export async function forgotPassword(req: Request, res: Response): Promise<void> {

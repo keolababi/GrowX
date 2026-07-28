@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { router, Stack } from 'expo-router';
+import { router, Stack, type Href } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import {
   Image,
@@ -193,6 +193,16 @@ function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
           <Text numberOfLines={2} style={styles.uploadedDescription}>
             {podcast.description || 'Тайлбаргүй'}
           </Text>
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              router.push(`/users/${podcast.author.id}` as Href);
+            }}
+          >
+            <Text style={styles.uploadedAuthor}>
+              {podcast.author.displayName || 'GrowX хэрэглэгч'}
+            </Text>
+          </Pressable>
         </View>
         <View style={styles.uploadedPlay}>
           <Text style={styles.uploadedPlayText}>{status.playing ? 'Ⅱ' : '▶'}</Text>
@@ -542,6 +552,7 @@ const styles = StyleSheet.create({
   uploadedCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
   uploadedTitle: { color: '#F1F4F3', fontSize: 15, fontWeight: '800' },
   uploadedDescription: { color: '#8F9B97', fontSize: 12, lineHeight: 17, marginTop: 6 },
+  uploadedAuthor: { color: lime, fontSize: 10, fontWeight: '800', marginTop: 5 },
   uploadedPlay: {
     width: 38,
     height: 38,
