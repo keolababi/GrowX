@@ -12,7 +12,10 @@ const registerSchema = z.object({
   password: z.string().min(8).max(72),
   displayName: z.string().min(1).max(100).optional(),
 });
-const loginSchema = registerSchema.pick({ email: true, password: true });
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(255),
+  password: z.string().min(1).max(200),
+});
 const emailSchema = z.object({
   email: z
     .string()

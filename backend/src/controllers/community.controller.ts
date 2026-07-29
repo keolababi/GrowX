@@ -17,6 +17,11 @@ export async function create(req: Request, res: Response): Promise<void> {
     .json(await communityService.createCommunity(req.auth!.userId, createSchema.parse(req.body)));
 }
 
+export async function getOne(req: Request, res: Response): Promise<void> {
+  const communityId = z.string().min(1).parse(req.params.communityId);
+  res.status(200).json(await communityService.getCommunity(req.auth!.userId, communityId));
+}
+
 export async function toggleMembership(req: Request, res: Response): Promise<void> {
   const communityId = z.string().min(1).parse(req.params.communityId);
   res.status(200).json(await communityService.toggleMembership(req.auth!.userId, communityId));

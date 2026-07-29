@@ -7,6 +7,7 @@ export const communityRouter = Router();
 communityRouter.use(requireAuth);
 communityRouter.get('/', asyncHandler(communityController.list));
 communityRouter.post('/', asyncHandler(communityController.create));
+communityRouter.get('/:communityId', asyncHandler(communityController.getOne));
 communityRouter.post(
   '/:communityId/membership',
   asyncHandler(communityController.toggleMembership),

@@ -16,13 +16,14 @@ export default function LoginScreen() {
   const { saveSession } = useUser();
 
   const submit = async () => {
-    if (!email.trim() || password.length < 8)
-      return setError('И-мэйл болон 8+ оронтой нууц үгээ оруулна уу.');
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail.includes('@') || !password)
+      return setError('И-мэйл болон нууц үгээ бүрэн оруулна уу.');
     setLoading(true);
     setError('');
     try {
       const { data } = await api.post<AuthResponse>('/auth/login', {
-        email: email.trim(),
+        email: normalizedEmail,
         password,
       });
       await saveSession(data.token, data.user);

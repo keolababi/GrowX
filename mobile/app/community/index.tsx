@@ -21,12 +21,6 @@ import type { SocialPost } from '@/types/post';
 const lime = '#8EE817';
 type Tab = 'discussions' | 'articles' | 'groups';
 
-const tabs: Array<{ value: Tab; label: string }> = [
-  { value: 'discussions', label: 'Хэлэлцүүлэг' },
-  { value: 'articles', label: 'Нийтлэл' },
-  { value: 'groups', label: 'Бүлгүүд' },
-];
-
 function relativeTime(value: string) {
   const minutes = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
   if (minutes < 60) return `${minutes} минутын өмнө`;
@@ -36,7 +30,7 @@ function relativeTime(value: string) {
 }
 
 export default function CommunityScreen() {
-  const [tab, setTab] = useState<Tab>('discussions');
+  const [tab, setTab] = useState<Tab>('groups');
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -168,21 +162,6 @@ export default function CommunityScreen() {
           </View>
         </View>
 
-        <View style={styles.tabs}>
-          {tabs.map((item) => {
-            const active = item.value === tab;
-            return (
-              <Pressable
-                key={item.value}
-                onPress={() => setTab(item.value)}
-                style={[styles.tab, active && styles.tabActive]}
-              >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{item.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         <View style={styles.search}>
           <Text style={styles.searchSmall}>⌕</Text>
           <TextInput
@@ -205,7 +184,11 @@ export default function CommunityScreen() {
             {tab === 'groups' ? (
               <>
                 {filteredCommunities.map((community) => (
-                  <View key={community.id} style={styles.groupCard}>
+                  <Pressable
+                    key={community.id}
+                    onPress={() => router.push(`/community/${community.id}` as Href)}
+                    style={({ pressed }) => [styles.groupCard, pressed && styles.groupCardPressed]}
+                  >
                     <View style={styles.groupMark}>
                       <Text style={styles.groupMarkText}>
                         {community.name.slice(0, 2).toUpperCase()}
@@ -221,7 +204,10 @@ export default function CommunityScreen() {
                       </Text>
                     </View>
                     <Pressable
-                      onPress={() => void toggleMembership(community)}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        void toggleMembership(community);
+                      }}
                       style={[styles.joinButton, community.joinedByMe && styles.joinedButton]}
                     >
                       <Text
@@ -233,7 +219,7 @@ export default function CommunityScreen() {
                         {community.joinedByMe ? 'Гишүүн' : 'Нэгдэх'}
                       </Text>
                     </Pressable>
-                  </View>
+                  </Pressable>
                 ))}
                 {!filteredCommunities.length && (
                   <EmptyState
@@ -446,6 +432,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  groupCardPressed: { backgroundColor: '#071916' },
   groupMark: {
     width: 54,
     height: 54,
