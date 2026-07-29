@@ -24,7 +24,7 @@ type Tab = 'discussions' | 'articles' | 'groups';
 const tabs: Array<{ value: Tab; label: string }> = [
   { value: 'discussions', label: 'Хэлэлцүүлэг' },
   { value: 'articles', label: 'Нийтлэл' },
-  { value: 'groups', label: 'Миний бүлгүүд' },
+  { value: 'groups', label: 'Бүлгүүд' },
 ];
 
 function relativeTime(value: string) {
@@ -44,14 +44,20 @@ export default function CommunityScreen() {
   const [error, setError] = useState('');
   const defaultCommunityId = communities.find((community) => community.joinedByMe)?.id;
 
-  const openComposer = () =>
+  const openComposer = () => {
+    if (!defaultCommunityId) {
+      setTab('groups');
+      setError('Нийтлэл эсвэл хэлэлцүүлэг оруулахын тулд эхлээд бүлэгт нэгдэнэ үү.');
+      return;
+    }
     router.push({
       pathname: '/posts/create',
       params: {
         type: 'post',
-        ...(defaultCommunityId ? { communityId: defaultCommunityId } : {}),
+        communityId: defaultCommunityId,
       },
     });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,25 +82,29 @@ export default function CommunityScreen() {
 
   const filteredPosts = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
+    const joinedCommunityIds = new Set(
+      communities.filter((community) => community.joinedByMe).map((community) => community.id),
+    );
     return posts.filter((post) => {
+      const belongsToJoinedGroup =
+        Boolean(post.community) && joinedCommunityIds.has(post.community!.id);
       const matchesTab = tab !== 'articles' || Boolean(post.imageUrl);
       const matchesQuery =
         !normalized ||
         post.content.toLocaleLowerCase().includes(normalized) ||
         (post.author.displayName || post.author.email).toLocaleLowerCase().includes(normalized) ||
         post.community?.name.toLocaleLowerCase().includes(normalized);
-      return matchesTab && matchesQuery;
+      return belongsToJoinedGroup && matchesTab && matchesQuery;
     });
-  }, [posts, query, tab]);
+  }, [communities, posts, query, tab]);
 
   const filteredCommunities = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     return communities.filter(
       (community) =>
-        community.joinedByMe &&
-        (!normalized ||
-          community.name.toLocaleLowerCase().includes(normalized) ||
-          community.description?.toLocaleLowerCase().includes(normalized)),
+        !normalized ||
+        community.name.toLocaleLowerCase().includes(normalized) ||
+        community.description?.toLocaleLowerCase().includes(normalized),
     );
   }, [communities, query]);
 
@@ -128,20 +138,8 @@ export default function CommunityScreen() {
 
   const toggleMembership = async (community: Community) => {
     try {
-      const { data } = await api.post<{ joined: boolean }>(
-        `/communities/${community.id}/membership`,
-      );
-      setCommunities((current) =>
-        current.map((item) =>
-          item.id === community.id
-            ? {
-                ...item,
-                joinedByMe: data.joined,
-                memberCount: Math.max(0, item.memberCount + (data.joined ? 1 : -1)),
-              }
-            : item,
-        ),
-      );
+      await api.post<{ joined: boolean }>(`/communities/${community.id}/membership`);
+      await load();
     } catch (value) {
       setError(getApiError(value, 'Community тохиргоог өөрчилж чадсангүй.'));
     }
@@ -212,16 +210,23 @@ export default function CommunityScreen() {
                     </View>
                     <Pressable
                       onPress={() => void toggleMembership(community)}
-                      style={styles.joinedButton}
+                      style={[styles.joinButton, community.joinedByMe && styles.joinedButton]}
                     >
-                      <Text style={styles.joinedButtonText}>Гишүүн</Text>
+                      <Text
+                        style={[
+                          styles.joinButtonText,
+                          community.joinedByMe && styles.joinedButtonText,
+                        ]}
+                      >
+                        {community.joinedByMe ? 'Гишүүн' : 'Нэгдэх'}
+                      </Text>
                     </Pressable>
                   </View>
                 ))}
                 {!filteredCommunities.length && (
                   <EmptyState
-                    title="Нэгдсэн бүлэг алга"
-                    copy="Community бүлэгт нэгдсэний дараа энд харагдана."
+                    title="Бүлэг олдсонгүй"
+                    copy="Хайлтаа өөрчлөх эсвэл шинэ бүлэг үүсгээрэй."
                   />
                 )}
               </>
@@ -279,7 +284,11 @@ export default function CommunityScreen() {
                 {!filteredPosts.length && (
                   <EmptyState
                     title="Контент олдсонгүй"
-                    copy="Хайлтаа өөрчлөх эсвэл шинэ хэлэлцүүлэг эхлүүлээрэй."
+                    copy={
+                      defaultCommunityId
+                        ? 'Хайлтаа өөрчлөх эсвэл шинэ контент оруулаарай.'
+                        : 'Эхлээд Бүлгүүд хэсгээс бүлэгт нэгдэнэ үү.'
+                    }
                   />
                 )}
               </>
@@ -438,13 +447,18 @@ const styles = StyleSheet.create({
   groupName: { color: '#F0F4F2', fontSize: 15, fontWeight: '900' },
   groupDescription: { color: '#8C9893', fontSize: 12, lineHeight: 17, marginTop: 4 },
   groupStats: { color: '#65736D', fontSize: 10, marginTop: 5 },
-  joinedButton: {
+  joinButton: {
     height: 36,
     paddingHorizontal: 13,
     borderRadius: 18,
+    backgroundColor: lime,
+    justifyContent: 'center',
+  },
+  joinButtonText: { color: '#142000', fontSize: 11, fontWeight: '900' },
+  joinedButton: {
     borderWidth: 1,
     borderColor: lime,
-    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   joinedButtonText: { color: lime, fontSize: 11, fontWeight: '800' },
   empty: { alignItems: 'center', paddingTop: 70, paddingHorizontal: 30 },

@@ -72,8 +72,31 @@ function serializePost(post: {
   };
 }
 
+const visibleToUserWhere = (userId: string) => ({
+  OR: [
+    { communityId: null },
+    {
+      community: {
+        is: {
+          OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+        },
+      },
+    },
+  ],
+});
+
+async function requirePostAccess(userId: string, postId: string) {
+  const post = await prisma.post.findFirst({
+    where: { id: postId, ...visibleToUserWhere(userId) },
+    select: { id: true, authorId: true },
+  });
+  if (!post) throw new HttpError(404, 'Post олдсонгүй эсвэл та энэ бүлгийн гишүүн биш байна.');
+  return post;
+}
+
 export async function listPosts(userId: string) {
   const posts = await prisma.post.findMany({
+    where: visibleToUserWhere(userId),
     orderBy: { createdAt: 'desc' },
     take: 50,
     include: postInclude(userId),
@@ -85,7 +108,7 @@ export async function listUserPosts(viewerId: string, authorId: string) {
   const author = await prisma.user.findUnique({ where: { id: authorId }, select: { id: true } });
   if (!author) throw new HttpError(404, 'Хэрэглэгч олдсонгүй.');
   const posts = await prisma.post.findMany({
-    where: { authorId },
+    where: { authorId, ...visibleToUserWhere(viewerId) },
     orderBy: { createdAt: 'desc' },
     take: 50,
     include: postInclude(viewerId),
@@ -94,8 +117,8 @@ export async function listUserPosts(viewerId: string, authorId: string) {
 }
 
 export async function getPost(userId: string, postId: string) {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
+  const post = await prisma.post.findFirst({
+    where: { id: postId, ...visibleToUserWhere(userId) },
     include: postInclude(userId),
   });
   if (!post) throw new HttpError(404, 'Post олдсонгүй.');
@@ -107,8 +130,13 @@ export async function createPost(
   input: { content: string; imageUrl?: string; videoUrl?: string; communityId?: string },
 ) {
   if (input.communityId) {
-    const community = await prisma.community.findUnique({ where: { id: input.communityId } });
-    if (!community) throw new HttpError(404, 'Community олдсонгүй.');
+    const community = await prisma.community.findFirst({
+      where: {
+        id: input.communityId,
+        OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+      },
+    });
+    if (!community) throw new HttpError(403, 'Нийтлэл оруулахын тулд эхлээд бүлэгт нэгдэнэ үү.');
   }
   const post = await prisma.post.create({
     data: {
@@ -124,11 +152,7 @@ export async function createPost(
 }
 
 export async function toggleLike(userId: string, postId: string) {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    select: { id: true, authorId: true },
-  });
-  if (!post) throw new HttpError(404, 'Post олдсонгүй.');
+  const post = await requirePostAccess(userId, postId);
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.like.findUnique({
@@ -164,11 +188,7 @@ export async function toggleLike(userId: string, postId: string) {
 }
 
 export async function addComment(userId: string, postId: string, content: string) {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    select: { id: true, authorId: true },
-  });
-  if (!post) throw new HttpError(404, 'Post олдсонгүй.');
+  const post = await requirePostAccess(userId, postId);
   const comment = await prisma.$transaction(async (tx) => {
     const created = await tx.comment.create({
       data: { authorId: userId, postId, content },
