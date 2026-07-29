@@ -9,6 +9,7 @@ const createPostSchema = z.object({
   imageUrl: z.string().url().max(2048).optional(),
   videoUrl: z.string().url().max(2048).optional(),
   communityId: z.string().min(1).optional(),
+  communityPostType: z.enum(['DISCUSSION', 'ARTICLE']).optional(),
 });
 const commentSchema = z.object({ content: z.string().trim().min(1).max(1000) });
 

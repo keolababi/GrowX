@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { router, type Href } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
@@ -55,6 +55,7 @@ export default function CommunityScreen() {
       params: {
         type: 'post',
         communityId: defaultCommunityId,
+        communityKind: tab,
       },
     });
   };
@@ -76,9 +77,11 @@ export default function CommunityScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const filteredPosts = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -88,7 +91,8 @@ export default function CommunityScreen() {
     return posts.filter((post) => {
       const belongsToJoinedGroup =
         Boolean(post.community) && joinedCommunityIds.has(post.community!.id);
-      const matchesTab = tab !== 'articles' || Boolean(post.imageUrl);
+      const postType = post.communityPostType ?? (post.imageUrl ? 'ARTICLE' : 'DISCUSSION');
+      const matchesTab = tab === 'articles' ? postType === 'ARTICLE' : postType === 'DISCUSSION';
       const matchesQuery =
         !normalized ||
         post.content.toLocaleLowerCase().includes(normalized) ||
@@ -143,6 +147,14 @@ export default function CommunityScreen() {
     } catch (value) {
       setError(getApiError(value, 'Community тохиргоог өөрчилж чадсангүй.'));
     }
+  };
+
+  const runPrimaryAction = () => {
+    if (tab === 'groups') {
+      router.push('/community/create-group' as Href);
+      return;
+    }
+    openComposer();
   };
 
   return (
@@ -297,8 +309,8 @@ export default function CommunityScreen() {
         )}
 
         <Pressable
-          accessibilityLabel="Шинэ community post"
-          onPress={openComposer}
+          accessibilityLabel={tab === 'groups' ? 'Шинэ бүлэг үүсгэх' : 'Шинэ community post'}
+          onPress={runPrimaryAction}
           style={styles.floatingAdd}
         >
           <Text style={styles.floatingAddText}>＋</Text>
@@ -308,7 +320,7 @@ export default function CommunityScreen() {
       <View style={styles.bottomNav}>
         <NavItem icon="⌂" label="Нүүр" active onPress={() => router.replace('/home')} />
         <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable onPress={openComposer} style={styles.addButton}>
+        <Pressable onPress={runPrimaryAction} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
         </Pressable>
         <NavItem icon="○" label="Мессеж" onPress={() => router.replace('/messages')} />

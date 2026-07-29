@@ -31,7 +31,11 @@ const modes: Array<{ value: CreateMode; label: string }> = [
 ];
 
 export default function CreateContentScreen() {
-  const params = useLocalSearchParams<{ type?: string; communityId?: string }>();
+  const params = useLocalSearchParams<{
+    type?: string;
+    communityId?: string;
+    communityKind?: string;
+  }>();
   const { user } = useUser();
   const initialMode: CreateMode =
     params.type === 'reel' || params.type === 'podcast' ? params.type : 'post';
@@ -49,6 +53,15 @@ export default function CreateContentScreen() {
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'GrowX хэрэглэгч';
   const userInitial = (user?.displayName?.trim() || user?.email || 'G').slice(0, 2).toUpperCase();
+  const isCommunityComposer =
+    params.communityKind === 'discussions' || params.communityKind === 'articles';
+  const isCommunityArticle = params.communityKind === 'articles';
+  const composerTitle =
+    params.communityKind === 'articles'
+      ? 'Шинэ нийтлэл'
+      : params.communityKind === 'discussions'
+        ? 'Шинэ хэлэлцүүлэг'
+        : 'Шинэ контент';
 
   const selectMode = (nextMode: CreateMode) => {
     setMode(nextMode);
@@ -107,7 +120,7 @@ export default function CreateContentScreen() {
 
   const canPublish =
     mode === 'post'
-      ? Boolean(caption.trim())
+      ? Boolean(caption.trim() && (!isCommunityArticle || media?.type === 'image'))
       : mode === 'reel'
         ? Boolean(caption.trim() && media)
         : Boolean(podcastTitle.trim() && podcastCover && podcastAudio);
@@ -148,6 +161,11 @@ export default function CreateContentScreen() {
           content: caption.trim(),
           ...(mediaUrl ? { imageUrl: mediaUrl } : {}),
           ...(params.communityId ? { communityId: params.communityId } : {}),
+          ...(params.communityKind === 'articles'
+            ? { communityPostType: 'ARTICLE' }
+            : params.communityKind === 'discussions'
+              ? { communityPostType: 'DISCUSSION' }
+              : {}),
         });
         router.replace('/posts');
       }
@@ -168,31 +186,37 @@ export default function CreateContentScreen() {
           <Pressable accessibilityLabel="Хаах" onPress={() => router.back()} style={styles.close}>
             <Text style={styles.closeText}>×</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Шинэ контент</Text>
+          <Text style={styles.headerTitle}>{composerTitle}</Text>
           <View style={styles.headerActions}>
             <NotificationBell />
             <Pressable disabled={!canPublish || submitting} onPress={() => void publish()}>
               <Text style={[styles.share, (!canPublish || submitting) && styles.shareDisabled]}>
-                {submitting ? `${Math.round(uploadProgress)}%` : 'Нийтлэх'}
+                {submitting
+                  ? `${Math.round(uploadProgress)}%`
+                  : params.communityKind === 'discussions'
+                    ? 'Хэлэлцэх'
+                    : 'Нийтлэх'}
               </Text>
             </Pressable>
           </View>
         </View>
 
-        <View style={styles.tabs}>
-          {modes.map((item) => {
-            const active = mode === item.value;
-            return (
-              <Pressable
-                key={item.value}
-                onPress={() => selectMode(item.value)}
-                style={[styles.tab, active && styles.tabActive]}
-              >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{item.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {!isCommunityComposer && (
+          <View style={styles.tabs}>
+            {modes.map((item) => {
+              const active = mode === item.value;
+              return (
+                <Pressable
+                  key={item.value}
+                  onPress={() => selectMode(item.value)}
+                  style={[styles.tab, active && styles.tabActive]}
+                >
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{item.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -295,6 +319,11 @@ export default function CreateContentScreen() {
                   </View>
                 </Pressable>
               )}
+              {isCommunityArticle && !media && (
+                <Text style={styles.articleMediaHint}>
+                  Нийтлэл оруулахын тулд нүүр зураг сонгоно уу.
+                </Text>
+              )}
 
               <View style={styles.captionRow}>
                 <TextInput
@@ -302,7 +331,15 @@ export default function CreateContentScreen() {
                   maxLength={5000}
                   value={caption}
                   onChangeText={setCaption}
-                  placeholder={mode === 'reel' ? 'Reel-ийн тайлбар бичих...' : 'Тайлбар бичих...'}
+                  placeholder={
+                    mode === 'reel'
+                      ? 'Reel-ийн тайлбар бичих...'
+                      : params.communityKind === 'discussions'
+                        ? 'Хэлэлцэх сэдэв, асуултаа бичээрэй...'
+                        : params.communityKind === 'articles'
+                          ? 'Нийтлэлийн агуулгаа бичээрэй...'
+                          : 'Тайлбар бичих...'
+                  }
                   placeholderTextColor="#66736E"
                   style={styles.captionInput}
                 />
@@ -455,6 +492,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   counter: { color: '#65726D', fontSize: 11, textAlign: 'right', marginTop: 5 },
+  articleMediaHint: { color: lime, fontSize: 11, fontWeight: '700', marginTop: 10 },
   podcastEditor: { width: '100%' },
   podcastCoverPicker: {
     width: '100%',

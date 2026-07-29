@@ -126,19 +126,20 @@ model CommunityMember {
 }
 
 model Post {
-  id            String         @id @default(cuid())
-  authorId      String
-  communityId   String?
-  content       String         @db.Text
-  imageUrl      String?
-  videoUrl      String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  community     Community?     @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  comments      Comment[]
-  likes         Like[]
-  notifications Notification[]
+  id                String         @id @default(cuid())
+  authorId          String
+  communityId       String?
+  communityPostType String?
+  content           String         @db.Text
+  imageUrl          String?
+  videoUrl          String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  author            User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  community         Community?     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  comments          Comment[]
+  likes             Like[]
+  notifications     Notification[]
 
   @@index([communityId, createdAt])
   @@index([authorId, createdAt])
