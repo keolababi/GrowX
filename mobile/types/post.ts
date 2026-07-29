@@ -22,6 +22,7 @@ export type SocialPost = {
   updatedAt: string;
   author: PostAuthor;
   community: { id: string; name: string } | null;
+  communityPostType: 'DISCUSSION' | 'ARTICLE' | null;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;

@@ -91,7 +91,8 @@ export default function CommunityScreen() {
     return posts.filter((post) => {
       const belongsToJoinedGroup =
         Boolean(post.community) && joinedCommunityIds.has(post.community!.id);
-      const matchesTab = tab !== 'articles' || Boolean(post.imageUrl);
+      const postType = post.communityPostType ?? (post.imageUrl ? 'ARTICLE' : 'DISCUSSION');
+      const matchesTab = tab === 'articles' ? postType === 'ARTICLE' : postType === 'DISCUSSION';
       const matchesQuery =
         !normalized ||
         post.content.toLocaleLowerCase().includes(normalized) ||

@@ -43,6 +43,7 @@ function serializePost(post: {
   updatedAt: Date;
   author: Parameters<typeof serializeAuthor>[0];
   community: { id: string; name: string } | null;
+  communityPostType: string | null;
   _count: { likes: number; comments: number };
   likes: { id: string }[];
   comments: Array<{
@@ -62,6 +63,7 @@ function serializePost(post: {
     updatedAt: post.updatedAt,
     author: serializeAuthor(post.author),
     community: post.community,
+    communityPostType: post.communityPostType,
     likeCount: post._count.likes,
     commentCount: post._count.comments,
     likedByMe: post.likes.length > 0,
@@ -127,7 +129,13 @@ export async function getPost(userId: string, postId: string) {
 
 export async function createPost(
   userId: string,
-  input: { content: string; imageUrl?: string; videoUrl?: string; communityId?: string },
+  input: {
+    content: string;
+    imageUrl?: string;
+    videoUrl?: string;
+    communityId?: string;
+    communityPostType?: 'DISCUSSION' | 'ARTICLE';
+  },
 ) {
   if (input.communityId) {
     const community = await prisma.community.findFirst({
@@ -145,6 +153,7 @@ export async function createPost(
       imageUrl: input.imageUrl,
       videoUrl: input.videoUrl,
       communityId: input.communityId,
+      communityPostType: input.communityId ? input.communityPostType : undefined,
     },
     include: postInclude(userId),
   });

@@ -161,6 +161,11 @@ export default function CreateContentScreen() {
           content: caption.trim(),
           ...(mediaUrl ? { imageUrl: mediaUrl } : {}),
           ...(params.communityId ? { communityId: params.communityId } : {}),
+          ...(params.communityKind === 'articles'
+            ? { communityPostType: 'ARTICLE' }
+            : params.communityKind === 'discussions'
+              ? { communityPostType: 'DISCUSSION' }
+              : {}),
         });
         router.replace('/posts');
       }
