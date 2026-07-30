@@ -189,11 +189,19 @@ export default function CommunityScreen() {
                     onPress={() => router.push(`/community/${community.id}` as Href)}
                     style={({ pressed }) => [styles.groupCard, pressed && styles.groupCardPressed]}
                   >
-                    <View style={styles.groupMark}>
-                      <Text style={styles.groupMarkText}>
-                        {community.name.slice(0, 2).toUpperCase()}
-                      </Text>
-                    </View>
+                    {community.coverUrl ? (
+                      <Image
+                        resizeMode="cover"
+                        source={{ uri: community.coverUrl }}
+                        style={styles.groupCover}
+                      />
+                    ) : (
+                      <View style={styles.groupMark}>
+                        <Text style={styles.groupMarkText}>
+                          {community.name.slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
                     <View style={styles.groupCopy}>
                       <Text style={styles.groupName}>{community.name}</Text>
                       <Text numberOfLines={2} style={styles.groupDescription}>
@@ -442,6 +450,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   groupMarkText: { color: lime, fontSize: 13, fontWeight: '900' },
+  groupCover: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: '#173329',
+  },
   groupCopy: { flex: 1, minWidth: 0, marginLeft: 12, marginRight: 8 },
   groupName: { color: '#F0F4F2', fontSize: 15, fontWeight: '900' },
   groupDescription: { color: '#8C9893', fontSize: 12, lineHeight: 17, marginTop: 4 },

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ActivityIndicator,
@@ -11,10 +11,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { api } from '@/services/api';
-import type { CommunityDetail } from '@/types/community';
+import type { CommunityDetail, CommunityMember } from '@/types/community';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 
@@ -43,6 +44,11 @@ export default function CommunityDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [membershipBusy, setMembershipBusy] = useState(false);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [candidateQuery, setCandidateQuery] = useState('');
+  const [candidates, setCandidates] = useState<CommunityMember[]>([]);
+  const [adminBusy, setAdminBusy] = useState<string | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(
@@ -72,6 +78,29 @@ export default function CommunityDetailScreen() {
       void load();
     }, [load]),
   );
+
+  const loadCandidates = useCallback(
+    async (query = '') => {
+      if (!communityId) return;
+      const { data } = await api.get<{ users: CommunityMember[] }>(
+        `/communities/${communityId}/member-candidates`,
+        { params: { q: query } },
+      );
+      setCandidates(data.users);
+    },
+    [communityId],
+  );
+
+  useEffect(() => {
+    if (!addMemberOpen || !community?.isOwner) return;
+    const timer = setTimeout(() => {
+      void loadCandidates(candidateQuery).catch((value) => {
+        setCandidates([]);
+        setError(getApiError(value, 'Хэрэглэгчдийн жагсаалтыг авч чадсангүй.'));
+      });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [addMemberOpen, candidateQuery, community?.isOwner, loadCandidates]);
 
   const visiblePosts = useMemo(() => {
     if (tab === 'members') return [];
@@ -107,6 +136,74 @@ export default function CommunityDetailScreen() {
     Alert.alert('Бүлгээс гарах', 'Та энэ бүлгээс гарахдаа итгэлтэй байна уу?', [
       { text: 'Болих', style: 'cancel' },
       { text: 'Гарах', style: 'destructive', onPress: () => void changeMembership() },
+    ]);
+  };
+
+  const addMember = async (userId: string) => {
+    if (!community?.isOwner || adminBusy) return;
+    setAdminBusy(userId);
+    setError('');
+    try {
+      await api.post(`/communities/${community.id}/members`, { userId });
+      await Promise.all([load(), loadCandidates(candidateQuery)]);
+    } catch (value) {
+      setError(getApiError(value, 'Гишүүн нэмж чадсангүй.'));
+    } finally {
+      setAdminBusy(null);
+    }
+  };
+
+  const removeMemberNow = async (member: CommunityMember) => {
+    if (!community?.isOwner || member.isOwner || adminBusy) return;
+    setAdminBusy(member.id);
+    setError('');
+    try {
+      await api.delete(`/communities/${community.id}/members/${member.id}`);
+      await load();
+    } catch (value) {
+      setError(getApiError(value, 'Гишүүнийг хасаж чадсангүй.'));
+    } finally {
+      setAdminBusy(null);
+    }
+  };
+
+  const confirmRemoveMember = (member: CommunityMember) => {
+    const memberName = member.displayName || member.email.split('@')[0];
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm(`${memberName}-г бүлгээс хасах уу?`)) {
+        void removeMemberNow(member);
+      }
+      return;
+    }
+    Alert.alert('Гишүүн хасах', `${memberName}-г бүлгээс хасах уу?`, [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Хасах', style: 'destructive', onPress: () => void removeMemberNow(member) },
+    ]);
+  };
+
+  const deleteGroupNow = async () => {
+    if (!community?.isOwner || deletingGroup) return;
+    setDeletingGroup(true);
+    setError('');
+    try {
+      await api.delete(`/communities/${community.id}`);
+      router.replace('/community');
+    } catch (value) {
+      setError(getApiError(value, 'Бүлгийг устгаж чадсангүй.'));
+      setDeletingGroup(false);
+    }
+  };
+
+  const confirmDeleteGroup = () => {
+    if (!community?.isOwner) return;
+    const message = `"${community.name}" бүлэг болон бүх post, хэлэлцүүлгийг бүр мөсөн устгах уу?`;
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm(message)) void deleteGroupNow();
+      return;
+    }
+    Alert.alert('Бүлэг устгах', message, [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Бүр мөсөн устгах', style: 'destructive', onPress: () => void deleteGroupNow() },
     ]);
   };
 
@@ -185,10 +282,22 @@ export default function CommunityDetailScreen() {
         {community && (
           <>
             <View style={styles.cover}>
-              <View style={styles.coverGlow} />
-              <View style={styles.groupMark}>
-                <Text style={styles.groupMarkText}>{community.name.slice(0, 2).toUpperCase()}</Text>
-              </View>
+              {community.coverUrl ? (
+                <Image
+                  resizeMode="cover"
+                  source={{ uri: community.coverUrl }}
+                  style={styles.coverImage}
+                />
+              ) : (
+                <>
+                  <View style={styles.coverGlow} />
+                  <View style={styles.groupMark}>
+                    <Text style={styles.groupMarkText}>
+                      {community.name.slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
             <Text style={styles.name}>{community.name}</Text>
             <Text style={styles.description}>
@@ -199,8 +308,8 @@ export default function CommunityDetailScreen() {
             </Text>
 
             <Pressable
-              disabled={membershipBusy || community.isOwner}
-              onPress={handleMembership}
+              disabled={membershipBusy}
+              onPress={community.isOwner ? () => setTab('members') : handleMembership}
               style={[
                 styles.membershipButton,
                 community.joinedByMe && styles.leaveButton,
@@ -217,7 +326,7 @@ export default function CommunityDetailScreen() {
                   ]}
                 >
                   {community.isOwner
-                    ? 'Бүлгийн админ'
+                    ? 'Бүлэг удирдах'
                     : community.joinedByMe
                       ? 'Бүлгээс гарах'
                       : 'Бүлэгт нэгдэх'}
@@ -249,6 +358,88 @@ export default function CommunityDetailScreen() {
               />
             ) : tab === 'members' ? (
               <View style={styles.memberList}>
+                {community.isOwner && (
+                  <View style={styles.adminPanel}>
+                    <View style={styles.adminPanelHeader}>
+                      <View style={styles.adminPanelCopy}>
+                        <Text style={styles.adminPanelTitle}>Гишүүдийн удирдлага</Text>
+                        <Text style={styles.adminPanelHint}>
+                          Хэрэглэгч нэмж, одоогийн гишүүдийг хасах боломжтой.
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => {
+                          setAddMemberOpen((open) => !open);
+                          setCandidateQuery('');
+                          setError('');
+                        }}
+                        style={[
+                          styles.addMemberButton,
+                          addMemberOpen && styles.addMemberButtonOpen,
+                        ]}
+                      >
+                        <Text style={styles.addMemberButtonText}>
+                          {addMemberOpen ? 'Хаах' : '＋ Нэмэх'}
+                        </Text>
+                      </Pressable>
+                    </View>
+
+                    {addMemberOpen && (
+                      <View style={styles.candidatePanel}>
+                        <TextInput
+                          autoCapitalize="none"
+                          value={candidateQuery}
+                          onChangeText={setCandidateQuery}
+                          placeholder="Нэр эсвэл и-мэйлээр хайх"
+                          placeholderTextColor="#65736D"
+                          style={styles.candidateSearch}
+                        />
+                        {candidates.map((candidate) => {
+                          const candidateName =
+                            candidate.displayName || candidate.email.split('@')[0];
+                          return (
+                            <View key={candidate.id} style={styles.candidateRow}>
+                              {candidate.avatarUrl ? (
+                                <Image
+                                  source={{ uri: candidate.avatarUrl }}
+                                  style={styles.candidateAvatar}
+                                />
+                              ) : (
+                                <View style={styles.candidateAvatarFallback}>
+                                  <Text style={styles.candidateAvatarText}>
+                                    {candidateName.charAt(0).toUpperCase()}
+                                  </Text>
+                                </View>
+                              )}
+                              <View style={styles.candidateCopy}>
+                                <Text numberOfLines={1} style={styles.candidateName}>
+                                  {candidateName}
+                                </Text>
+                                <Text numberOfLines={1} style={styles.candidateEmail}>
+                                  {candidate.email}
+                                </Text>
+                              </View>
+                              <Pressable
+                                disabled={Boolean(adminBusy)}
+                                onPress={() => void addMember(candidate.id)}
+                                style={styles.candidateAdd}
+                              >
+                                {adminBusy === candidate.id ? (
+                                  <ActivityIndicator color="#142000" size="small" />
+                                ) : (
+                                  <Text style={styles.candidateAddText}>Нэмэх</Text>
+                                )}
+                              </Pressable>
+                            </View>
+                          );
+                        })}
+                        {!candidates.length && (
+                          <Text style={styles.noCandidates}>Нэмэх хэрэглэгч олдсонгүй.</Text>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
                 {community.members.map((member) => {
                   const memberName = member.displayName || member.email.split('@')[0];
                   return (
@@ -278,10 +469,46 @@ export default function CommunityDetailScreen() {
                           {member.bio || 'GrowX хэрэглэгч'}
                         </Text>
                       </View>
-                      <Text style={styles.chevron}>›</Text>
+                      {community.isOwner && !member.isOwner ? (
+                        <Pressable
+                          disabled={Boolean(adminBusy)}
+                          onPress={(event) => {
+                            event.stopPropagation();
+                            confirmRemoveMember(member);
+                          }}
+                          style={styles.removeMemberButton}
+                        >
+                          {adminBusy === member.id ? (
+                            <ActivityIndicator color="#FF817B" size="small" />
+                          ) : (
+                            <Text style={styles.removeMemberText}>Хасах</Text>
+                          )}
+                        </Pressable>
+                      ) : (
+                        <Text style={styles.chevron}>›</Text>
+                      )}
                     </Pressable>
                   );
                 })}
+                {community.isOwner && (
+                  <View style={styles.dangerZone}>
+                    <Text style={styles.dangerTitle}>Аюултай үйлдэл</Text>
+                    <Text style={styles.dangerHint}>
+                      Бүлгийг устгавал гишүүд, post болон хэлэлцүүлгүүд хамт устна.
+                    </Text>
+                    <Pressable
+                      disabled={deletingGroup}
+                      onPress={confirmDeleteGroup}
+                      style={styles.deleteGroupButton}
+                    >
+                      {deletingGroup ? (
+                        <ActivityIndicator color="#FF817B" />
+                      ) : (
+                        <Text style={styles.deleteGroupText}>Бүлгийг устгах</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
               </View>
             ) : (
               <View style={styles.feed}>
@@ -382,6 +609,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  coverImage: { width: '100%', height: '100%' },
   coverGlow: {
     position: 'absolute',
     width: 230,
@@ -457,6 +685,80 @@ const styles = StyleSheet.create({
   actionText: { color: '#A4B0AA', fontSize: 12, fontWeight: '700' },
   liked: { color: lime },
   memberList: { paddingTop: 5 },
+  adminPanel: {
+    marginVertical: 14,
+    padding: 15,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#29483D',
+    backgroundColor: '#081A17',
+  },
+  adminPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  adminPanelCopy: { flex: 1, minWidth: 0 },
+  adminPanelTitle: { color: '#EFF3F1', fontSize: 14, fontWeight: '900' },
+  adminPanelHint: { color: '#7E8B85', fontSize: 10, lineHeight: 15, marginTop: 4 },
+  addMemberButton: {
+    height: 36,
+    paddingHorizontal: 13,
+    borderRadius: 18,
+    backgroundColor: lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addMemberButtonOpen: {
+    borderWidth: 1,
+    borderColor: '#486157',
+    backgroundColor: '#10251F',
+  },
+  addMemberButtonText: { color: '#142000', fontSize: 11, fontWeight: '900' },
+  candidatePanel: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#1B332B',
+  },
+  candidateSearch: {
+    height: 44,
+    paddingHorizontal: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#25443A',
+    backgroundColor: '#0A211C',
+    color: '#F1F5F3',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  candidateRow: {
+    minHeight: 62,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#173029',
+  },
+  candidateAvatar: { width: 38, height: 38, borderRadius: 19 },
+  candidateAvatarFallback: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#173329',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  candidateAvatarText: { color: lime, fontSize: 13, fontWeight: '900' },
+  candidateCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
+  candidateName: { color: '#ECF1EF', fontSize: 12, fontWeight: '800' },
+  candidateEmail: { color: '#73817B', fontSize: 9, marginTop: 3 },
+  candidateAdd: {
+    minWidth: 62,
+    height: 32,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  candidateAddText: { color: '#142000', fontSize: 10, fontWeight: '900' },
+  noCandidates: { color: '#718079', fontSize: 11, textAlign: 'center', paddingVertical: 18 },
   memberRow: {
     minHeight: 72,
     paddingHorizontal: 5,
@@ -490,6 +792,38 @@ const styles = StyleSheet.create({
   },
   memberBio: { color: '#7E8B85', fontSize: 11, marginTop: 4 },
   chevron: { color: '#8F9C96', fontSize: 29 },
+  removeMemberButton: {
+    minWidth: 58,
+    height: 32,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#713D3A',
+    backgroundColor: '#271513',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeMemberText: { color: '#FF817B', fontSize: 10, fontWeight: '900' },
+  dangerZone: {
+    marginTop: 24,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#5A302E',
+    backgroundColor: '#1D1110',
+  },
+  dangerTitle: { color: '#FFAAA5', fontSize: 13, fontWeight: '900' },
+  dangerHint: { color: '#9F7774', fontSize: 10, lineHeight: 16, marginTop: 5 },
+  deleteGroupButton: {
+    height: 42,
+    marginTop: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#A54D48',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteGroupText: { color: '#FF817B', fontSize: 12, fontWeight: '900' },
   empty: { alignItems: 'center', paddingVertical: 55, paddingHorizontal: 25 },
   emptyTitle: { color: '#EFF3F1', fontSize: 17, fontWeight: '900' },
   emptyCopy: { color: '#78867F', fontSize: 12, lineHeight: 19, textAlign: 'center', marginTop: 8 },

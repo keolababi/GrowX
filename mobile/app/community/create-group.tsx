@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +15,8 @@ import {
   View,
 } from 'react-native';
 import { api } from '@/services/api';
+import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
+import type { Community } from '@/types/community';
 import { getApiError } from '@/utils/auth';
 
 const lime = '#8EE817';
@@ -20,8 +24,29 @@ const lime = '#8EE817';
 export default function CreateGroupScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [cover, setCover] = useState<LocalUploadAsset | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
+
+  const pickCover = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.9,
+      allowsEditing: true,
+      aspect: [3, 1],
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    setCover({
+      uri: asset.uri,
+      name: asset.fileName || `community-cover-${Date.now()}.jpg`,
+      mimeType: asset.mimeType || 'image/jpeg',
+      file: asset.file,
+    });
+    setUploadProgress(0);
+    setError('');
+  };
 
   const createGroup = async () => {
     const groupName = name.trim();
@@ -30,13 +55,20 @@ export default function CreateGroupScreen() {
       return;
     }
     setSubmitting(true);
+    setUploadProgress(0);
     setError('');
     try {
-      await api.post('/communities', {
+      let coverUrl: string | undefined;
+      if (cover) {
+        const uploadedCover = await uploadMedia(cover, 'image', setUploadProgress);
+        coverUrl = uploadedCover.url;
+      }
+      const { data } = await api.post<{ community: Community }>('/communities', {
         name: groupName,
         ...(description.trim() ? { description: description.trim() } : {}),
+        ...(coverUrl ? { coverUrl } : {}),
       });
-      router.back();
+      router.replace(`/community/${data.community.id}` as Href);
     } catch (value) {
       setError(getApiError(value, 'Бүлэг үүсгэж чадсангүй.'));
     } finally {
@@ -63,11 +95,34 @@ export default function CreateGroupScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.groupMark}>
-            <Text style={styles.groupMarkText}>
-              {(name.trim() || 'GX').slice(0, 2).toUpperCase()}
-            </Text>
-          </View>
+          <Pressable
+            disabled={submitting}
+            onPress={() => void pickCover()}
+            style={styles.coverPicker}
+          >
+            {cover ? (
+              <Image resizeMode="cover" source={{ uri: cover.uri }} style={styles.coverPreview} />
+            ) : (
+              <>
+                <View style={styles.coverGlow} />
+                <View style={styles.groupMark}>
+                  <Text style={styles.groupMarkText}>
+                    {(name.trim() || 'GX').slice(0, 2).toUpperCase()}
+                  </Text>
+                </View>
+              </>
+            )}
+            <View style={styles.coverAction}>
+              <Text style={styles.coverActionText}>
+                {cover ? 'Зураг солих' : 'Cover зураг сонгох'}
+              </Text>
+            </View>
+          </Pressable>
+          {cover && !submitting && (
+            <Pressable onPress={() => setCover(null)} style={styles.removeCover}>
+              <Text style={styles.removeCoverText}>Зураг хасах</Text>
+            </Pressable>
+          )}
           <Text style={styles.title}>Шинэ community бүлэг</Text>
           <Text style={styles.subtitle}>
             Нэг зорилго, сонирхолтой хүмүүсийг цуглуулж мэдлэг туршлагаа хуваалцаарай.
@@ -101,6 +156,16 @@ export default function CreateGroupScreen() {
             <Text style={styles.characterCount}>{description.length}/1000</Text>
 
             {!!error && <Text style={styles.error}>{error}</Text>}
+            {submitting && cover && (
+              <View style={styles.progress}>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
+                </View>
+                <Text style={styles.progressText}>
+                  Cover зураг хуулж байна · {Math.round(uploadProgress)}%
+                </Text>
+              </View>
+            )}
 
             <Pressable
               disabled={name.trim().length < 2 || submitting}
@@ -146,10 +211,30 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 50,
   },
+  coverPicker: {
+    width: '100%',
+    height: 168,
+    overflow: 'hidden',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#25473B',
+    backgroundColor: '#0C291F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverPreview: { width: '100%', height: '100%' },
+  coverGlow: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: '#214C25',
+    opacity: 0.55,
+  },
   groupMark: {
-    width: 84,
-    height: 84,
-    borderRadius: 27,
+    width: 82,
+    height: 82,
+    borderRadius: 26,
     backgroundColor: '#173329',
     borderWidth: 2,
     borderColor: lime,
@@ -157,7 +242,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   groupMarkText: { color: lime, fontSize: 23, fontWeight: '900' },
-  title: { color: '#F3F7F5', fontSize: 25, fontWeight: '900', marginTop: 20 },
+  coverAction: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    minHeight: 34,
+    paddingHorizontal: 13,
+    borderRadius: 17,
+    backgroundColor: 'rgba(2, 13, 18, 0.82)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverActionText: { color: '#F1F5F3', fontSize: 11, fontWeight: '800' },
+  removeCover: { marginTop: 9, paddingVertical: 5, paddingHorizontal: 10 },
+  removeCoverText: { color: '#FF817B', fontSize: 11, fontWeight: '700' },
+  title: { color: '#F3F7F5', fontSize: 25, fontWeight: '900', marginTop: 16 },
   subtitle: {
     maxWidth: 440,
     color: '#84918B',
@@ -198,6 +297,15 @@ const styles = StyleSheet.create({
   },
   characterCount: { color: '#66756F', fontSize: 10, textAlign: 'right' },
   error: { color: '#FF817B', fontSize: 12, marginTop: 12 },
+  progress: { marginTop: 16 },
+  progressTrack: {
+    height: 5,
+    overflow: 'hidden',
+    borderRadius: 3,
+    backgroundColor: '#173029',
+  },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: lime },
+  progressText: { color: '#84918B', fontSize: 10, marginTop: 7, textAlign: 'center' },
   submitButton: {
     height: 54,
     marginTop: 23,

@@ -2,6 +2,7 @@ export type Community = {
   id: string;
   name: string;
   description: string | null;
+  coverUrl: string | null;
   ownerId: string;
   memberCount: number;
   postCount: number;

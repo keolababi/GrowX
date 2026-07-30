@@ -104,6 +104,7 @@ model Community {
   ownerId     String
   name        String            @unique
   description String?           @db.Text
+  coverUrl    String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   owner       User              @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
