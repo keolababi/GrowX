@@ -1,6 +1,8 @@
 import { prisma } from '../config/prisma.js';
 import { HttpError } from '../utils/http-error.js';
 
+const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
+
 const userSelect = {
   id: true,
   email: true,
@@ -59,7 +61,7 @@ export async function listConversations(userId: string) {
     take: 50,
     include: {
       members: { include: { user: { select: userSelect } } },
-      messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+      messages: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 1 },
     },
   });
 
@@ -159,6 +161,7 @@ export async function listMessages(userId: string, conversationId: string) {
   ]);
   return {
     otherUser: conversation?.members[0] ? serializeUser(conversation.members[0].user) : null,
+    otherLastReadAt: conversation?.members[0]?.lastReadAt ?? null,
     messages: messages.map((message) => ({
       ...message,
       sender: serializeUser(message.sender),
@@ -180,6 +183,45 @@ export async function sendMessage(userId: string, conversationId: string, conten
     return created;
   });
   return { message: { ...message, sender: serializeUser(message.sender) } };
+}
+
+async function requireEditableMessage(userId: string, conversationId: string, messageId: string) {
+  await requireMember(userId, conversationId);
+  const message = await prisma.message.findFirst({
+    where: { id: messageId, conversationId, deletedAt: null },
+    select: { id: true, senderId: true, createdAt: true },
+  });
+  if (!message) throw new HttpError(404, 'Мессеж олдсонгүй.');
+  if (message.senderId !== userId) {
+    throw new HttpError(403, 'Зөвхөн өөрийн илгээсэн мессежийг өөрчлөх боломжтой.');
+  }
+  if (Date.now() - message.createdAt.getTime() > MESSAGE_ACTION_WINDOW_MS) {
+    throw new HttpError(403, 'Мессеж засах эсвэл буцаах 10 минутын хугацаа дууссан.');
+  }
+  return message;
+}
+
+export async function editMessage(
+  userId: string,
+  conversationId: string,
+  messageId: string,
+  content: string,
+) {
+  const message = await requireEditableMessage(userId, conversationId, messageId);
+  const updated = await prisma.message.update({
+    where: { id: message.id },
+    data: { content, editedAt: new Date() },
+    include: { sender: { select: userSelect } },
+  });
+  return { message: { ...updated, sender: serializeUser(updated.sender) } };
+}
+
+export async function unsendMessage(userId: string, conversationId: string, messageId: string) {
+  const message = await requireEditableMessage(userId, conversationId, messageId);
+  await prisma.message.update({
+    where: { id: message.id },
+    data: { content: '', deletedAt: new Date() },
+  });
 }
 
 export async function markRead(userId: string, conversationId: string) {

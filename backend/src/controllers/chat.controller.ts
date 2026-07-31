@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as chatService from '../services/chat.service.js';
 
 const conversationIdSchema = z.object({ conversationId: z.string().min(1) });
+const messageIdSchema = conversationIdSchema.extend({ messageId: z.string().min(1) });
 const createSchema = z.object({ recipientId: z.string().min(1) });
 const messageSchema = z.object({ content: z.string().trim().min(1).max(4000) });
 
@@ -33,6 +34,20 @@ export async function send(req: Request, res: Response): Promise<void> {
   const { conversationId } = conversationIdSchema.parse(req.params);
   const { content } = messageSchema.parse(req.body);
   res.status(201).json(await chatService.sendMessage(req.auth!.userId, conversationId, content));
+}
+
+export async function unsend(req: Request, res: Response): Promise<void> {
+  const { conversationId, messageId } = messageIdSchema.parse(req.params);
+  await chatService.unsendMessage(req.auth!.userId, conversationId, messageId);
+  res.status(204).send();
+}
+
+export async function edit(req: Request, res: Response): Promise<void> {
+  const { conversationId, messageId } = messageIdSchema.parse(req.params);
+  const { content } = messageSchema.parse(req.body);
+  res
+    .status(200)
+    .json(await chatService.editMessage(req.auth!.userId, conversationId, messageId, content));
 }
 
 export async function markRead(req: Request, res: Response): Promise<void> {

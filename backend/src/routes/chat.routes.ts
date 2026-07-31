@@ -12,4 +12,6 @@ chatRouter.get('/', asyncHandler(chatController.list));
 chatRouter.post('/', asyncHandler(chatController.create));
 chatRouter.get('/:conversationId/messages', asyncHandler(chatController.messages));
 chatRouter.post('/:conversationId/messages', asyncHandler(chatController.send));
+chatRouter.patch('/:conversationId/messages/:messageId', asyncHandler(chatController.edit));
+chatRouter.delete('/:conversationId/messages/:messageId', asyncHandler(chatController.unsend));
 chatRouter.patch('/:conversationId/read', asyncHandler(chatController.markRead));
