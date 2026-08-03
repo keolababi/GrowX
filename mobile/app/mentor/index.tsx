@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { router } from 'expo-router';
 import {
   Pressable,
   SafeAreaView,
@@ -10,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
-import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { AppBottomNav } from '@/components/AppBottomNav';
 
 const lime = '#8EE817';
 const categories = ['Бүгд', 'Маркетинг', 'Санхүү', 'Бизнес хөгжил'];
@@ -140,7 +139,11 @@ export default function MentorScreen() {
         ))}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.listScroll}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+      >
         {visibleMentors.map((mentor) => {
           const isFollowing = following.includes(mentor.id);
           return (
@@ -176,36 +179,8 @@ export default function MentorScreen() {
         {visibleMentors.length === 0 && <Text style={styles.empty}>Ментор олдсонгүй.</Text>}
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" active onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
-          <Text style={styles.addIcon}>＋</Text>
-        </Pressable>
-        <NavItem icon="◯" label="Мессеж" onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
-      </View>
+      <AppBottomNav />
     </SafeAreaView>
-  );
-}
-
-function NavItem({
-  icon,
-  label,
-  active,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={styles.navItem}>
-      <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
-      {label === 'Мессеж' && <MessageUnreadBadge />}
-      <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -248,7 +223,8 @@ const styles = StyleSheet.create({
   categoryActive: { backgroundColor: lime, borderColor: '#A2F733' },
   categoryText: { color: '#E4E7E8', fontSize: 14, fontWeight: '700' },
   categoryTextActive: { color: '#122000' },
-  list: { paddingHorizontal: 22, paddingBottom: 120 },
+  listScroll: { flex: 1 },
+  list: { paddingHorizontal: 22, paddingBottom: 24 },
   mentorRow: {
     minHeight: 125,
     flexDirection: 'row',
@@ -302,34 +278,4 @@ const styles = StyleSheet.create({
   followText: { color: lime, fontSize: 15, fontWeight: '800' },
   followingText: { color: '#132000' },
   empty: { color: '#899399', textAlign: 'center', paddingTop: 50, fontSize: 15 },
-  bottomNav: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 94,
-    paddingBottom: 9,
-    backgroundColor: '#061712',
-    borderTopWidth: 1,
-    borderTopColor: '#132822',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  navItem: { width: 69, alignItems: 'center', gap: 4 },
-  navIcon: { color: '#E7EAEA', fontSize: 29, lineHeight: 31 },
-  navLabel: { color: '#D2D7D9', fontSize: 12, fontWeight: '600' },
-  navActive: { color: lime },
-  addButton: {
-    width: 61,
-    height: 61,
-    borderRadius: 31,
-    marginTop: -27,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#061712',
-  },
-  addIcon: { color: '#142000', fontSize: 38, lineHeight: 40, fontWeight: '300' },
 });

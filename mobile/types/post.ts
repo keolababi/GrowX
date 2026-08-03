@@ -3,6 +3,7 @@ export type PostAuthor = {
   email: string;
   displayName: string | null;
   avatarUrl: string | null;
+  company: string | null;
 };
 
 export type PostComment = {

@@ -9,4 +9,7 @@ mediaRouter.get('/podcasts', asyncHandler(mediaController.listPodcasts));
 mediaRouter.post('/podcasts', asyncHandler(mediaController.createPodcast));
 mediaRouter.delete('/podcasts/:podcastId', asyncHandler(mediaController.removePodcast));
 mediaRouter.get('/reels', asyncHandler(mediaController.listReels));
+mediaRouter.get('/reels/mine', asyncHandler(mediaController.listMyReels));
 mediaRouter.post('/reels', asyncHandler(mediaController.createReel));
+mediaRouter.post('/reels/:reelId/like', asyncHandler(mediaController.toggleReelLike));
+mediaRouter.post('/reels/:reelId/comments', asyncHandler(mediaController.addReelComment));

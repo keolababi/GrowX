@@ -38,6 +38,11 @@ export async function toggleLike(req: Request, res: Response): Promise<void> {
   res.status(200).json(await postService.toggleLike(req.auth!.userId, postId));
 }
 
+export async function listComments(req: Request, res: Response): Promise<void> {
+  const { postId } = postIdSchema.parse(req.params);
+  res.status(200).json(await postService.listComments(req.auth!.userId, postId));
+}
+
 export async function comment(req: Request, res: Response): Promise<void> {
   const { postId } = postIdSchema.parse(req.params);
   const { content } = commentSchema.parse(req.body);

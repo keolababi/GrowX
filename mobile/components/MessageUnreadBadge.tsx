@@ -18,7 +18,7 @@ export function MessageUnreadBadge() {
 
   useEffect(() => {
     void refresh();
-    const timer = setInterval(() => void refresh(), 3_000);
+    const timer = setInterval(() => void refresh(), 5_000);
     return () => clearInterval(timer);
   }, [refresh, segments]);
 

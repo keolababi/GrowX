@@ -16,18 +16,15 @@ import { getApiError } from '@/utils/auth';
 import type { Community } from '@/types/community';
 import { NotificationBell } from '@/components/NotificationBell';
 import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { PostCard } from '@/components/ui/PostCard';
+import { Tabs } from '@/components/ui/Tabs';
 import type { SocialPost } from '@/types/post';
+import { relativeTime } from '@/utils/relativeTime';
 
 const lime = '#8EE817';
 type Tab = 'discussions' | 'articles' | 'groups';
-
-function relativeTime(value: string) {
-  const minutes = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
-  if (minutes < 60) return `${minutes} минутын өмнө`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} цагийн өмнө`;
-  return `${Math.floor(hours / 24)} өдрийн өмнө`;
-}
+const tabOrder: Tab[] = ['groups', 'discussions', 'articles'];
+const tabLabels = ['Бүлгүүд', 'Хэлэлцүүлэг', 'Нийтлэл'];
 
 export default function CommunityScreen() {
   const [tab, setTab] = useState<Tab>('groups');
@@ -173,12 +170,24 @@ export default function CommunityScreen() {
           />
         </View>
 
+        <View className="px-6">
+          <Tabs
+            tabs={tabLabels}
+            activeIndex={tabOrder.indexOf(tab)}
+            onChange={(index) => setTab(tabOrder[index])}
+          />
+        </View>
+
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={lime} size="large" />
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.feed} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.feed}
+            showsVerticalScrollIndicator={false}
+          >
             {!!error && <Text style={styles.error}>{error}</Text>}
 
             {tab === 'groups' ? (
@@ -239,53 +248,22 @@ export default function CommunityScreen() {
             ) : (
               <>
                 {filteredPosts.map((post) => (
-                  <View key={post.id} style={styles.post}>
-                    <View style={styles.postHeader}>
-                      <Pressable
-                        onPress={() => router.push(`/users/${post.author.id}` as Href)}
-                        style={styles.profileLink}
-                      >
-                        {post.author.avatarUrl ? (
-                          <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
-                        ) : (
-                          <View style={styles.avatarFallback}>
-                            <Text style={styles.avatarText}>
-                              {(post.author.displayName || post.author.email)
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={styles.authorCopy}>
-                          <Text style={styles.authorName}>
-                            {post.author.displayName || post.author.email.split('@')[0]}
-                          </Text>
-                          <Text style={styles.time}>{relativeTime(post.createdAt)}</Text>
-                        </View>
-                      </Pressable>
-                      <Text style={styles.more}>•••</Text>
-                    </View>
-
-                    <Text style={styles.postContent}>{post.content}</Text>
-                    {!!post.imageUrl && (
-                      <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
-                    )}
-                    <Text style={styles.topic}>
-                      ▣ {post.community?.name || (tab === 'articles' ? 'Нийтлэл' : 'Startup')}
-                    </Text>
-                    <View style={styles.actions}>
-                      <Pressable onPress={() => void toggleLike(post)} style={styles.action}>
-                        <Text style={[styles.likeIcon, post.likedByMe && styles.liked]}>
-                          {post.likedByMe ? '♥' : '♡'}
-                        </Text>
-                        <Text style={styles.actionCount}>{post.likeCount}</Text>
-                      </Pressable>
-                      <Pressable onPress={() => router.push('/posts')} style={styles.action}>
-                        <Text style={styles.commentIcon}>○</Text>
-                        <Text style={styles.actionCount}>{post.commentCount}</Text>
-                      </Pressable>
-                    </View>
-                  </View>
+                  <PostCard
+                    key={post.id}
+                    author={post.author}
+                    timestamp={relativeTime(post.createdAt)}
+                    content={post.content}
+                    media={post.imageUrl ? [{ type: 'image', url: post.imageUrl }] : []}
+                    communityName={
+                      post.community?.name || (tab === 'articles' ? 'Нийтлэл' : 'Startup')
+                    }
+                    likeCount={post.likeCount}
+                    commentCount={post.commentCount}
+                    likedByMe={post.likedByMe}
+                    onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
+                    onPressLike={() => void toggleLike(post)}
+                    onPressComment={() => router.push(`/posts/${post.id}`)}
+                  />
                 ))}
                 {!filteredPosts.length && (
                   <EmptyState
@@ -312,7 +290,7 @@ export default function CommunityScreen() {
       </View>
 
       <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" active onPress={() => router.replace('/home')} />
+        <NavItem icon="⌂" label="Нүүр" active onPress={() => router.replace('/posts')} />
         <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
         <Pressable onPress={runPrimaryAction} style={styles.addButton}>
           <Text style={styles.addIcon}>＋</Text>
@@ -366,23 +344,6 @@ const styles = StyleSheet.create({
   },
   heading: { color: '#F5F7F6', fontSize: 29, fontWeight: '900', letterSpacing: -0.5 },
   searchIcon: { color: '#F1F5F3', fontSize: 39, lineHeight: 42, transform: [{ rotate: '-20deg' }] },
-  tabs: {
-    height: 50,
-    marginHorizontal: 22,
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#17272C',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: { borderBottomColor: lime },
-  tabText: { color: '#7E8A86', fontSize: 13, fontWeight: '800' },
-  tabTextActive: { color: lime },
   search: {
     height: 54,
     marginHorizontal: 22,
@@ -396,42 +357,9 @@ const styles = StyleSheet.create({
   searchSmall: { color: '#8C9994', fontSize: 29, transform: [{ rotate: '-20deg' }] },
   searchInput: { flex: 1, height: '100%', color: '#EFF3F1', fontSize: 14, marginLeft: 10 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scroll: { flex: 1 },
   feed: { paddingHorizontal: 22, paddingBottom: 120 },
   error: { color: '#FF817B', fontSize: 13, paddingVertical: 12 },
-  post: { paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#16272C' },
-  postHeader: { flexDirection: 'row', alignItems: 'center' },
-  profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
-  avatarFallback: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#193329',
-    borderWidth: 1,
-    borderColor: '#315143',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: lime, fontSize: 12, fontWeight: '900' },
-  authorCopy: { flex: 1, marginLeft: 11 },
-  authorName: { color: '#F0F4F2', fontSize: 15, fontWeight: '900' },
-  time: { color: '#7F8C87', fontSize: 11, marginTop: 4 },
-  more: { color: '#8F9B96', fontSize: 18, letterSpacing: 2 },
-  postContent: { color: '#E7ECEA', fontSize: 15, lineHeight: 23, marginTop: 14 },
-  postImage: {
-    width: '100%',
-    aspectRatio: 1.7,
-    borderRadius: 13,
-    marginTop: 13,
-    backgroundColor: '#08171C',
-  },
-  topic: { color: '#6F817A', fontSize: 12, fontWeight: '700', marginTop: 12 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 25, marginTop: 14 },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  likeIcon: { color: '#FF695F', fontSize: 25 },
-  liked: { color: '#FF493E' },
-  commentIcon: { color: '#CBD3D0', fontSize: 25 },
-  actionCount: { color: '#B8C2BE', fontSize: 13, fontWeight: '700' },
   groupCard: {
     minHeight: 108,
     paddingVertical: 17,

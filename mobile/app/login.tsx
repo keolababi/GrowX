@@ -27,7 +27,7 @@ export default function LoginScreen() {
         password,
       });
       await saveSession(data.token, data.user);
-      router.replace('/home');
+      router.replace('/posts');
     } catch (value) {
       setError(getApiError(value, 'И-мэйл эсвэл нууц үг буруу байна.'));
     } finally {

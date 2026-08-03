@@ -13,20 +13,14 @@ import {
   View,
 } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
-import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { AppBottomNav } from '@/components/AppBottomNav';
+import { Icon } from '@/components/ui/Icon';
 import { api } from '@/services/api';
 import type { ChatUser, Conversation } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
+import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 
 const lime = '#8EE817';
-
-function relativeTime(value: string) {
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return 'одоо';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}м`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}ц`;
-  return `${Math.floor(seconds / 86400)}ө`;
-}
 
 function displayName(user: ChatUser | null) {
   return user?.displayName || user?.email.split('@')[0] || 'GrowX хэрэглэгч';
@@ -64,6 +58,7 @@ function UserAvatar({ user }: { user: ChatUser | null }) {
 export default function MessagesScreen() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [users, setUsers] = useState<ChatUser[]>([]);
+  const [presenceUsers, setPresenceUsers] = useState<ChatUser[]>([]);
   const [query, setQuery] = useState('');
   const [newChatOpen, setNewChatOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,12 +85,25 @@ export default function MessagesScreen() {
     setUsers(data.users);
   }, []);
 
+  const loadPresenceUsers = useCallback(async () => {
+    try {
+      const { data } = await api.get<{ users: ChatUser[] }>('/conversations/users');
+      setPresenceUsers(data.users);
+    } catch {
+      // Conversation list errors are displayed separately; presence is supplemental.
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       void loadConversations();
-      const timer = setInterval(() => void loadConversations(), 3_000);
+      void loadPresenceUsers();
+      const timer = setInterval(() => {
+        void loadConversations();
+        void loadPresenceUsers();
+      }, 5_000);
       return () => clearInterval(timer);
-    }, [loadConversations]),
+    }, [loadConversations, loadPresenceUsers]),
   );
 
   useEffect(() => {
@@ -146,13 +154,13 @@ export default function MessagesScreen() {
             }}
             style={styles.newButton}
           >
-            <Text style={styles.newButtonText}>{newChatOpen ? '×' : '＋'}</Text>
+            <Icon name={newChatOpen ? 'close' : 'create-outline'} size={22} color="#142000" />
           </Pressable>
         </View>
       </View>
 
       <View style={styles.search}>
-        <Text style={styles.searchIcon}>⌕</Text>
+        <Icon name="search-outline" size={20} color="#A5B0AB" />
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -163,11 +171,46 @@ export default function MessagesScreen() {
         />
       </View>
 
+      {!newChatOpen && presenceUsers.length > 0 && (
+        <View style={styles.presenceSection}>
+          <Text style={styles.presenceHeading}>Хүмүүс</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.presenceList}
+          >
+            {presenceUsers.map((presenceUser) => {
+              const active = isUserActive(presenceUser);
+              return (
+                <Pressable
+                  key={presenceUser.id}
+                  accessibilityLabel={`${displayName(presenceUser)}, ${active ? 'Идэвхтэй' : 'Идэвхгүй'}`}
+                  onPress={() => void startChat(presenceUser.id)}
+                  style={({ pressed }) => [
+                    styles.presenceCard,
+                    pressed && styles.presenceCardPressed,
+                  ]}
+                >
+                  <UserAvatar user={presenceUser} />
+                  <Text numberOfLines={1} style={styles.presenceName}>
+                    {displayName(presenceUser)}
+                  </Text>
+                  <Text style={[styles.presenceStatus, active && styles.presenceStatusActive]}>
+                    {active ? 'Идэвхтэй' : 'Идэвхгүй'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
       {!!error && <Text style={styles.error}>{error}</Text>}
       {loading ? (
         <ActivityIndicator color={lime} style={styles.loader} />
       ) : (
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
@@ -197,7 +240,7 @@ export default function MessagesScreen() {
                     </View>
                     <Text style={styles.preview}>{user.email}</Text>
                   </View>
-                  <Text style={styles.chevron}>›</Text>
+                  <Icon name="chevron-forward" size={21} color="#89968F" />
                 </Pressable>
               ))
             : filtered.map((conversation) => (
@@ -247,34 +290,13 @@ export default function MessagesScreen() {
         </ScrollView>
       )}
 
-      <View style={styles.bottomNav}>
-        <Pressable onPress={() => router.replace('/home')} style={styles.navItem}>
-          <Text style={styles.navIcon}>⌂</Text>
-          <Text style={styles.navText}>Нүүр</Text>
-        </Pressable>
-        <Pressable onPress={() => router.replace('/medlege')} style={styles.navItem}>
-          <Text style={styles.navIcon}>⌘</Text>
-          <Text style={styles.navText}>Мэдлэг</Text>
-        </Pressable>
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
-          <Text style={styles.addText}>＋</Text>
-        </Pressable>
-        <View style={styles.navItem}>
-          <Text style={[styles.navIcon, styles.active]}>○</Text>
-          <MessageUnreadBadge />
-          <Text style={[styles.navText, styles.active]}>Мессеж</Text>
-        </View>
-        <Pressable onPress={() => router.replace('/profile')} style={styles.navItem}>
-          <Text style={styles.navIcon}>♙</Text>
-          <Text style={styles.navText}>Профайл</Text>
-        </Pressable>
-      </View>
+      <AppBottomNav />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#031015' },
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#031015' },
   header: {
     height: 66,
     paddingHorizontal: 20,
@@ -305,10 +327,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#19302B',
   },
-  searchIcon: { color: '#A5B0AB', fontSize: 25, marginRight: 9 },
-  searchInput: { flex: 1, color: '#F1F5F3', fontSize: 14 },
+  searchInput: { flex: 1, marginLeft: 9, color: '#F1F5F3', fontSize: 14 },
+  presenceSection: {
+    paddingTop: 4,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#142824',
+  },
+  presenceHeading: {
+    color: '#DCE4E0',
+    fontSize: 13,
+    fontWeight: '800',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  presenceList: { gap: 13, paddingHorizontal: 20 },
+  presenceCard: { width: 70, alignItems: 'center' },
+  presenceCardPressed: { opacity: 0.65 },
+  presenceName: {
+    width: 70,
+    color: '#E6ECE9',
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  presenceStatus: { color: '#75837D', fontSize: 9, fontWeight: '600', marginTop: 2 },
+  presenceStatusActive: { color: lime },
   error: { color: '#FF7777', paddingHorizontal: 20, paddingVertical: 7 },
   loader: { marginTop: 60 },
+  scroll: { flex: 1, minHeight: 0 },
   list: { paddingHorizontal: 14, paddingBottom: 116 },
   row: {
     minHeight: 78,

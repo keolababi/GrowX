@@ -18,6 +18,7 @@ import { api } from '@/services/api';
 import type { CommunityDetail, CommunityMember } from '@/types/community';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
+import { relativeTime } from '@/utils/relativeTime';
 
 const lime = '#8EE817';
 type GroupTab = 'discussions' | 'articles' | 'members';
@@ -27,14 +28,6 @@ const tabs: Array<{ value: GroupTab; label: string }> = [
   { value: 'articles', label: 'Нийтлэл' },
   { value: 'members', label: 'Гишүүд' },
 ];
-
-function relativeTime(value: string) {
-  const minutes = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
-  if (minutes < 60) return `${minutes} минутын өмнө`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} цагийн өмнө`;
-  return `${Math.floor(hours / 24)} өдрийн өмнө`;
-}
 
 export default function CommunityDetailScreen() {
   const { communityId } = useLocalSearchParams<{ communityId: string }>();
@@ -268,6 +261,7 @@ export default function CommunityDetailScreen() {
       </View>
 
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -599,6 +593,7 @@ const styles = StyleSheet.create({
   back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   headerTitle: { flex: 1, color: '#F4F7F6', fontSize: 20, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
+  scroll: { flex: 1 },
   content: { width: '100%', maxWidth: 650, alignSelf: 'center', padding: 20, paddingBottom: 110 },
   error: { color: '#FF817B', marginBottom: 12 },
   cover: {

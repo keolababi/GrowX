@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
+import type { AccountType } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 import { HttpError } from '../utils/http-error.js';
 import { signAccessToken } from '../utils/jwt.js';
@@ -13,6 +14,11 @@ type ProfileInput = {
   avatarUrl?: string | null;
   phone?: string | null;
   company?: string | null;
+  accountType?: AccountType;
+  coverUrl?: string | null;
+  industry?: string | null;
+  location?: string | null;
+  services?: string | null;
 };
 
 function serializeUser(user: {
@@ -24,6 +30,11 @@ function serializeUser(user: {
     avatarUrl: string | null;
     phone: string | null;
     company: string | null;
+    accountType: AccountType;
+    coverUrl: string | null;
+    industry: string | null;
+    location: string | null;
+    services: string | null;
   } | null;
 }) {
   return {
@@ -34,6 +45,11 @@ function serializeUser(user: {
     avatarUrl: user.profile?.avatarUrl ?? null,
     phone: user.profile?.phone ?? null,
     company: user.profile?.company ?? null,
+    accountType: user.profile?.accountType ?? 'PERSONAL',
+    coverUrl: user.profile?.coverUrl ?? null,
+    industry: user.profile?.industry ?? null,
+    location: user.profile?.location ?? null,
+    services: user.profile?.services ?? null,
   };
 }
 
@@ -43,6 +59,11 @@ const profileSelect = {
   avatarUrl: true,
   phone: true,
   company: true,
+  accountType: true,
+  coverUrl: true,
+  industry: true,
+  location: true,
+  services: true,
 } as const;
 
 export async function register(input: RegisterInput) {

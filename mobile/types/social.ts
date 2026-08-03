@@ -1,3 +1,5 @@
+export type AccountType = 'PERSONAL' | 'BUSINESS';
+
 export type SocialUser = {
   id: string;
   email: string;
@@ -5,6 +7,12 @@ export type SocialUser = {
   bio: string | null;
   avatarUrl: string | null;
   company: string | null;
+  accountType: AccountType;
+  coverUrl: string | null;
+  industry: string | null;
+  location: string | null;
+  services: string | null;
+  phone: string | null;
 };
 
 export type SocialProfile = {

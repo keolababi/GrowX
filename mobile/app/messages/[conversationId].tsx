@@ -20,6 +20,7 @@ import { api } from '@/services/api';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
+import { Icon } from '@/components/ui/Icon';
 
 const lime = '#8EE817';
 const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
@@ -96,9 +97,15 @@ export default function ConversationScreen() {
 
   useEffect(() => {
     void loadMessages();
-    const timer = setInterval(() => void loadMessages(true), 3_000);
-    return () => clearInterval(timer);
   }, [loadMessages]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const timer = setInterval(() => {
+      void loadMessages(true);
+    }, 3_000);
+    return () => clearInterval(timer);
+  }, [conversationId, loadMessages]);
 
   useEffect(() => {
     if (!messages.length) return;
@@ -122,7 +129,10 @@ export default function ConversationScreen() {
         `/conversations/${conversationId}/messages`,
         { content },
       );
-      setMessages((items) => [...items, data.message]);
+      const message = data.message;
+      setMessages((items) =>
+        items.some((item) => item.id === message.id) ? items : [...items, message],
+      );
       setError('');
     } catch (value) {
       setDraft(content);
@@ -222,8 +232,12 @@ export default function ConversationScreen() {
         style={styles.keyboard}
       >
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.back}>‹</Text>
+          <Pressable
+            accessibilityLabel="Мессежийн жагсаалт руу буцах"
+            onPress={() => router.replace('/messages')}
+            style={styles.backButton}
+          >
+            <Icon name="chevron-back" size={27} color="#F2F6F4" />
           </Pressable>
           <Pressable
             disabled={!otherUser}
@@ -258,6 +272,7 @@ export default function ConversationScreen() {
         ) : (
           <ScrollView
             ref={scrollRef}
+            style={styles.scroll}
             contentContainerStyle={styles.messages}
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
@@ -297,11 +312,11 @@ export default function ConversationScreen() {
                             pressed && styles.moreButtonPressed,
                           ]}
                         >
-                          <Text
-                            style={[styles.moreButtonText, selected && styles.moreButtonTextActive]}
-                          >
-                            •••
-                          </Text>
+                          <Icon
+                            name="ellipsis-horizontal"
+                            size={18}
+                            color={selected ? lime : '#8D9B95'}
+                          />
                         </Pressable>
                       </View>
                     )}
@@ -321,7 +336,7 @@ export default function ConversationScreen() {
                     </Pressable>
                   </View>
                   {mine && message.id === lastSeenMessageId && (
-                    <Text style={styles.seenText}>Seen</Text>
+                    <Text style={styles.seenText}>Уншсан</Text>
                   )}
                 </View>
               );
@@ -334,7 +349,7 @@ export default function ConversationScreen() {
           {editingMessage && (
             <View style={styles.editingHeader}>
               <View style={styles.editingCopy}>
-                <Text style={styles.editingLabel}>Editing message</Text>
+                <Text style={styles.editingLabel}>Мессеж засаж байна</Text>
                 <Text numberOfLines={1} style={styles.editingPreview}>
                   {editingMessage.content}
                 </Text>
@@ -345,7 +360,7 @@ export default function ConversationScreen() {
                 onPress={cancelEdit}
                 style={styles.cancelEditingButton}
               >
-                <Text style={styles.cancelEditingText}>×</Text>
+                <Icon name="close" size={20} color="#E8EEEB" />
               </Pressable>
             </View>
           )}
@@ -381,7 +396,7 @@ export default function ConversationScreen() {
               {savingEdit ? (
                 <ActivityIndicator color="#142000" size="small" />
               ) : (
-                <Text style={styles.sendIcon}>↑</Text>
+                <Icon name="arrow-up" size={22} color="#142000" />
               )}
             </Pressable>
           </View>
@@ -410,8 +425,8 @@ export default function ConversationScreen() {
                     pressed && styles.popoverItemPressed,
                   ]}
                 >
-                  <Text style={styles.popoverIcon}>✎</Text>
-                  <Text style={styles.popoverItemText}>Edit</Text>
+                  <Icon name="create-outline" size={17} color={lime} />
+                  <Text style={styles.popoverItemText}>Засах</Text>
                 </Pressable>
                 <Pressable
                   disabled={Boolean(unsendingId)}
@@ -421,8 +436,8 @@ export default function ConversationScreen() {
                     pressed && styles.popoverItemPressed,
                   ]}
                 >
-                  <Text style={styles.popoverDeleteIcon}>⌫</Text>
-                  <Text style={styles.popoverDeleteText}>Delete</Text>
+                  <Icon name="trash-outline" size={17} color="#E64C55" />
+                  <Text style={styles.popoverDeleteText}>Устгах</Text>
                 </Pressable>
               </View>
             )}
@@ -464,6 +479,7 @@ const styles = StyleSheet.create({
   status: { color: '#73827B', fontSize: 11 },
   activeStatus: { color: lime },
   loader: { flex: 1 },
+  scroll: { flex: 1 },
   messages: { flexGrow: 1, padding: 14, justifyContent: 'flex-end', gap: 7 },
   empty: { alignItems: 'center', marginBottom: 60 },
   emptyTitle: { color: '#EAF0ED', fontSize: 17, fontWeight: '800' },

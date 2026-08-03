@@ -15,6 +15,7 @@ const menuItems: Array<{ icon: string; label: string; route?: Href }> = [
   { icon: '♙', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
   { icon: '▧', label: 'Миний контент', route: '/posts' as Href },
   { icon: '▯', label: 'Хадгалсан контент' },
+  { icon: '▤', label: 'Миний асуулгууд', route: '/feedback' as Href },
   { icon: '▣', label: 'Миний төсөл' },
   { icon: '♧', label: 'Миний зөвлөлүүд' },
   { icon: '⚙', label: 'Тохиргоо' },
@@ -48,7 +49,7 @@ export default function ProfileSettingsScreen() {
         <Text style={styles.title}>Settings</Text>
         <View style={styles.headerSpacer} />
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {menuItems.map((item) => (
           <Pressable
             key={item.label}
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
   back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   title: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
+  scroll: { flex: 1 },
   content: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: 20, gap: 5 },
   menuItem: {
     minHeight: 68,

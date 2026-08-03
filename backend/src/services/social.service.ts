@@ -1,3 +1,4 @@
+import type { AccountType } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -10,6 +11,12 @@ const profileSelect = {
       bio: true,
       avatarUrl: true,
       company: true,
+      accountType: true,
+      coverUrl: true,
+      industry: true,
+      location: true,
+      services: true,
+      phone: true,
     },
   },
 } as const;
@@ -22,6 +29,12 @@ function serializeUser(user: {
     bio: string | null;
     avatarUrl: string | null;
     company: string | null;
+    accountType: AccountType;
+    coverUrl: string | null;
+    industry: string | null;
+    location: string | null;
+    services: string | null;
+    phone: string | null;
   } | null;
 }) {
   return {
@@ -31,6 +44,12 @@ function serializeUser(user: {
     bio: user.profile?.bio ?? null,
     avatarUrl: user.profile?.avatarUrl ?? null,
     company: user.profile?.company ?? null,
+    accountType: user.profile?.accountType ?? 'PERSONAL',
+    coverUrl: user.profile?.coverUrl ?? null,
+    industry: user.profile?.industry ?? null,
+    location: user.profile?.location ?? null,
+    services: user.profile?.services ?? null,
+    phone: user.profile?.phone ?? null,
   };
 }
 

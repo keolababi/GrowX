@@ -13,14 +13,7 @@ import {
 import { api } from '@/services/api';
 import type { AppNotification } from '@/types/notification';
 import { getApiError } from '@/utils/auth';
-
-function relativeTime(value: string) {
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return 'саяхан';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} мин`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} цаг`;
-  return `${Math.floor(seconds / 86400)} өдөр`;
-}
+import { relativeTime } from '@/utils/relativeTime';
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -83,7 +76,7 @@ export default function NotificationsScreen() {
       {loading ? (
         <ActivityIndicator color="#8ee817" style={styles.loader} />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {!!error && <Text style={styles.error}>{error}</Text>}
           {!notifications.length && !error && (
             <View style={styles.empty}>
@@ -139,6 +132,7 @@ const styles = StyleSheet.create({
   readAll: { color: '#8ee817', fontSize: 12, fontWeight: '800' },
   readAllDisabled: { opacity: 0.35 },
   loader: { marginTop: 60 },
+  scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 40, gap: 8 },
   error: { color: '#ff7777', padding: 14 },
   empty: { alignItems: 'center', paddingTop: 90 },

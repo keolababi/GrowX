@@ -219,6 +219,7 @@ export default function CreateContentScreen() {
         )}
 
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -398,6 +399,7 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: lime },
   tabText: { color: '#687570', fontSize: 12, fontWeight: '800', letterSpacing: 0.7 },
   tabTextActive: { color: '#F0F4F2' },
+  scroll: { flex: 1 },
   scrollContent: { padding: 22, paddingBottom: 50 },
   postEditor: { width: '100%' },
   authorRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },

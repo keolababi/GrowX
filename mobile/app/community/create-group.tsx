@@ -91,6 +91,7 @@ export default function CreateGroupScreen() {
         </View>
 
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -203,6 +204,7 @@ const styles = StyleSheet.create({
   back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   headerTitle: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
+  scroll: { flex: 1 },
   content: {
     width: '100%',
     maxWidth: 560,

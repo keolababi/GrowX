@@ -6,62 +6,21 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { api } from '@/services/api';
-import type { Podcast } from '@/types/media';
+import { useUser } from '@/providers/UserProvider';
+import { usePodcastStore } from '@/store/podcastStore';
+import type { Podcast, PodcastEpisode } from '@/types/media';
 import { NotificationBell } from '@/components/NotificationBell';
-import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { AppBottomNav } from '@/components/AppBottomNav';
+import { Icon } from '@/components/ui/Icon';
 
 const lime = '#8EE817';
-
-const episodes = [
-  {
-    number: '12',
-    title: 'Стартапын нууц',
-    duration: '32:10',
-    listens: '840 сонссон',
-    tone: '#2d1688',
-    category: 'BizTalk',
-  },
-  {
-    number: '11',
-    title: 'Хөрөнгө оруулалт татах нь',
-    duration: '28:45',
-    listens: '760 сонссон',
-    tone: '#142870',
-    category: 'Business Voice',
-  },
-  {
-    number: '10',
-    title: 'Маркетингийн стратеги',
-    duration: '21:30',
-    listens: '1.1K сонссон',
-    tone: '#24160f',
-    category: 'Startup',
-  },
-  {
-    number: '09',
-    title: 'Багаа зөв бүрдүүлэх нь',
-    duration: '26:18',
-    listens: '690 сонссон',
-    tone: '#19453d',
-    category: 'BizTalk',
-  },
-  {
-    number: '08',
-    title: 'Бизнесийн мөнгөн урсгал',
-    duration: '35:02',
-    listens: '920 сонссон',
-    tone: '#573019',
-    category: 'Business Voice',
-  },
-];
-
-const categories = ['Бүгд', 'BizTalk', 'Business Voice', 'Startup'];
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -71,103 +30,51 @@ function formatTime(seconds: number) {
     .padStart(2, '0')}`;
 }
 
-function Microphone({ small = false }: { small?: boolean }) {
-  return (
-    <View style={[styles.mic, small && styles.micSmall]}>
-      <View style={[styles.micHead, small && styles.micHeadSmall]}>
-        <View style={styles.micShine} />
-      </View>
-      <View style={[styles.micArms, small && styles.micArmsSmall]} />
-      <View style={[styles.micStem, small && styles.micStemSmall]} />
-      <View style={[styles.micBase, small && styles.micBaseSmall]} />
-    </View>
-  );
-}
-
-function Waveform() {
-  const heights = [
-    18, 32, 52, 34, 20, 16, 28, 44, 58, 42, 24, 18, 14, 26, 50, 34, 22, 31, 47, 61, 38, 27, 18, 24,
-    41, 54, 37, 19, 13, 22, 34, 44, 29, 16,
-  ];
-  return (
-    <View style={styles.waveform}>
-      {heights.map((height, index) => (
-        <View key={index} style={[styles.waveBar, { height }]} />
-      ))}
-    </View>
-  );
-}
-
-function EpisodeRow({
-  episode,
-  selected,
-  onPress,
+function PodcastRow({
+  podcast,
+  isFollowingHost,
+  onToggleFollowHost,
+  resumeAt,
 }: {
-  episode: (typeof episodes)[number];
-  selected?: boolean;
-  onPress: () => void;
+  podcast: Podcast;
+  isFollowingHost: boolean;
+  onToggleFollowHost: () => void;
+  resumeAt?: number;
 }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${episode.title} дугаарыг сонгох`}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.episodeRow,
-        selected && styles.episodeRowSelected,
-        pressed && styles.episodeRowPressed,
-      ]}
-    >
-      <View style={[styles.thumbnail, { backgroundColor: episode.tone }]}>
-        <View style={styles.thumbGlow} />
-        <Microphone small />
-      </View>
-      <View style={styles.episodeCopy}>
-        <Text style={styles.episodeTitle}>
-          #{episode.number} {episode.title}
-        </Text>
-        <Text style={styles.episodeMeta}>
-          {episode.duration} · {episode.listens}
-        </Text>
-      </View>
-      <Text style={[styles.rowPlay, selected && styles.rowPlaySelected]}>
-        {selected ? '▶' : '›'}
-      </Text>
-    </Pressable>
-  );
-}
-
-function NavItem({
-  icon,
-  label,
-  active,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={styles.navItem}>
-      <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
-      {label === 'Мессеж' && <MessageUnreadBadge />}
-      <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
   const episode = podcast.episodes[0];
   const player = useAudioPlayer(episode?.audioUrl ?? null);
   const status = useAudioPlayerStatus(player);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  const savedEpisodeIds = usePodcastStore((state) => state.savedEpisodeIds);
+  const toggleSaved = usePodcastStore((state) => state.toggleSaved);
+  const setProgress = usePodcastStore((state) => state.setProgress);
+
+  useEffect(() => {
+    if (!resumed && resumeAt && status.duration > 0) {
+      void player.seekTo(resumeAt);
+      setResumed(true);
+    }
+  }, [resumeAt, resumed, status.duration, player]);
+
+  useEffect(() => {
+    if (!episode || !status.playing) return;
+    const interval = setInterval(() => {
+      setProgress(episode.id, status.currentTime, status.duration);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [episode, status.currentTime, status.duration, status.playing, setProgress]);
+
   if (!episode) return null;
 
   const toggle = () => {
     setControlsOpen(true);
-    if (status.playing) player.pause();
-    else player.play();
+    if (status.playing) {
+      player.pause();
+      setProgress(episode.id, status.currentTime, status.duration);
+    } else {
+      player.play();
+    }
   };
 
   const seekBy = (seconds: number) => {
@@ -175,8 +82,17 @@ function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
     void player.seekTo(nextTime);
   };
 
+  const share = async () => {
+    try {
+      await Share.share({ message: `${podcast.title} — GrowX podcast` });
+    } catch {
+      // User dismissed the native share sheet.
+    }
+  };
+
   const progress =
     status.duration > 0 ? Math.min(Math.max(status.currentTime / status.duration, 0), 1) : 0;
+  const saved = savedEpisodeIds.has(episode.id);
 
   return (
     <View style={[styles.uploadedCard, controlsOpen && styles.uploadedCardActive]}>
@@ -254,6 +170,35 @@ function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
             </Pressable>
           </View>
           {status.isBuffering && <Text style={styles.buffering}>Ачаалж байна...</Text>}
+
+          <View style={styles.secondaryActions}>
+            <Pressable
+              onPress={onToggleFollowHost}
+              style={[styles.followChip, isFollowingHost && styles.followChipActive]}
+            >
+              <Text style={[styles.followChipText, isFollowingHost && styles.followChipTextActive]}>
+                {isFollowingHost ? 'Дагаж буй' : 'Хостыг дагах'}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Хадгалах"
+              onPress={() => toggleSaved(episode.id)}
+              style={styles.iconAction}
+            >
+              <Icon
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={20}
+                color={saved ? lime : '#D6DBDC'}
+              />
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Хуваалцах"
+              onPress={() => void share()}
+              style={styles.iconAction}
+            >
+              <Icon name="arrow-redo-outline" size={20} color="#D6DBDC" />
+            </Pressable>
+          </View>
         </View>
       )}
     </View>
@@ -261,49 +206,98 @@ function UploadedPodcastRow({ podcast }: { podcast: Podcast }) {
 }
 
 export default function PodcastScreen() {
-  const [category, setCategory] = useState('Бүгд');
+  const { user } = useUser();
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
-  const [selectedNumber, setSelectedNumber] = useState(episodes[0].number);
-  const [playing, setPlaying] = useState(false);
-  const [uploadedPodcasts, setUploadedPodcasts] = useState<Podcast[]>([]);
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const progress = usePodcastStore((state) => state.progress);
+  const hydrateStore = usePodcastStore((state) => state.hydrate);
 
-  const loadUploadedPodcasts = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      const { data } = await api.get<{ podcasts: Podcast[] }>('/media/podcasts');
-      setUploadedPodcasts(data.podcasts);
+      const [{ data }, followingResponse] = await Promise.all([
+        api.get<{ podcasts: Podcast[] }>('/media/podcasts'),
+        user?.id
+          ? api.get<{ users: { id: string }[] }>(`/users/${user.id}/following`)
+          : Promise.resolve(null),
+      ]);
+      setPodcasts(data.podcasts);
+      if (followingResponse) {
+        setFollowingIds(new Set(followingResponse.data.users.map((item) => item.id)));
+      }
     } catch {
-      setUploadedPodcasts([]);
+      setPodcasts([]);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
-    void loadUploadedPodcasts();
-  }, [loadUploadedPodcasts]);
+    void hydrateStore();
+    void load();
+  }, [hydrateStore, load]);
 
-  const selectedEpisode =
-    episodes.find((episode) => episode.number === selectedNumber) ?? episodes[0];
-  const visibleEpisodes = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-    return episodes.filter((episode) => {
-      const matchesCategory = category === 'Бүгд' || episode.category === category;
-      const matchesQuery =
-        !normalizedQuery ||
-        episode.title.toLocaleLowerCase().includes(normalizedQuery) ||
-        episode.category.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesCategory && matchesQuery;
+  const toggleFollowHost = async (hostId: string) => {
+    const wasFollowing = followingIds.has(hostId);
+    setFollowingIds((current) => {
+      const next = new Set(current);
+      if (wasFollowing) next.delete(hostId);
+      else next.add(hostId);
+      return next;
     });
-  }, [category, query]);
-
-  const selectEpisode = (number: string) => {
-    setSelectedNumber(number);
-    setPlaying(true);
+    try {
+      await api.post(`/users/${hostId}/follow`);
+    } catch {
+      setFollowingIds((current) => {
+        const next = new Set(current);
+        if (wasFollowing) next.add(hostId);
+        else next.delete(hostId);
+        return next;
+      });
+    }
   };
+
+  const continueListening = useMemo(() => {
+    const episodeById = new Map<string, { podcast: Podcast; episode: PodcastEpisode }>();
+    for (const podcast of podcasts) {
+      for (const episode of podcast.episodes) episodeById.set(episode.id, { podcast, episode });
+    }
+    return Object.entries(progress)
+      .map(([episodeId, value]) => ({ episodeId, ...value, match: episodeById.get(episodeId) }))
+      .filter(
+        (item) =>
+          item.match &&
+          item.durationSec > 0 &&
+          item.positionSec / item.durationSec < 0.95 &&
+          item.positionSec > 5,
+      )
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+  }, [podcasts, progress]);
+
+  const continueListeningPodcastIds = useMemo(
+    () => new Set(continueListening.map((item) => item.match!.podcast.id)),
+    [continueListening],
+  );
+
+  const visiblePodcasts = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    return podcasts.filter((podcast) => {
+      if (continueListeningPodcastIds.has(podcast.id)) return false;
+      if (!normalizedQuery) return true;
+      return (
+        podcast.title.toLocaleLowerCase().includes(normalizedQuery) ||
+        (podcast.description ?? '').toLocaleLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [continueListeningPodcastIds, podcasts, query]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.heading}>Podcast</Text>
           <View style={styles.headerActions}>
@@ -332,78 +326,38 @@ export default function PodcastScreen() {
           />
         )}
 
-        <ScrollView
-          horizontal
-          contentContainerStyle={styles.categories}
-          showsHorizontalScrollIndicator={false}
-        >
-          {categories.map((item) => (
-            <Pressable
-              key={item}
-              onPress={() => setCategory(item)}
-              style={[styles.category, category === item && styles.categoryActive]}
-            >
-              <Text style={category === item ? styles.categoryActiveText : styles.categoryText}>
-                {item}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <View style={styles.featured}>
-          <View style={styles.featuredGlow} />
-          <Text style={styles.featuredTitle}>BizTalk Podcast</Text>
-          <Text style={styles.featuredSubtitle}>
-            #{selectedEpisode.number} {selectedEpisode.title}
-          </Text>
-          <Waveform />
-          <Text style={styles.featuredDuration}>{selectedEpisode.duration}</Text>
-          <View style={styles.largeMic}>
-            <Microphone />
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={playing ? 'Podcast түр зогсоох' : 'Podcast тоглуулах'}
-            onPress={() => setPlaying((current) => !current)}
-            style={({ pressed }) => [styles.playButton, pressed && styles.playButtonPressed]}
-          >
-            <Text style={styles.playIcon}>{playing ? 'Ⅱ' : '▶'}</Text>
-          </Pressable>
-        </View>
-
-        {!!uploadedPodcasts.length && (
+        {!!continueListening.length && (
           <>
-            <Text style={styles.allTitle}>Шинэ podcast</Text>
+            <Text style={styles.allTitle}>Үргэлжлүүлж сонсох</Text>
             <View style={styles.uploadedList}>
-              {uploadedPodcasts.map((podcast) => (
-                <UploadedPodcastRow key={podcast.id} podcast={podcast} />
+              {continueListening.map(({ episodeId, positionSec, match }) => (
+                <PodcastRow
+                  key={episodeId}
+                  podcast={match!.podcast}
+                  isFollowingHost={followingIds.has(match!.podcast.author.id)}
+                  onToggleFollowHost={() => void toggleFollowHost(match!.podcast.author.id)}
+                  resumeAt={positionSec}
+                />
               ))}
             </View>
           </>
         )}
-        <Text style={styles.allTitle}>Бүх дугаар</Text>
-        <View style={styles.episodeList}>
-          {visibleEpisodes.map((episode) => (
-            <EpisodeRow
-              key={episode.number}
-              episode={episode}
-              selected={selectedNumber === episode.number}
-              onPress={() => selectEpisode(episode.number)}
+
+        <Text style={styles.allTitle}>Бүх подкаст</Text>
+        <View style={styles.uploadedList}>
+          {visiblePodcasts.map((podcast) => (
+            <PodcastRow
+              key={podcast.id}
+              podcast={podcast}
+              isFollowingHost={followingIds.has(podcast.author.id)}
+              onToggleFollowHost={() => void toggleFollowHost(podcast.author.id)}
             />
           ))}
-          {visibleEpisodes.length === 0 && <Text style={styles.empty}>Podcast олдсонгүй.</Text>}
+          {!visiblePodcasts.length && <Text style={styles.empty}>Podcast олдсонгүй.</Text>}
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" active onPress={() => router.replace('/medlege')} />
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
-          <Text style={styles.addIcon}>＋</Text>
-        </Pressable>
-        <NavItem icon="○" label="Мессеж" onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
-      </View>
+      <AppBottomNav />
     </SafeAreaView>
   );
 }
@@ -411,7 +365,8 @@ export default function PodcastScreen() {
 const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   safeArea: { flex: 1, backgroundColor: '#020d12' },
-  content: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 112 },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 24 },
   header: {
     height: 58,
     flexDirection: 'row',
@@ -431,115 +386,7 @@ const styles = StyleSheet.create({
     borderColor: '#1a292f',
     fontSize: 15,
   },
-  categories: { gap: 10, paddingTop: 13, paddingBottom: 31 },
-  category: {
-    height: 43,
-    paddingHorizontal: 18,
-    borderRadius: 13,
-    backgroundColor: '#0b171d',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryActive: { backgroundColor: lime },
-  categoryText: { color: '#e4e5e6', fontSize: 12, fontWeight: '700' },
-  categoryActiveText: { color: '#152000', fontSize: 13, fontWeight: '800' },
-  featured: {
-    height: 292,
-    borderRadius: 22,
-    overflow: 'hidden',
-    backgroundColor: '#2d177c',
-    padding: 25,
-  },
-  featuredGlow: {
-    position: 'absolute',
-    right: -60,
-    top: -90,
-    width: 290,
-    height: 290,
-    borderRadius: 145,
-    backgroundColor: '#4d28ab',
-    opacity: 0.72,
-  },
-  featuredTitle: { color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  featuredSubtitle: { color: '#ece9ff', fontSize: 17, fontWeight: '700', marginTop: 15 },
-  featuredDuration: {
-    position: 'absolute',
-    left: 25,
-    bottom: 28,
-    color: '#dad4f5',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  waveform: {
-    position: 'absolute',
-    left: 25,
-    right: 113,
-    top: 139,
-    height: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  waveBar: { width: 2, borderRadius: 2, backgroundColor: '#aa8eff' },
-  largeMic: { position: 'absolute', right: 26, top: 41 },
-  mic: { width: 90, height: 174, alignItems: 'center' },
-  micSmall: { width: 44, height: 74, transform: [{ scale: 0.65 }] },
-  micHead: {
-    width: 53,
-    height: 99,
-    borderRadius: 27,
-    backgroundColor: '#08090b',
-    borderWidth: 3,
-    borderColor: '#16171a',
-    zIndex: 2,
-    overflow: 'hidden',
-  },
-  micHeadSmall: { width: 40, height: 71, borderRadius: 20 },
-  micShine: { width: 10, height: '100%', marginLeft: 9, backgroundColor: '#303136', opacity: 0.45 },
-  micArms: {
-    position: 'absolute',
-    top: 65,
-    width: 77,
-    height: 52,
-    borderWidth: 7,
-    borderTopWidth: 0,
-    borderColor: '#08090b',
-    borderBottomLeftRadius: 34,
-    borderBottomRightRadius: 34,
-  },
-  micArmsSmall: { top: 44, width: 60, height: 42 },
-  micStem: {
-    position: 'absolute',
-    top: 112,
-    width: 9,
-    height: 43,
-    borderRadius: 5,
-    backgroundColor: '#08090b',
-  },
-  micStemSmall: { top: 77, height: 25, width: 7 },
-  micBase: {
-    position: 'absolute',
-    top: 150,
-    width: 45,
-    height: 8,
-    borderRadius: 5,
-    backgroundColor: '#08090b',
-  },
-  micBaseSmall: { top: 99, width: 32, height: 6 },
-  playButton: {
-    position: 'absolute',
-    right: 25,
-    bottom: 24,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playIcon: { color: '#342181', fontSize: 25, marginLeft: 4 },
-  playButtonPressed: { opacity: 0.8, transform: [{ scale: 0.94 }] },
-  allTitle: { color: '#f5f5f5', fontSize: 23, fontWeight: '800', marginTop: 36, marginBottom: 17 },
+  allTitle: { color: '#f5f5f5', fontSize: 23, fontWeight: '800', marginTop: 30, marginBottom: 17 },
   uploadedList: { gap: 11 },
   uploadedCard: {
     borderRadius: 18,
@@ -638,67 +485,31 @@ const styles = StyleSheet.create({
   mainControlIcon: { color: '#142000', fontSize: 22, fontWeight: '900', marginLeft: 2 },
   controlPressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
   buffering: { color: '#A8B4AF', fontSize: 11, textAlign: 'center', marginTop: 5 },
-  episodeList: { gap: 12 },
-  episodeRow: {
-    height: 79,
-    borderRadius: 15,
-    backgroundColor: '#08151b',
+  secondaryActions: {
+    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 7,
+    gap: 12,
   },
-  episodeRowSelected: { borderWidth: 1, borderColor: '#486a2a', backgroundColor: '#0c1d1a' },
-  episodeRowPressed: { opacity: 0.76 },
-  thumbnail: {
-    width: 70,
-    height: 65,
-    borderRadius: 12,
+  followChip: {
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: '#50635B',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
-  thumbGlow: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#4c2ec4',
-    opacity: 0.45,
+  followChipActive: { backgroundColor: lime, borderColor: lime },
+  followChipText: { color: '#D6DBDC', fontSize: 12, fontWeight: '800' },
+  followChipTextActive: { color: '#142000' },
+  iconAction: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10231D',
   },
-  episodeCopy: { flex: 1, marginLeft: 15 },
-  episodeTitle: { color: '#f1f1f1', fontSize: 15, fontWeight: '700' },
-  episodeMeta: { color: '#9ba2a7', fontSize: 12, marginTop: 8 },
-  rowPlay: { color: '#8c969b', fontSize: 30, marginRight: 12 },
-  rowPlaySelected: { color: lime, fontSize: 17 },
   empty: { color: '#899399', textAlign: 'center', paddingVertical: 28, fontSize: 14 },
-  bottomNav: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 94,
-    paddingBottom: 9,
-    backgroundColor: '#061712',
-    borderTopWidth: 1,
-    borderTopColor: '#132822',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  navItem: { width: 69, alignItems: 'center', gap: 4 },
-  navIcon: { color: '#d9dddf', fontSize: 29, lineHeight: 31 },
-  navLabel: { color: '#d0d3d5', fontSize: 12, fontWeight: '600' },
-  navActive: { color: lime },
-  addButton: {
-    width: 61,
-    height: 61,
-    borderRadius: 31,
-    marginTop: -28,
-    backgroundColor: lime,
-    borderWidth: 4,
-    borderColor: '#061712',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addIcon: { color: '#152000', fontSize: 39, lineHeight: 41 },
 });

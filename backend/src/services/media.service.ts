@@ -53,28 +53,143 @@ export async function createPodcast(
   return { podcast };
 }
 
-export async function listReels() {
-  return {
-    reels: await prisma.reel.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        author: {
-          select: {
-            id: true,
-            email: true,
-            profile: { select: { displayName: true, avatarUrl: true } },
-          },
-        },
-      },
-    }),
+const reelAuthorSelect = {
+  id: true,
+  email: true,
+  profile: { select: { displayName: true, avatarUrl: true } },
+} as const;
+
+const reelInclude = (viewerId: string) =>
+  ({
+    author: { select: reelAuthorSelect },
+    _count: { select: { likes: true, comments: true } },
+    likes: { where: { userId: viewerId }, select: { id: true }, take: 1 },
+    comments: {
+      orderBy: { createdAt: 'asc' as const },
+      take: 3,
+      include: { user: { select: reelAuthorSelect } },
+    },
+  }) as const;
+
+function serializeReel(reel: {
+  id: string;
+  authorId: string;
+  caption: string | null;
+  videoUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: string;
+    email: string;
+    profile: { displayName: string | null; avatarUrl: string | null } | null;
   };
+  _count: { likes: number; comments: number };
+  likes: { id: string }[];
+  comments: Array<{
+    id: string;
+    content: string;
+    createdAt: Date;
+    user: {
+      id: string;
+      email: string;
+      profile: { displayName: string | null; avatarUrl: string | null } | null;
+    };
+  }>;
+}) {
+  return {
+    id: reel.id,
+    authorId: reel.authorId,
+    caption: reel.caption,
+    videoUrl: reel.videoUrl,
+    createdAt: reel.createdAt,
+    updatedAt: reel.updatedAt,
+    author: {
+      id: reel.author.id,
+      email: reel.author.email,
+      displayName: reel.author.profile?.displayName ?? null,
+      avatarUrl: reel.author.profile?.avatarUrl ?? null,
+    },
+    likeCount: reel._count.likes,
+    commentCount: reel._count.comments,
+    likedByMe: reel.likes.length > 0,
+    comments: reel.comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      author: {
+        id: comment.user.id,
+        email: comment.user.email,
+        displayName: comment.user.profile?.displayName ?? null,
+        avatarUrl: comment.user.profile?.avatarUrl ?? null,
+      },
+    })),
+  };
+}
+
+export async function listReels(viewerId: string) {
+  const reels = await prisma.reel.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: reelInclude(viewerId),
+  });
+  return { reels: reels.map(serializeReel) };
+}
+
+export async function listMyReels(viewerId: string) {
+  const reels = await prisma.reel.findMany({
+    where: { authorId: viewerId },
+    orderBy: { createdAt: 'desc' },
+    include: reelInclude(viewerId),
+  });
+  return { reels: reels.map(serializeReel) };
 }
 
 export async function createReel(userId: string, input: { caption?: string; videoUrl: string }) {
   const reel = await prisma.reel.create({
     data: { authorId: userId, caption: input.caption, videoUrl: input.videoUrl },
+    include: reelInclude(userId),
   });
-  return { reel };
+  return { reel: serializeReel(reel) };
+}
+
+async function requireReel(reelId: string) {
+  const reel = await prisma.reel.findUnique({ where: { id: reelId }, select: { id: true } });
+  if (!reel) throw new HttpError(404, 'Reel олдсонгүй.');
+  return reel;
+}
+
+export async function toggleReelLike(userId: string, reelId: string) {
+  await requireReel(reelId);
+  const existing = await prisma.reelLike.findUnique({
+    where: { userId_reelId: { userId, reelId } },
+  });
+  if (existing) {
+    await prisma.reelLike.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.reelLike.create({ data: { userId, reelId } });
+  }
+  const likeCount = await prisma.reelLike.count({ where: { reelId } });
+  return { liked: !existing, likeCount };
+}
+
+export async function addReelComment(userId: string, reelId: string, content: string) {
+  await requireReel(reelId);
+  const comment = await prisma.reelComment.create({
+    data: { userId, reelId, content },
+    include: { user: { select: reelAuthorSelect } },
+  });
+  return {
+    comment: {
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      author: {
+        id: comment.user.id,
+        email: comment.user.email,
+        displayName: comment.user.profile?.displayName ?? null,
+        avatarUrl: comment.user.profile?.avatarUrl ?? null,
+      },
+    },
+  };
 }
 
 export async function deletePodcast(userId: string, podcastId: string) {

@@ -39,22 +39,36 @@ model User {
   sentMessages         Message[]
   followers            Follow[]             @relation("UserFollowers")
   following            Follow[]             @relation("UserFollowing")
+  reelLikes            ReelLike[]
+  reelComments         ReelComment[]
+  feedbackForms        FeedbackForm[]
+  feedbackResponses    FeedbackResponse[]
 
   @@index([createdAt])
   @@index([lastSeenAt])
 }
 
+enum AccountType {
+  PERSONAL
+  BUSINESS
+}
+
 model Profile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
+  id          String      @id @default(cuid())
+  userId      String      @unique
   displayName String?
-  bio         String?  @db.VarChar(500)
+  bio         String?     @db.VarChar(500)
   avatarUrl   String?
-  phone       String?  @db.VarChar(30)
-  company     String?  @db.VarChar(120)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone       String?     @db.VarChar(30)
+  company     String?     @db.VarChar(120)
+  accountType AccountType @default(PERSONAL)
+  coverUrl    String?
+  industry    String?     @db.VarChar(120)
+  location    String?     @db.VarChar(120)
+  services    String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Podcast {
@@ -88,15 +102,41 @@ model Episode {
 }
 
 model Reel {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   authorId  String
-  caption   String?  @db.VarChar(1000)
+  caption   String?       @db.VarChar(1000)
   videoUrl  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  author    User     @relation("ReelAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  author    User          @relation("ReelAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  likes     ReelLike[]
+  comments  ReelComment[]
 
   @@index([authorId, createdAt])
+}
+
+model ReelLike {
+  id        String   @id @default(cuid())
+  userId    String
+  reelId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reelId])
+  @@index([reelId, createdAt])
+}
+
+model ReelComment {
+  id        String   @id @default(cuid())
+  userId    String
+  reelId    String
+  content   String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@index([reelId, createdAt])
 }
 
 model Community {
@@ -239,4 +279,68 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followingId, createdAt])
   @@index([followerId, createdAt])
+}
+
+enum FeedbackQuestionType {
+  SHORT_ANSWER
+  LONG_ANSWER
+  MULTIPLE_CHOICE
+  CHECKBOXES
+  RATING
+  SCALE
+  YES_NO
+}
+
+model FeedbackForm {
+  id          String             @id @default(cuid())
+  authorId    String
+  title       String             @db.VarChar(200)
+  description String?            @db.Text
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  author      User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  questions   FeedbackQuestion[]
+  responses   FeedbackResponse[]
+
+  @@index([authorId, createdAt])
+}
+
+model FeedbackQuestion {
+  id       String               @id @default(cuid())
+  formId   String
+  type     FeedbackQuestionType
+  label    String               @db.VarChar(500)
+  options  Json?
+  required Boolean              @default(true)
+  order    Int
+  form     FeedbackForm         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers  FeedbackAnswer[]
+
+  @@index([formId, order])
+}
+
+model FeedbackResponse {
+  id           String           @id @default(cuid())
+  formId       String
+  respondentId String
+  createdAt    DateTime         @default(now())
+  form         FeedbackForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  respondent   User             @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  answers      FeedbackAnswer[]
+
+  @@unique([formId, respondentId])
+  @@index([formId, createdAt])
+}
+
+model FeedbackAnswer {
+  id           String           @id @default(cuid())
+  responseId   String
+  questionId   String
+  textValue    String?          @db.Text
+  optionsValue Json?
+  response     FeedbackResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question     FeedbackQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([responseId])
+  @@index([questionId])
 }

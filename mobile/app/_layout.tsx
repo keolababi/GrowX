@@ -19,8 +19,8 @@ const publicRoutes = [
 ];
 
 const routesWithOwnBottomNav = new Set([
-  'home',
   'community',
+  'discover',
   'mentor',
   'medlege',
   'messages',
@@ -47,7 +47,7 @@ function AppNavigator() {
   useEffect(() => {
     if (loading) return;
     if (!token && !isPublic) router.replace('/login');
-    if (token && ['login', 'register', 'onboard'].includes(first ?? '')) router.replace('/home');
+    if (token && ['login', 'register', 'onboard'].includes(first ?? '')) router.replace('/posts');
   }, [first, isPublic, loading, token]);
 
   return (
@@ -68,6 +68,6 @@ function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, backgroundColor: '#020B0D' },
-  stack: { flex: 1 },
+  shell: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#020B0D' },
+  stack: { flex: 1, minHeight: 0, overflow: 'hidden' },
 });

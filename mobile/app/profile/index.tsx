@@ -10,40 +10,44 @@ import {
   Text,
   View,
 } from 'react-native';
-import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { AppBottomNav } from '@/components/AppBottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
+import { PostCard } from '@/components/ui/PostCard';
+import { Tabs } from '@/components/ui/Tabs';
 import { useUser } from '@/providers/UserProvider';
+import { useEngagementStore } from '@/store/engagementStore';
 import { api } from '@/services/api';
 import type { SocialPost } from '@/types/post';
 import type { SocialProfile } from '@/types/social';
 import { getApiError } from '@/utils/auth';
+import { relativeTime } from '@/utils/relativeTime';
+
+const profileTabs = ['Пост', 'Дахин нийтэлсэн', 'Хадгалсан'];
 
 const lime = '#8EE817';
-
-function relativeTime(value: string) {
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return 'саяхан';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} минутын өмнө`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} цагийн өмнө`;
-  return `${Math.floor(seconds / 86400)} өдрийн өмнө`;
-}
 
 export default function ProfileScreen() {
   const { user } = useUser();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [allPosts, setAllPosts] = useState<SocialPost[]>([]);
+  const [tabIndex, setTabIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const repostedIds = useEngagementStore((state) => state.repostedIds);
+  const savedIds = useEngagementStore((state) => state.savedIds);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const [{ data }, { data: postsData }] = await Promise.all([
+      const [{ data }, { data: postsData }, { data: allPostsData }] = await Promise.all([
         api.get<SocialProfile>(`/users/${user.id}`),
         api.get<{ posts: SocialPost[] }>(`/posts/user/${user.id}`),
+        api.get<{ posts: SocialPost[] }>('/posts'),
       ]);
       setProfile(data);
       setPosts(postsData.posts);
+      setAllPosts(allPostsData.posts);
       setError('');
     } catch (value) {
       setError(getApiError(value, 'Профайлыг авч чадсангүй.'));
@@ -58,33 +62,40 @@ export default function ProfileScreen() {
     }, [load]),
   );
 
+  const applyLike = (items: SocialPost[], postId: string, patch: Partial<SocialPost>) =>
+    items.map((item) => (item.id === postId ? { ...item, ...patch } : item));
+
   const toggleLike = async (post: SocialPost) => {
-    setPosts((items) =>
-      items.map((item) =>
-        item.id === post.id
-          ? {
-              ...item,
-              likedByMe: !item.likedByMe,
-              likeCount: Math.max(0, item.likeCount + (item.likedByMe ? -1 : 1)),
-            }
-          : item,
-      ),
-    );
+    const optimistic = {
+      likedByMe: !post.likedByMe,
+      likeCount: Math.max(0, post.likeCount + (post.likedByMe ? -1 : 1)),
+    };
+    setPosts((items) => applyLike(items, post.id, optimistic));
+    setAllPosts((items) => applyLike(items, post.id, optimistic));
     try {
       const { data } = await api.post<{ liked: boolean; likeCount: number }>(
         `/posts/${post.id}/like`,
       );
-      setPosts((items) =>
-        items.map((item) =>
-          item.id === post.id
-            ? { ...item, likedByMe: data.liked, likeCount: data.likeCount }
-            : item,
-        ),
-      );
+      const confirmed = { likedByMe: data.liked, likeCount: data.likeCount };
+      setPosts((items) => applyLike(items, post.id, confirmed));
+      setAllPosts((items) => applyLike(items, post.id, confirmed));
     } catch {
       void load();
     }
   };
+
+  const tabPosts =
+    tabIndex === 0
+      ? posts
+      : tabIndex === 1
+        ? allPosts.filter((post) => repostedIds.has(post.id))
+        : allPosts.filter((post) => savedIds.has(post.id));
+
+  const emptyTabMessage = [
+    'Одоогоор post оруулаагүй байна.',
+    'Дахин нийтэлсэн зүйл алга.',
+    'Хадгалсан зүйл алга.',
+  ][tabIndex];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -104,10 +115,22 @@ export default function ProfileScreen() {
       {loading ? (
         <ActivityIndicator color={lime} style={styles.loader} />
       ) : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
           {!!error && <Text style={styles.error}>{error}</Text>}
           {profile && (
             <>
+              {profile.user.accountType === 'BUSINESS' && (
+                <View className="-mt-6 mb-3 h-32 w-full overflow-hidden rounded-card bg-background-paper">
+                  {profile.user.coverUrl && (
+                    <Image source={{ uri: profile.user.coverUrl }} className="h-full w-full" />
+                  )}
+                </View>
+              )}
+
               {profile.user.avatarUrl ? (
                 <Image source={{ uri: profile.user.avatarUrl }} style={styles.avatar} />
               ) : (
@@ -118,10 +141,32 @@ export default function ProfileScreen() {
                 </View>
               )}
               <Text style={styles.name}>
-                {profile.user.displayName || profile.user.email.split('@')[0]}
+                {profile.user.accountType === 'BUSINESS' && profile.user.company
+                  ? profile.user.company
+                  : profile.user.displayName || profile.user.email.split('@')[0]}
               </Text>
-              <Text style={styles.bio}>{profile.user.bio || 'GrowX хэрэглэгч'}</Text>
-              {!!profile.user.company && <Text style={styles.company}>{profile.user.company}</Text>}
+              {profile.user.accountType === 'BUSINESS' ? (
+                <>
+                  {!!(profile.user.industry || profile.user.location) && (
+                    <Text className="mt-1 text-xs font-bold text-brand-primary">
+                      {[profile.user.industry, profile.user.location].filter(Boolean).join(' · ')}
+                    </Text>
+                  )}
+                  <Text style={styles.bio}>{profile.user.bio || 'GrowX бизнес хэрэглэгч'}</Text>
+                  {!!profile.user.services && (
+                    <Text className="mt-2 max-w-[430px] text-center text-sm leading-5 text-text-secondary">
+                      {profile.user.services}
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Text style={styles.bio}>{profile.user.bio || 'GrowX хэрэглэгч'}</Text>
+                  {!!profile.user.company && (
+                    <Text style={styles.company}>{profile.user.company}</Text>
+                  )}
+                </>
+              )}
 
               <View style={styles.stats}>
                 <Stat value={profile.counts.posts} label="Posts" />
@@ -147,57 +192,37 @@ export default function ProfileScreen() {
 
               <View style={styles.postsSection}>
                 <View style={styles.postsHeading}>
-                  <Text style={styles.postsTitle}>Posts</Text>
+                  <Text style={styles.postsTitle}>Контент</Text>
                   <Pressable onPress={() => router.push('/posts/create')}>
                     <Text style={styles.createPost}>＋ Post</Text>
                   </Pressable>
                 </View>
-                {posts.map((post) => (
-                  <View key={post.id} style={styles.postCard}>
-                    <View style={styles.postMetaRow}>
-                      <Text style={styles.postTime}>{relativeTime(post.createdAt)}</Text>
-                      {!!post.community && (
-                        <Text style={styles.communityName}>{post.community.name}</Text>
-                      )}
-                    </View>
-                    <Text style={styles.postContent}>{post.content}</Text>
-                    {!!post.imageUrl && (
-                      <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
-                    )}
-                    <View style={styles.postActions}>
-                      <Pressable onPress={() => void toggleLike(post)} style={styles.postAction}>
-                        <Text style={[styles.postActionIcon, post.likedByMe && styles.liked]}>
-                          {post.likedByMe ? '♥' : '♡'}
-                        </Text>
-                        <Text style={[styles.postActionText, post.likedByMe && styles.liked]}>
-                          {post.likeCount}
-                        </Text>
-                      </Pressable>
-                      <Pressable onPress={() => router.push('/posts')} style={styles.postAction}>
-                        <Text style={styles.commentIcon}>○</Text>
-                        <Text style={styles.postActionText}>{post.commentCount}</Text>
-                      </Pressable>
-                    </View>
-                  </View>
+                <View className="mb-3 px-6">
+                  <Tabs tabs={profileTabs} activeIndex={tabIndex} onChange={setTabIndex} />
+                </View>
+                {tabPosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    author={post.author}
+                    timestamp={relativeTime(post.createdAt)}
+                    content={post.content}
+                    media={post.imageUrl ? [{ type: 'image', url: post.imageUrl }] : []}
+                    communityName={post.community?.name}
+                    likeCount={post.likeCount}
+                    commentCount={post.commentCount}
+                    likedByMe={post.likedByMe}
+                    onPressLike={() => void toggleLike(post)}
+                    onPressComment={() => router.push(`/posts/${post.id}`)}
+                  />
                 ))}
-                {!posts.length && (
-                  <Text style={styles.noPosts}>Одоогоор post оруулаагүй байна.</Text>
-                )}
+                {!tabPosts.length && <Text style={styles.noPosts}>{emptyTabMessage}</Text>}
               </View>
             </>
           )}
         </ScrollView>
       )}
 
-      <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" onPress={() => router.replace('/home')} />
-        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable onPress={() => router.push('/posts/create')} style={styles.addButton}>
-          <Text style={styles.addIcon}>＋</Text>
-        </Pressable>
-        <NavItem icon="◯" label="Мессеж" onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" active />
-      </View>
+      <AppBottomNav />
     </SafeAreaView>
   );
 }
@@ -208,26 +233,6 @@ function Stat({ value, label }: { value: number; label: string }) {
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
-  );
-}
-
-function NavItem({
-  icon,
-  label,
-  active,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={styles.navItem}>
-      <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
-      {label === 'Мессеж' && <MessageUnreadBadge />}
-      <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -255,7 +260,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingsIcon: { color: lime, fontSize: 19 },
-  content: { alignItems: 'center', padding: 24, paddingBottom: 125 },
+  scroll: { flex: 1 },
+  content: { alignItems: 'center', padding: 24, paddingBottom: 24 },
   error: { color: '#FF7777', marginBottom: 14 },
   avatar: { width: 116, height: 116, borderRadius: 58, borderWidth: 3, borderColor: lime },
   avatarFallback: {
@@ -286,41 +292,16 @@ const styles = StyleSheet.create({
   stat: { minWidth: 75, alignItems: 'center' },
   statValue: { color: '#F3F6F5', fontSize: 22, fontWeight: '900' },
   statLabel: { color: '#8F9C96', fontSize: 12, fontWeight: '600', marginTop: 5 },
-  postsSection: { width: '100%', maxWidth: 520, marginTop: 34 },
+  postsSection: { width: '100%', maxWidth: 520, marginTop: 34, marginHorizontal: -24 },
   postsHeading: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 13,
+    paddingHorizontal: 24,
   },
   postsTitle: { color: '#F4F7F6', fontSize: 20, fontWeight: '900' },
   createPost: { color: lime, fontSize: 12, fontWeight: '900' },
-  postCard: {
-    marginBottom: 12,
-    padding: 15,
-    borderRadius: 16,
-    backgroundColor: '#09171A',
-    borderWidth: 1,
-    borderColor: '#162B29',
-  },
-  postMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  postTime: { color: '#74817B', fontSize: 10 },
-  communityName: { color: lime, fontSize: 10, fontWeight: '800' },
-  postContent: { color: '#EDF3F0', fontSize: 14, lineHeight: 21, marginTop: 10 },
-  postImage: { width: '100%', aspectRatio: 1.35, borderRadius: 13, marginTop: 12 },
-  postActions: {
-    marginTop: 13,
-    paddingTop: 11,
-    borderTopWidth: 1,
-    borderTopColor: '#172B28',
-    flexDirection: 'row',
-    gap: 24,
-  },
-  postAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  postActionIcon: { color: '#D2DBD7', fontSize: 21 },
-  commentIcon: { color: '#D2DBD7', fontSize: 21 },
-  postActionText: { color: '#A4B0AA', fontSize: 12, fontWeight: '700' },
-  liked: { color: lime },
   noPosts: {
     color: '#78867F',
     textAlign: 'center',
@@ -328,34 +309,4 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     backgroundColor: '#081512',
   },
-  bottomNav: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 94,
-    paddingBottom: 9,
-    backgroundColor: '#061712',
-    borderTopWidth: 1,
-    borderTopColor: '#132822',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  navItem: { width: 69, alignItems: 'center', gap: 4 },
-  navIcon: { color: '#E0E6E3', fontSize: 29, lineHeight: 31 },
-  navLabel: { color: '#C5CECA', fontSize: 12, fontWeight: '600' },
-  navActive: { color: lime },
-  addButton: {
-    width: 61,
-    height: 61,
-    borderRadius: 31,
-    marginTop: -27,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#061712',
-  },
-  addIcon: { color: '#142000', fontSize: 38, lineHeight: 40, fontWeight: '300' },
 });

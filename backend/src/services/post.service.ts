@@ -4,7 +4,7 @@ import { HttpError } from '../utils/http-error.js';
 const authorSelect = {
   id: true,
   email: true,
-  profile: { select: { displayName: true, avatarUrl: true } },
+  profile: { select: { displayName: true, avatarUrl: true, company: true } },
 } as const;
 
 const postInclude = (userId: string) =>
@@ -23,13 +23,14 @@ const postInclude = (userId: string) =>
 function serializeAuthor(author: {
   id: string;
   email: string;
-  profile: { displayName: string | null; avatarUrl: string | null } | null;
+  profile: { displayName: string | null; avatarUrl: string | null; company: string | null } | null;
 }) {
   return {
     id: author.id,
     email: author.email,
     displayName: author.profile?.displayName ?? null,
     avatarUrl: author.profile?.avatarUrl ?? null,
+    company: author.profile?.company ?? null,
   };
 }
 
@@ -223,6 +224,21 @@ export async function addComment(userId: string, postId: string, content: string
       ...comment,
       author: serializeAuthor(comment.author),
     },
+  };
+}
+
+export async function listComments(userId: string, postId: string) {
+  await requirePostAccess(userId, postId);
+  const comments = await prisma.comment.findMany({
+    where: { postId },
+    orderBy: { createdAt: 'asc' },
+    include: { author: { select: authorSelect } },
+  });
+  return {
+    comments: comments.map((comment) => ({
+      ...comment,
+      author: serializeAuthor(comment.author),
+    })),
   };
 }
 

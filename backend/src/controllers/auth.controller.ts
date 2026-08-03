@@ -30,6 +30,11 @@ const profileSchema = z.object({
   avatarUrl: z.string().url().max(2048).nullable().optional(),
   phone: z.string().trim().max(30).nullable().optional(),
   company: z.string().trim().max(120).nullable().optional(),
+  accountType: z.enum(['PERSONAL', 'BUSINESS']).optional(),
+  coverUrl: z.string().url().max(2048).nullable().optional(),
+  industry: z.string().trim().max(120).nullable().optional(),
+  location: z.string().trim().max(120).nullable().optional(),
+  services: z.string().trim().max(2000).nullable().optional(),
 });
 
 export async function register(req: Request, res: Response): Promise<void> {

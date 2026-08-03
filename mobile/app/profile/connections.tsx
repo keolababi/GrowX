@@ -91,7 +91,7 @@ export default function ConnectionsScreen() {
       {loading ? (
         <ActivityIndicator color={lime} style={styles.loader} />
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
           {!!error && <Text style={styles.error}>{error}</Text>}
           {users.map((item) => {
             const name = item.displayName || item.email.split('@')[0];
@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
   tabText: { color: '#A1ACA7', fontSize: 13, fontWeight: '800' },
   activeTabText: { color: '#142000' },
   loader: { marginTop: 60 },
+  scroll: { flex: 1 },
   list: { padding: 15, paddingBottom: 40 },
   error: { color: '#FF7777', padding: 12 },
   row: {

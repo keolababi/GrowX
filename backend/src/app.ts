@@ -12,6 +12,7 @@ import { communityRouter } from './routes/community.routes.js';
 import { notificationRouter } from './routes/notification.routes.js';
 import { chatRouter } from './routes/chat.routes.js';
 import { socialRouter } from './routes/social.routes.js';
+import { feedbackRouter } from './routes/feedback.routes.js';
 
 export const app = express();
 
@@ -46,5 +47,6 @@ app.use('/api/communities', communityRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/conversations', chatRouter);
 app.use('/api/users', socialRouter);
+app.use('/api/feedback-forms', feedbackRouter);
 app.use(notFound);
 app.use(errorHandler);

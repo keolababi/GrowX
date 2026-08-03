@@ -17,7 +17,10 @@ import { api } from '@/services/api';
 import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import { useUser } from '@/providers/UserProvider';
 import { getApiError } from '@/utils/auth';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { User } from '@/types/auth';
+
+type AccountType = 'PERSONAL' | 'BUSINESS';
 
 const lime = '#8EE817';
 
@@ -27,7 +30,12 @@ export default function PersonalInformationScreen() {
   const [bio, setBio] = useState('');
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
+  const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
+  const [industry, setIndustry] = useState('');
+  const [location, setLocation] = useState('');
+  const [services, setServices] = useState('');
   const [avatar, setAvatar] = useState<LocalUploadAsset | null>(null);
+  const [cover, setCover] = useState<LocalUploadAsset | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -37,6 +45,10 @@ export default function PersonalInformationScreen() {
     setBio(user?.bio ?? '');
     setPhone(user?.phone ?? '');
     setCompany(user?.company ?? '');
+    setAccountType(user?.accountType ?? 'PERSONAL');
+    setIndustry(user?.industry ?? '');
+    setLocation(user?.location ?? '');
+    setServices(user?.services ?? '');
   }, [user]);
 
   const pickAvatar = async () => {
@@ -57,6 +69,24 @@ export default function PersonalInformationScreen() {
     setSuccess('');
   };
 
+  const pickCover = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    setCover({
+      uri: asset.uri,
+      name: asset.fileName || `cover-${Date.now()}.jpg`,
+      mimeType: asset.mimeType || 'image/jpeg',
+      file: asset.file,
+    });
+    setSuccess('');
+  };
+
   const save = async () => {
     if (!displayName.trim()) {
       setError('Нэрээ оруулна уу.');
@@ -71,15 +101,26 @@ export default function PersonalInformationScreen() {
         const uploaded = await uploadMedia(avatar, 'image');
         avatarUrl = uploaded.url;
       }
+      let coverUrl = user?.coverUrl ?? null;
+      if (cover) {
+        const uploaded = await uploadMedia(cover, 'image');
+        coverUrl = uploaded.url;
+      }
       await api.patch<{ user: User }>('/auth/me', {
         displayName: displayName.trim(),
         bio: bio.trim() || null,
         phone: phone.trim() || null,
         company: company.trim() || null,
+        accountType,
+        coverUrl,
+        industry: accountType === 'BUSINESS' ? industry.trim() || null : null,
+        location: accountType === 'BUSINESS' ? location.trim() || null : null,
+        services: accountType === 'BUSINESS' ? services.trim() || null : null,
         avatarUrl,
       });
       await refreshUser();
       setAvatar(null);
+      setCover(null);
       setSuccess('Хувийн мэдээлэл хадгалагдлаа.');
     } catch (value) {
       setError(getApiError(value, 'Хувийн мэдээллийг хадгалж чадсангүй.'));
@@ -89,6 +130,7 @@ export default function PersonalInformationScreen() {
   };
 
   const avatarUri = avatar?.uri || user?.avatarUrl;
+  const coverUri = cover?.uri || user?.coverUrl;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -104,7 +146,29 @@ export default function PersonalInformationScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <SegmentedControl
+            options={['Хувийн профайл', 'Бизнес профайл']}
+            selectedIndex={accountType === 'BUSINESS' ? 1 : 0}
+            onChange={(index) => setAccountType(index === 1 ? 'BUSINESS' : 'PERSONAL')}
+          />
+
+          {accountType === 'BUSINESS' && (
+            <Pressable onPress={() => void pickCover()} style={styles.coverCard}>
+              {coverUri ? (
+                <Image source={{ uri: coverUri }} style={styles.coverImage} />
+              ) : (
+                <View style={styles.coverPlaceholder}>
+                  <Text style={styles.rowHint}>Нүүр зураг нэмэх</Text>
+                </View>
+              )}
+            </Pressable>
+          )}
+
           <Pressable onPress={() => void pickAvatar()} style={styles.avatarCard}>
             <View style={styles.rowIcon}>
               <Text style={styles.rowIconText}>♙</Text>
@@ -152,12 +216,42 @@ export default function PersonalInformationScreen() {
           />
           <Field
             icon="▣"
-            label="Хаана ажилладаг"
+            label={accountType === 'BUSINESS' ? 'Бизнесийн нэр' : 'Хаана ажилладаг'}
             value={company}
             onChangeText={setCompany}
             placeholder="Жишээ: GrowX LLC"
             maxLength={120}
           />
+
+          {accountType === 'BUSINESS' && (
+            <>
+              <Field
+                icon="◆"
+                label="Салбар"
+                value={industry}
+                onChangeText={setIndustry}
+                placeholder="Жишээ: Fintech"
+                maxLength={120}
+              />
+              <Field
+                icon="⌖"
+                label="Байршил"
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Жишээ: Улаанбаатар"
+                maxLength={120}
+              />
+              <Field
+                icon="▤"
+                label="Үйлчилгээ"
+                value={services}
+                onChangeText={setServices}
+                placeholder="Санал болгож буй үйлчилгээгээ бичнэ үү"
+                multiline
+                maxLength={2000}
+              />
+            </>
+          )}
 
           <View style={styles.emailCard}>
             <Text style={styles.emailLabel}>И-мэйл</Text>
@@ -223,6 +317,7 @@ const styles = StyleSheet.create({
   back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   title: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
+  scroll: { flex: 1 },
   content: { padding: 18, paddingBottom: 44, gap: 11 },
   avatarCard: {
     minHeight: 96,
@@ -234,6 +329,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#152A28',
   },
+  coverCard: {
+    height: 120,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#09171A',
+    borderWidth: 1,
+    borderColor: '#152A28',
+  },
+  coverImage: { width: '100%', height: '100%' },
+  coverPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   rowIcon: {
     width: 38,
     height: 38,

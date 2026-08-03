@@ -30,7 +30,7 @@ export default function RegisterScreen() {
         password,
       });
       await saveSession(data.token, data.user);
-      router.replace('/home');
+      router.replace('/posts');
     } catch (value) {
       setError(getApiError(value, 'Бүртгэл үүсгэж чадсангүй.'));
     } finally {
