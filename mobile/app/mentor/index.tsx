@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { router, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
@@ -48,12 +48,14 @@ function MentorRow({
   onToggleFollow,
   onMessage,
   onRequestCollaboration,
+  isSelf,
 }: {
   user: DiscoverUser;
   isFollowing: boolean;
   onToggleFollow: () => void;
   onMessage: () => void;
   onRequestCollaboration: () => void;
+  isSelf: boolean;
 }) {
   return (
     <Pressable
@@ -92,41 +94,47 @@ function MentorRow({
         />
       </View>
 
-      <View className="mt-s flex-row gap-s">
-        <Pressable
-          onPress={(event) => {
-            event.stopPropagation();
-            onToggleFollow();
-          }}
-          className={`h-9 flex-1 items-center justify-center rounded-avatar border ${
-            isFollowing ? 'border-border' : 'border-brand-primary bg-brand-primary'
-          }`}
-        >
-          <Text
-            className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
+      {isSelf ? (
+        <View className="mt-s h-9 items-center justify-center rounded-avatar border border-brand-primary/40">
+          <Text className="text-xs font-bold text-brand-primary">Таны ментор профайл</Text>
+        </View>
+      ) : (
+        <View className="mt-s flex-row gap-s">
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleFollow();
+            }}
+            className={`h-9 flex-1 items-center justify-center rounded-avatar border ${
+              isFollowing ? 'border-border' : 'border-brand-primary bg-brand-primary'
+            }`}
           >
-            {isFollowing ? 'Холбогдсон' : 'Холбогдох'}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={(event) => {
-            event.stopPropagation();
-            onMessage();
-          }}
-          className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
-        >
-          <Text className="text-xs font-bold text-text-secondary">Мессеж</Text>
-        </Pressable>
-        <Pressable
-          onPress={(event) => {
-            event.stopPropagation();
-            onRequestCollaboration();
-          }}
-          className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
-        >
-          <Text className="text-xs font-bold text-text-secondary">Хамтрах</Text>
-        </Pressable>
-      </View>
+            <Text
+              className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
+            >
+              {isFollowing ? 'Холбогдсон' : 'Холбогдох'}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onMessage();
+            }}
+            className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
+          >
+            <Text className="text-xs font-bold text-text-secondary">Мессеж</Text>
+          </Pressable>
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onRequestCollaboration();
+            }}
+            className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
+          >
+            <Text className="text-xs font-bold text-text-secondary">Хамтрах</Text>
+          </Pressable>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -234,7 +242,9 @@ export default function MentorScreen() {
       setError('');
       try {
         const [usersResponse, followingResponse] = await Promise.all([
-          api.get<{ users: DiscoverUser[] }>('/conversations/users', { params: { q: search } }),
+          api.get<{ users: DiscoverUser[] }>('/conversations/users', {
+            params: { q: search, includeSelf: true },
+          }),
           user?.id
             ? api.get<{ users: { id: string }[] }>(`/users/${user.id}/following`)
             : Promise.resolve(null),
@@ -276,6 +286,13 @@ export default function MentorScreen() {
   useEffect(() => {
     void loadRequests();
   }, [loadRequests]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadUsers(query);
+      void loadRequests();
+    }, [loadRequests, loadUsers, query]),
+  );
 
   const toggleFollow = async (targetId: string) => {
     const wasFollowing = followingIds.has(targetId);
@@ -409,6 +426,7 @@ export default function MentorScreen() {
                     setComposerMessage('');
                     setComposerError('');
                   }}
+                  isSelf={item.id === user?.id}
                 />
               ))}
               {!visibleUsers.length && (

@@ -33,6 +33,7 @@ type Props = {
   onToggleFollow?: () => void;
   onToggleRepost?: () => void;
   onToggleSave?: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
   footer?: React.ReactNode;
 };
@@ -115,6 +116,7 @@ export const PostCard: React.FC<Props> = ({
   onToggleFollow,
   onToggleRepost,
   onToggleSave,
+  onEdit,
   onDelete,
   footer,
 }) => (
@@ -159,10 +161,19 @@ export const PostCard: React.FC<Props> = ({
           </Text>
         </Pressable>
       )}
-      {isOwnPost && onDelete && (
-        <Pressable accessibilityLabel="Post устгах" hitSlop={10} onPress={onDelete}>
-          <Icon name="ellipsis-horizontal" size={20} color="#A7AEB0" />
-        </Pressable>
+      {isOwnPost && (onEdit || onDelete) && (
+        <View className="ml-s flex-row items-center gap-m">
+          {onEdit && (
+            <Pressable accessibilityLabel="Post засах" hitSlop={10} onPress={onEdit}>
+              <Icon name="create-outline" size={20} color="#9AF000" />
+            </Pressable>
+          )}
+          {onDelete && (
+            <Pressable accessibilityLabel="Post устгах" hitSlop={10} onPress={onDelete}>
+              <Icon name="trash-outline" size={19} color="#FF817B" />
+            </Pressable>
+          )}
+        </View>
       )}
     </View>
 

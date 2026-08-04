@@ -161,6 +161,23 @@ export async function createPost(
   return { post: serializePost(post) };
 }
 
+export async function updatePost(userId: string, postId: string, input: { content: string }) {
+  const existing = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true },
+  });
+  if (!existing) throw new HttpError(404, 'Post олдсонгүй.');
+  if (existing.authorId !== userId) {
+    throw new HttpError(403, 'Энэ post-ийг засах эрхгүй байна.');
+  }
+  const post = await prisma.post.update({
+    where: { id: postId },
+    data: { content: input.content },
+    include: postInclude(userId),
+  });
+  return { post: serializePost(post) };
+}
+
 export async function toggleLike(userId: string, postId: string) {
   const post = await requirePostAccess(userId, postId);
 
