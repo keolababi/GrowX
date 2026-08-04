@@ -20,6 +20,7 @@ import { PostCard } from '@/components/ui/PostCard';
 import { Tabs } from '@/components/ui/Tabs';
 import type { SocialPost } from '@/types/post';
 import { relativeTime } from '@/utils/relativeTime';
+import { useUser } from '@/providers/UserProvider';
 
 const lime = '#8EE817';
 type Tab = 'discussions' | 'articles' | 'groups';
@@ -27,6 +28,7 @@ const tabOrder: Tab[] = ['groups', 'discussions', 'articles'];
 const tabLabels = ['Бүлгүүд', 'Хэлэлцүүлэг', 'Нийтлэл'];
 
 export default function CommunityScreen() {
+  const { user } = useUser();
   const [tab, setTab] = useState<Tab>('groups');
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -260,9 +262,11 @@ export default function CommunityScreen() {
                     likeCount={post.likeCount}
                     commentCount={post.commentCount}
                     likedByMe={post.likedByMe}
+                    isOwnPost={post.authorId === user?.id}
                     onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
                     onPressLike={() => void toggleLike(post)}
                     onPressComment={() => router.push(`/posts/${post.id}`)}
+                    onEdit={() => router.push(`/posts/${post.id}/edit`)}
                   />
                 ))}
                 {!filteredPosts.length && (

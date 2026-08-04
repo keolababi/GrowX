@@ -112,7 +112,16 @@ export default function PostCommentsScreen() {
             <Text style={styles.back}>‹</Text>
           </Pressable>
           <Text style={styles.heading}>Сэтгэгдэл</Text>
-          <View style={styles.headerSpacer} />
+          {post && post.authorId === user?.id ? (
+            <Pressable
+              onPress={() => router.push(`/posts/${post.id}/edit`)}
+              style={styles.editButton}
+            >
+              <Text style={styles.editText}>Засах</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.headerSpacer} />
+          )}
         </View>
 
         {loading ? (
@@ -219,6 +228,8 @@ const styles = StyleSheet.create({
   back: { color: '#F1F5F3', fontSize: 43, lineHeight: 44 },
   heading: { color: '#F4F7F6', fontSize: 20, fontWeight: '900' },
   headerSpacer: { width: 44 },
+  editButton: { width: 52, height: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  editText: { color: lime, fontSize: 13, fontWeight: '900' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   content: { paddingBottom: 35 },

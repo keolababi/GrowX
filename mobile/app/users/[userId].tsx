@@ -285,8 +285,10 @@ export default function PublicUserProfileScreen() {
                   likeCount={post.likeCount}
                   commentCount={post.commentCount}
                   likedByMe={post.likedByMe}
+                  isOwnPost={profile.isMe}
                   onPressLike={() => void toggleLike(post)}
                   onPressComment={() => router.push(`/posts/${post.id}`)}
+                  onEdit={() => router.push(`/posts/${post.id}/edit`)}
                 />
               ))}
               {!posts.length && (

@@ -327,6 +327,7 @@ export default function PostsScreen() {
               onToggleFollow={() => void toggleFollowAuthor(post.authorId)}
               onToggleRepost={() => toggleRepost(post.id)}
               onToggleSave={() => toggleSave(post.id)}
+              onEdit={() => router.push(`/posts/${post.id}/edit`)}
               onDelete={() => void deletePost(post.id)}
               footer={
                 <>
