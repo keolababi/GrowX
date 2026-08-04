@@ -13,6 +13,7 @@ const createPostSchema = z.object({
   communityPostType: z.enum(['DISCUSSION', 'ARTICLE']).optional(),
 });
 const commentSchema = z.object({ content: z.string().trim().min(1).max(1000) });
+const updatePostSchema = z.object({ content: z.string().trim().min(1).max(5000) });
 
 export async function list(req: Request, res: Response): Promise<void> {
   res.status(200).json(await postService.listPosts(req.auth!.userId));
@@ -32,6 +33,13 @@ export async function create(req: Request, res: Response): Promise<void> {
   res
     .status(201)
     .json(await postService.createPost(req.auth!.userId, createPostSchema.parse(req.body)));
+}
+
+export async function update(req: Request, res: Response): Promise<void> {
+  const { postId } = postIdSchema.parse(req.params);
+  res
+    .status(200)
+    .json(await postService.updatePost(req.auth!.userId, postId, updatePostSchema.parse(req.body)));
 }
 
 export async function toggleLike(req: Request, res: Response): Promise<void> {

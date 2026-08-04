@@ -57,11 +57,11 @@ async function requireMember(userId: string, conversationId: string) {
   return member;
 }
 
-export async function searchUsers(userId: string, query: string) {
+export async function searchUsers(userId: string, query: string, includeSelf = false) {
   const normalized = query.trim();
   const users = await prisma.user.findMany({
     where: {
-      id: { not: userId },
+      ...(includeSelf ? {} : { id: { not: userId } }),
       ...(normalized
         ? {
             OR: [

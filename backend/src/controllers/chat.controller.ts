@@ -9,7 +9,9 @@ const messageSchema = z.object({ content: z.string().trim().min(1).max(4000) });
 
 export async function searchUsers(req: Request, res: Response): Promise<void> {
   const query = z.string().max(100).catch('').parse(req.query.q);
-  res.status(200).json(await chatService.searchUsers(req.auth!.userId, query));
+  const includeSelf =
+    z.enum(['true', 'false']).catch('false').parse(req.query.includeSelf) === 'true';
+  res.status(200).json(await chatService.searchUsers(req.auth!.userId, query, includeSelf));
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
