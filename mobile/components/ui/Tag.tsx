@@ -10,12 +10,13 @@ type Props = {
 export const Tag: React.FC<Props> = ({ label, selected, onPress }) => (
   <Pressable
     onPress={onPress}
-    className={`rounded-avatar border px-m py-xs ${
+    className={`h-10 items-center justify-center rounded-avatar border px-m ${
       selected ? 'border-brand-primary bg-brand-primary' : 'border-border bg-background-paper'
     }`}
   >
     <Text
-      className={`text-sm font-medium ${selected ? 'text-background-app' : 'text-text-secondary'}`}
+      style={{ textAlign: 'center', lineHeight: 20, includeFontPadding: false }}
+      className={`text-center text-sm font-medium ${selected ? 'text-background-app' : 'text-text-secondary'}`}
     >
       {label}
     </Text>

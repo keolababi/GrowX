@@ -2,7 +2,8 @@ export type PodcastEpisode = {
   id: string;
   title: string;
   description: string | null;
-  audioUrl: string;
+  videoUrl: string;
+  audioUrl?: string;
   durationSec: number | null;
   publishedAt: string | null;
 };

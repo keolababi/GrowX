@@ -14,7 +14,6 @@ import { AppBottomNav } from '@/components/AppBottomNav';
 import { GrowXMark } from '@/components/GrowXLogo';
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
-import { SearchBar } from '@/components/ui/SearchBar';
 import { Tag } from '@/components/ui/Tag';
 import { lessons } from '@/data/lessons';
 import { useLearningStore } from '@/store/learningStore';
@@ -38,8 +37,12 @@ const categories: (LessonCategory | 'Бүгд')[] = [
 const knowledgeShortcuts = [
   { label: 'Ментор', icon: 'person-outline' as const, route: '/mentor' as const },
   { label: 'Community', icon: 'people-outline' as const, route: '/community' as const },
-  { label: 'Хэлэлцэх', icon: 'chatbubbles-outline' as const, route: '/messages' as const },
-  { label: 'Нээх', icon: 'search-outline' as const, route: '/discover' as const },
+  {
+    label: 'Feedback',
+    icon: 'chatbox-ellipses-outline' as const,
+    route: '/feedback' as const,
+  },
+  { label: 'Podcast', icon: 'mic-outline' as const, route: '/podcast' as const },
 ];
 
 const webKnowledgeScrollStyle = {
@@ -52,7 +55,6 @@ const webKnowledgeScrollStyle = {
 
 export default function KnowledgeScreen() {
   const [category, setCategory] = useState<(typeof categories)[number]>('Бүгд');
-  const [query, setQuery] = useState('');
   const completedIds = useLearningStore((state) => state.completedIds);
   const startedIds = useLearningStore((state) => state.startedIds);
   const hydrate = useLearningStore((state) => state.hydrate);
@@ -62,16 +64,8 @@ export default function KnowledgeScreen() {
   }, [hydrate]);
 
   const visibleLessons = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
-    return lessons.filter((lesson) => {
-      const matchesCategory = category === 'Бүгд' || lesson.category === category;
-      const matchesQuery =
-        !normalized ||
-        lesson.title.toLocaleLowerCase().includes(normalized) ||
-        lesson.description.toLocaleLowerCase().includes(normalized);
-      return matchesCategory && matchesQuery;
-    });
-  }, [category, query]);
+    return lessons.filter((lesson) => category === 'Бүгд' || lesson.category === category);
+  }, [category]);
 
   const completedCount = lessons.filter((lesson) => completedIds.has(lesson.id)).length;
 
@@ -88,15 +82,16 @@ export default function KnowledgeScreen() {
         <View className="w-full max-w-[900px] self-center">
           <View className="h-16 flex-row items-center justify-between px-l">
             <Text className="text-3xl font-extrabold text-text-primary">Мэдлэг</Text>
-            <View className="flex-row items-center gap-s">
-              <NotificationBell />
+            <View className="ml-m min-w-0 flex-1 flex-row items-center justify-end gap-s">
               <Pressable
-                onPress={() => router.push('/podcast')}
-                accessibilityLabel="Podcast руу очих"
-                className="h-10 w-10 items-center justify-center rounded-avatar border border-border"
+                onPress={() => router.push('/discover')}
+                accessibilityRole="button"
+                accessibilityLabel="Хайлт нээх"
+                className="h-10 w-10 items-center justify-center rounded-avatar border border-border bg-background-paper active:opacity-70"
               >
-                <Icon name="mic-outline" size={18} color="#9AF000" />
+                <Icon name="search-outline" size={20} color="#9AF000" />
               </Pressable>
+              <NotificationBell />
             </View>
           </View>
 
@@ -128,16 +123,12 @@ export default function KnowledgeScreen() {
               <Pressable
                 key={shortcut.label}
                 onPress={() => router.push(shortcut.route)}
-                className="min-w-[150px] flex-1 basis-[30%] items-center justify-center gap-s rounded-card border border-border bg-background-paper py-l active:opacity-70"
+                className="min-w-[150px] flex-1 basis-[20%] items-center justify-center gap-s rounded-card border border-border bg-background-paper py-l active:opacity-70"
               >
                 <Icon name={shortcut.icon} size={25} color="#9AF000" />
                 <Text className="text-xs font-bold text-text-secondary">{shortcut.label}</Text>
               </Pressable>
             ))}
-          </View>
-
-          <View className="px-l pb-s pt-s">
-            <SearchBar value={query} onChangeText={setQuery} placeholder="Хичээл хайх" />
           </View>
 
           {!!completedCount && (

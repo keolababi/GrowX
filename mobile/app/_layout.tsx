@@ -59,7 +59,12 @@ function AppNavigator() {
             animation: 'fade',
             contentStyle: { backgroundColor: '#020B0D' },
           }}
-        />
+        >
+          <Stack.Screen name="feedback/index" />
+          <Stack.Screen name="feedback/create" />
+          <Stack.Screen name="feedback/[formId]" />
+          <Stack.Screen name="feedback/[formId]/responses" />
+        </Stack>
       </View>
       {showSharedBottomNav && <AppBottomNav />}
       {!!token && <PresenceHeartbeat />}

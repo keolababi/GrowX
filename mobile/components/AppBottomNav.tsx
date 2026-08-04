@@ -59,11 +59,6 @@ export function AppBottomNav() {
     });
   };
 
-  const createFeedbackForm = () => {
-    setPickerOpen(false);
-    router.push('/feedback/create');
-  };
-
   return (
     <SafeAreaView
       className="shrink-0 border-t border-border bg-background-paper"
@@ -119,11 +114,6 @@ export function AppBottomNav() {
               onPress={createDiscussion}
             />
           )}
-          <CreateOption
-            icon="clipboard-outline"
-            label="Feedback Form"
-            onPress={createFeedbackForm}
-          />
         </View>
       </BottomSheet>
     </SafeAreaView>
