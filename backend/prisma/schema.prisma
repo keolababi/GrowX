@@ -13,6 +13,7 @@ enum NotificationType {
   COMMENT
   FOLLOW
   SYSTEM
+  COLLABORATION_REQUEST
 }
 
 model User {
@@ -43,6 +44,8 @@ model User {
   reelComments         ReelComment[]
   feedbackForms        FeedbackForm[]
   feedbackResponses    FeedbackResponse[]
+  sentCollaborationRequests     CollaborationRequest[] @relation("CollaborationRequester")
+  receivedCollaborationRequests CollaborationRequest[] @relation("CollaborationTarget")
 
   @@index([createdAt])
   @@index([lastSeenAt])
@@ -279,6 +282,28 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followingId, createdAt])
   @@index([followerId, createdAt])
+}
+
+enum CollaborationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model CollaborationRequest {
+  id          String              @id @default(cuid())
+  requesterId String
+  targetId    String
+  message     String              @db.VarChar(500)
+  status      CollaborationStatus @default(PENDING)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  requester   User                @relation("CollaborationRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  target      User                @relation("CollaborationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, targetId, status])
+  @@index([targetId, status, createdAt])
+  @@index([requesterId, createdAt])
 }
 
 enum FeedbackQuestionType {
