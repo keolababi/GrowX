@@ -1,8 +1,10 @@
-import { useCallback, useState } from 'react';
-import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -27,6 +29,7 @@ const profileTabs = ['Пост', 'Дахин нийтэлсэн', 'Хадгал�
 const lime = '#8EE817';
 
 export default function ProfileScreen() {
+  const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useUser();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -36,6 +39,12 @@ export default function ProfileScreen() {
   const [error, setError] = useState('');
   const repostedIds = useEngagementStore((state) => state.repostedIds);
   const savedIds = useEngagementStore((state) => state.savedIds);
+  const toggleRepost = useEngagementStore((state) => state.toggleRepost);
+  const toggleSave = useEngagementStore((state) => state.toggleSave);
+
+  useEffect(() => {
+    if (saved === '1') setTabIndex(2);
+  }, [saved]);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -82,6 +91,26 @@ export default function ProfileScreen() {
     } catch {
       void load();
     }
+  };
+
+  const deletePost = async (postId: string) => {
+    const remove = async () => {
+      try {
+        await api.delete(`/posts/${postId}`);
+        setPosts((items) => items.filter((item) => item.id !== postId));
+        setAllPosts((items) => items.filter((item) => item.id !== postId));
+      } catch (value) {
+        setError(getApiError(value, 'Post устгаж чадсангүй.'));
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Энэ post-ийг устгах уу?')) await remove();
+      return;
+    }
+    Alert.alert('Post устгах', 'Энэ post-ийг устгах уу?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
+    ]);
   };
 
   const tabPosts =
@@ -211,8 +240,16 @@ export default function ProfileScreen() {
                     likeCount={post.likeCount}
                     commentCount={post.commentCount}
                     likedByMe={post.likedByMe}
+                    isOwnPost={post.authorId === user?.id}
+                    reposted={repostedIds.has(post.id)}
+                    saved={savedIds.has(post.id)}
                     onPressLike={() => void toggleLike(post)}
                     onPressComment={() => router.push(`/posts/${post.id}`)}
+                    onToggleRepost={() => toggleRepost(post.id)}
+                    onToggleSave={() => toggleSave(post.id)}
+                    onDelete={
+                      post.authorId === user?.id ? () => void deletePost(post.id) : undefined
+                    }
                   />
                 ))}
                 {!tabPosts.length && <Text style={styles.noPosts}>{emptyTabMessage}</Text>}

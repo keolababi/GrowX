@@ -65,6 +65,7 @@ model Profile {
   phone       String?     @db.VarChar(30)
   company     String?     @db.VarChar(120)
   accountType AccountType @default(PERSONAL)
+  isMentor    Boolean     @default(false)
   coverUrl    String?
   industry    String?     @db.VarChar(120)
   location    String?     @db.VarChar(120)

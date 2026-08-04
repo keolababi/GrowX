@@ -12,6 +12,7 @@ const profileSelect = {
       avatarUrl: true,
       company: true,
       accountType: true,
+      isMentor: true,
       coverUrl: true,
       industry: true,
       location: true,
@@ -30,6 +31,7 @@ function serializeUser(user: {
     avatarUrl: string | null;
     company: string | null;
     accountType: AccountType;
+    isMentor: boolean;
     coverUrl: string | null;
     industry: string | null;
     location: string | null;
@@ -45,6 +47,7 @@ function serializeUser(user: {
     avatarUrl: user.profile?.avatarUrl ?? null,
     company: user.profile?.company ?? null,
     accountType: user.profile?.accountType ?? 'PERSONAL',
+    isMentor: user.profile?.isMentor ?? false,
     coverUrl: user.profile?.coverUrl ?? null,
     industry: user.profile?.industry ?? null,
     location: user.profile?.location ?? null,

@@ -8,6 +8,7 @@ export type SocialUser = {
   avatarUrl: string | null;
   company: string | null;
   accountType: AccountType;
+  isMentor: boolean;
   coverUrl: string | null;
   industry: string | null;
   location: string | null;

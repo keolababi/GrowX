@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Image,
   KeyboardAvoidingView,
+  Alert,
   Platform,
   Pressable,
   SafeAreaView,
@@ -17,10 +18,12 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import type { PostComment, SocialPost } from '@/types/post';
+import { useUser } from '@/providers/UserProvider';
 
 const lime = '#8EE817';
 
 export default function PostCommentsScreen() {
+  const { user } = useUser();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
@@ -70,6 +73,29 @@ export default function PostCommentsScreen() {
     } finally {
       setSending(false);
     }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!postId) return;
+    const remove = async () => {
+      try {
+        await api.delete(`/posts/${postId}/comments/${commentId}`);
+        setComments((current) => current.filter((comment) => comment.id !== commentId));
+        setPost((current) =>
+          current ? { ...current, commentCount: Math.max(0, current.commentCount - 1) } : current,
+        );
+      } catch (value) {
+        setError(getApiError(value, 'Сэтгэгдэл устгаж чадсангүй.'));
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Сэтгэгдлээ устгах уу?')) await remove();
+      return;
+    }
+    Alert.alert('Сэтгэгдэл устгах', 'Сэтгэгдлээ устгах уу?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
+    ]);
   };
 
   return (
@@ -134,7 +160,14 @@ export default function PostCommentsScreen() {
                     {comment.author.displayName || comment.author.email.split('@')[0]}
                   </Text>
                   <Text style={styles.commentText}>{comment.content}</Text>
-                  <Text style={styles.commentTime}>{relativeTime(comment.createdAt)}</Text>
+                  <View style={styles.commentMeta}>
+                    <Text style={styles.commentTime}>{relativeTime(comment.createdAt)}</Text>
+                    {comment.author.id === user?.id && (
+                      <Pressable onPress={() => void deleteComment(comment.id)} hitSlop={10}>
+                        <Text style={styles.deleteComment}>Устгах</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               </View>
             ))}
@@ -230,6 +263,8 @@ const styles = StyleSheet.create({
   commentAuthor: { color: '#F0F4F2', fontSize: 13, fontWeight: '900' },
   commentText: { color: '#CBD4D0', fontSize: 14, lineHeight: 20, marginTop: 5 },
   commentTime: { color: '#71807A', fontSize: 10, marginTop: 7 },
+  commentMeta: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  deleteComment: { color: '#FF817B', fontSize: 10, fontWeight: '800', marginTop: 7 },
   empty: { alignItems: 'center', paddingTop: 55 },
   emptyTitle: { color: '#EAF0ED', fontSize: 16, fontWeight: '800' },
   emptyCopy: { color: '#77847F', fontSize: 12, marginTop: 7 },

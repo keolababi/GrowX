@@ -14,7 +14,7 @@ import { useUser } from '@/providers/UserProvider';
 const menuItems: Array<{ icon: string; label: string; route?: Href }> = [
   { icon: '♙', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
   { icon: '▧', label: 'Миний контент', route: '/posts' as Href },
-  { icon: '▯', label: 'Хадгалсан контент' },
+  { icon: '▯', label: 'Хадгалсан контент', route: '/profile?saved=1' as Href },
   { icon: '▤', label: 'Миний асуулгууд', route: '/feedback' as Href },
   { icon: '▣', label: 'Миний төсөл' },
   { icon: '♧', label: 'Миний зөвлөлүүд' },

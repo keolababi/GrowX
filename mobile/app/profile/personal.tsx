@@ -31,6 +31,7 @@ export default function PersonalInformationScreen() {
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
+  const [isMentor, setIsMentor] = useState(false);
   const [industry, setIndustry] = useState('');
   const [location, setLocation] = useState('');
   const [services, setServices] = useState('');
@@ -46,6 +47,7 @@ export default function PersonalInformationScreen() {
     setPhone(user?.phone ?? '');
     setCompany(user?.company ?? '');
     setAccountType(user?.accountType ?? 'PERSONAL');
+    setIsMentor(user?.isMentor ?? false);
     setIndustry(user?.industry ?? '');
     setLocation(user?.location ?? '');
     setServices(user?.services ?? '');
@@ -112,6 +114,7 @@ export default function PersonalInformationScreen() {
         phone: phone.trim() || null,
         company: company.trim() || null,
         accountType,
+        isMentor: accountType === 'PERSONAL' ? isMentor : false,
         coverUrl,
         industry: accountType === 'BUSINESS' ? industry.trim() || null : null,
         location: accountType === 'BUSINESS' ? location.trim() || null : null,
@@ -156,6 +159,18 @@ export default function PersonalInformationScreen() {
             selectedIndex={accountType === 'BUSINESS' ? 1 : 0}
             onChange={(index) => setAccountType(index === 1 ? 'BUSINESS' : 'PERSONAL')}
           />
+
+          {accountType === 'PERSONAL' && (
+            <View style={styles.badgeSection}>
+              <Text style={styles.badgeLabel}>Профайлын badge</Text>
+              <Text style={styles.badgeHint}>Ментороор харагдах бол “Ментор”-ыг сонгоно уу.</Text>
+              <SegmentedControl
+                options={['Энгийн хэрэглэгч', 'Ментор']}
+                selectedIndex={isMentor ? 1 : 0}
+                onChange={(index) => setIsMentor(index === 1)}
+              />
+            </View>
+          )}
 
           {accountType === 'BUSINESS' && (
             <Pressable onPress={() => void pickCover()} style={styles.coverCard}>
@@ -319,6 +334,16 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 46 },
   scroll: { flex: 1 },
   content: { padding: 18, paddingBottom: 44, gap: 11 },
+  badgeSection: {
+    padding: 14,
+    gap: 9,
+    borderRadius: 16,
+    backgroundColor: '#09171A',
+    borderWidth: 1,
+    borderColor: '#152A28',
+  },
+  badgeLabel: { color: '#EAF0ED', fontSize: 14, fontWeight: '800' },
+  badgeHint: { color: '#788781', fontSize: 11, lineHeight: 16 },
   avatarCard: {
     minHeight: 96,
     paddingHorizontal: 14,

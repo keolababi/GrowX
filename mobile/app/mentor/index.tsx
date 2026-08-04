@@ -81,7 +81,13 @@ function MentorRow({
           </Text>
         </View>
         <Badge
-          label={user.accountType === 'BUSINESS' ? 'Бизнес' : 'Ментор'}
+          label={
+            user.accountType === 'BUSINESS'
+              ? 'Бизнес'
+              : user.isMentor
+                ? 'Ментор'
+                : 'Энгийн хэрэглэгч'
+          }
           variant={user.accountType === 'BUSINESS' ? 'brand' : 'muted'}
         />
       </View>
@@ -335,9 +341,9 @@ export default function MentorScreen() {
 
   const visibleUsers = useMemo(() => {
     return users.filter((item) => {
-      if (category === 'Ментор') return item.accountType === 'PERSONAL';
+      if (category === 'Ментор') return item.isMentor;
       if (category === 'Бизнес & Стартап') return item.accountType === 'BUSINESS';
-      return true;
+      return item.isMentor || item.accountType === 'BUSINESS';
     });
   }, [users, category]);
 

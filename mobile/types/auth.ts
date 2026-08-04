@@ -7,6 +7,7 @@ export type User = {
   phone: string | null;
   company: string | null;
   accountType: 'PERSONAL' | 'BUSINESS';
+  isMentor: boolean;
   coverUrl: string | null;
   industry: string | null;
   location: string | null;

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as postService from '../services/post.service.js';
 
 const postIdSchema = z.object({ postId: z.string().min(1) });
+const commentIdSchema = postIdSchema.extend({ commentId: z.string().min(1) });
 const userIdSchema = z.object({ userId: z.string().min(1) });
 const createPostSchema = z.object({
   content: z.string().trim().min(1).max(5000),
@@ -47,6 +48,12 @@ export async function comment(req: Request, res: Response): Promise<void> {
   const { postId } = postIdSchema.parse(req.params);
   const { content } = commentSchema.parse(req.body);
   res.status(201).json(await postService.addComment(req.auth!.userId, postId, content));
+}
+
+export async function removeComment(req: Request, res: Response): Promise<void> {
+  const { postId, commentId } = commentIdSchema.parse(req.params);
+  await postService.deleteComment(req.auth!.userId, postId, commentId);
+  res.status(204).send();
 }
 
 export async function remove(req: Request, res: Response): Promise<void> {

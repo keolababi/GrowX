@@ -11,6 +11,7 @@ const userSelect = {
       bio: true,
       company: true,
       accountType: true,
+      isMentor: true,
       industry: true,
     },
   },
@@ -25,6 +26,7 @@ function serializeUser(user: {
     bio: string | null;
     company: string | null;
     accountType: string;
+    isMentor: boolean;
     industry: string | null;
   } | null;
 }) {
@@ -36,6 +38,7 @@ function serializeUser(user: {
     bio: user.profile?.bio ?? null,
     company: user.profile?.company ?? null,
     accountType: user.profile?.accountType ?? 'PERSONAL',
+    isMentor: user.profile?.isMentor ?? false,
     industry: user.profile?.industry ?? null,
   };
 }

@@ -7,5 +7,6 @@ export type DiscoverUser = {
   bio: string | null;
   company: string | null;
   accountType: 'PERSONAL' | 'BUSINESS';
+  isMentor: boolean;
   industry: string | null;
 };

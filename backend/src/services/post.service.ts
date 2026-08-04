@@ -242,6 +242,19 @@ export async function listComments(userId: string, postId: string) {
   };
 }
 
+export async function deleteComment(userId: string, postId: string, commentId: string) {
+  await requirePostAccess(userId, postId);
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true, postId: true },
+  });
+  if (!comment || comment.postId !== postId) throw new HttpError(404, 'Сэтгэгдэл олдсонгүй.');
+  if (comment.authorId !== userId) {
+    throw new HttpError(403, 'Энэ сэтгэгдлийг устгах эрхгүй байна.');
+  }
+  await prisma.comment.delete({ where: { id: commentId } });
+}
+
 export async function deletePost(userId: string, postId: string) {
   const post = await prisma.post.findUnique({ where: { id: postId }, select: { authorId: true } });
   if (!post) throw new HttpError(404, 'Post олдсонгүй.');
