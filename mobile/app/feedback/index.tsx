@@ -33,64 +33,172 @@ export default function FeedbackFormsScreen() {
     }, [load]),
   );
 
+  const totalResponses = forms.reduce((sum, form) => sum + form.responseCount, 0);
+
   return (
     <SafeAreaView className="flex-1 bg-background-app">
-      <View className="h-16 flex-row items-center justify-between px-l">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="chevron-back" size={26} color="#FFFFFF" />
-        </Pressable>
-        <Text className="text-xl font-extrabold text-text-primary">Миний асуулгууд</Text>
-        <Pressable
-          onPress={() => router.push('/feedback/create')}
-          className="h-10 w-10 items-center justify-center rounded-avatar bg-brand-primary"
-        >
-          <Icon name="add" size={22} color="#020B0D" />
-        </Pressable>
+      <View className="shrink-0 border-b border-border">
+        <View className="h-16 w-full max-w-[900px] self-center flex-row items-center justify-between px-l">
+          <View className="flex-row items-center gap-s">
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Буцах"
+              className="h-10 w-10 items-center justify-center rounded-avatar border border-border bg-background-paper active:opacity-70"
+            >
+              <Icon name="chevron-back" size={22} color="#FFFFFF" />
+            </Pressable>
+            <View>
+              <Text className="text-lg font-extrabold text-text-primary">Feedback</Text>
+              <Text className="text-[11px] text-text-muted">Санал асуулгын төв</Text>
+            </View>
+          </View>
+          <Pressable
+            onPress={() => router.push('/feedback/create')}
+            accessibilityRole="button"
+            accessibilityLabel="Шинэ асуулга нэмэх"
+            className="h-10 flex-row items-center justify-center gap-1 rounded-btn bg-brand-primary px-m active:opacity-80"
+          >
+            <Icon name="add" size={19} color="#020B0D" />
+            <Text className="text-xs font-extrabold text-background-app">Шинэ асуулга</Text>
+          </Pressable>
+        </View>
       </View>
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color={lime} size="large" />
+          <Text className="mt-s text-sm text-text-muted">Асуулгуудыг ачаалж байна...</Text>
         </View>
       ) : (
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          {!!error && <Text className="pb-s text-danger">{error}</Text>}
-
-          {forms.map((form) => (
-            <Pressable
-              key={form.id}
-              onPress={() => router.push(`/feedback/${form.id}`)}
-              className="mb-s rounded-card border border-border bg-background-paper p-m"
-            >
-              <Text className="text-base font-extrabold text-text-primary">{form.title}</Text>
-              {!!form.description && (
-                <Text numberOfLines={2} className="mt-1 text-sm text-text-muted">
-                  {form.description}
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 48 }}
+        >
+          <View className="w-full max-w-[900px] self-center px-l pt-l">
+            <View className="relative min-h-[190px] overflow-hidden rounded-[24px] border border-[#1D4938] bg-[#09261C] p-l">
+              <View className="absolute -right-10 -top-16 h-48 w-48 rounded-avatar bg-[#174B32] opacity-60" />
+              <View className="absolute -bottom-20 right-20 h-40 w-40 rounded-avatar bg-[#123B2B] opacity-80" />
+              <View className="relative max-w-[560px]">
+                <View className="mb-m h-12 w-12 items-center justify-center rounded-card bg-brand-primary">
+                  <Icon name="chatbox-ellipses" size={25} color="#020B0D" />
+                </View>
+                <Text className="text-2xl font-extrabold text-text-primary">
+                  Санал хүсэлтээс илүү сайн шийдвэр төрнө.
                 </Text>
-              )}
-              <View className="mt-s flex-row items-center gap-l">
-                <Text className="text-xs text-text-muted">{form.questionCount} асуулт</Text>
-                <Text className="text-xs text-text-muted">{form.responseCount} хариулт</Text>
-                <Text className="text-xs text-text-muted">{relativeTime(form.createdAt)}</Text>
+                <Text className="mt-s max-w-[500px] text-sm leading-5 text-text-secondary">
+                  Асуулга үүсгэж, хариултуудыг нэг дороос хянаж, хэрэглэгчдийнхээ бодлыг ойлгоорой.
+                </Text>
               </View>
-            </Pressable>
-          ))}
-
-          {!forms.length && !error && (
-            <View className="items-center pt-24">
-              <Icon name="clipboard-outline" size={40} color="#A7AEB0" />
-              <Text className="mt-m text-lg font-bold text-text-primary">Асуулга алга</Text>
-              <Text className="mt-2 text-center text-sm text-text-muted">
-                Санал асуулга үүсгэж, GrowX хамт олонтойгоо хуваалцаарай.
-              </Text>
-              <Pressable
-                onPress={() => router.push('/feedback/create')}
-                className="mt-l h-12 items-center justify-center rounded-btn bg-brand-primary px-l"
-              >
-                <Text className="text-sm font-bold text-background-app">Асуулга үүсгэх</Text>
-              </Pressable>
             </View>
-          )}
+
+            <View className="mt-m flex-row gap-s">
+              <View className="flex-1 rounded-card border border-border bg-background-paper p-m">
+                <View className="flex-row items-center justify-between">
+                  <View className="h-9 w-9 items-center justify-center rounded-avatar bg-[#173126]">
+                    <Icon name="documents-outline" size={18} color={lime} />
+                  </View>
+                  <Text className="text-2xl font-extrabold text-text-primary">{forms.length}</Text>
+                </View>
+                <Text className="mt-s text-xs font-bold text-text-muted">Нийт асуулга</Text>
+              </View>
+              <View className="flex-1 rounded-card border border-border bg-background-paper p-m">
+                <View className="flex-row items-center justify-between">
+                  <View className="h-9 w-9 items-center justify-center rounded-avatar bg-[#173126]">
+                    <Icon name="people-outline" size={18} color={lime} />
+                  </View>
+                  <Text className="text-2xl font-extrabold text-text-primary">
+                    {totalResponses}
+                  </Text>
+                </View>
+                <Text className="mt-s text-xs font-bold text-text-muted">Нийт хариулт</Text>
+              </View>
+            </View>
+
+            {!!error && (
+              <View className="mt-m rounded-btn border border-danger/40 bg-danger/10 p-m">
+                <Text className="text-sm font-semibold text-danger">{error}</Text>
+                <Pressable onPress={() => void load()} className="mt-s self-start">
+                  <Text className="text-xs font-bold text-brand-primary">Дахин оролдох</Text>
+                </Pressable>
+              </View>
+            )}
+
+            <View className="mb-s mt-l flex-row items-center justify-between">
+              <Text className="text-lg font-extrabold text-text-primary">Миний асуулгууд</Text>
+              {!!forms.length && (
+                <View className="rounded-avatar border border-border bg-background-paper px-s py-1">
+                  <Text className="text-[11px] font-bold text-text-secondary">
+                    {forms.length} асуулга
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {forms.map((form) => (
+              <Pressable
+                key={form.id}
+                onPress={() => router.push(`/feedback/${form.id}`)}
+                className="mb-s flex-row items-center rounded-card border border-border bg-background-paper p-m active:border-[#376B55] active:opacity-80"
+              >
+                <View className="mr-m h-12 w-12 shrink-0 items-center justify-center rounded-card bg-[#102A20]">
+                  <Icon name="clipboard-outline" size={23} color={lime} />
+                </View>
+                <View className="min-w-0 flex-1">
+                  <Text numberOfLines={1} className="text-base font-extrabold text-text-primary">
+                    {form.title}
+                  </Text>
+                  {!!form.description && (
+                    <Text numberOfLines={1} className="mt-1 text-xs text-text-muted">
+                      {form.description}
+                    </Text>
+                  )}
+                  <View className="mt-s flex-row flex-wrap items-center gap-s">
+                    <View className="flex-row items-center gap-1">
+                      <Icon name="help-circle-outline" size={13} color="#A7AEB0" />
+                      <Text className="text-[11px] text-text-muted">
+                        {form.questionCount} асуулт
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center gap-1">
+                      <Icon name="people-outline" size={13} color="#A7AEB0" />
+                      <Text className="text-[11px] text-text-muted">
+                        {form.responseCount} хариулт
+                      </Text>
+                    </View>
+                    <Text className="text-[11px] text-text-muted">
+                      · {relativeTime(form.createdAt)}
+                    </Text>
+                  </View>
+                </View>
+                <Icon name="chevron-forward" size={20} color="#65736E" />
+              </Pressable>
+            ))}
+
+            {!forms.length && !error && (
+              <View className="items-center rounded-[24px] border border-dashed border-border bg-background-paper px-l py-12">
+                <View className="h-16 w-16 items-center justify-center rounded-avatar bg-[#102A20]">
+                  <Icon name="clipboard-outline" size={30} color={lime} />
+                </View>
+                <Text className="mt-m text-lg font-extrabold text-text-primary">
+                  Анхны асуулгаа үүсгээрэй
+                </Text>
+                <Text className="mt-2 max-w-[420px] text-center text-sm leading-5 text-text-muted">
+                  Богино асуулга үүсгээд хэрэглэгч, баг эсвэл хамт олныхоо санал хүсэлтийг
+                  цуглуулаарай.
+                </Text>
+                <Pressable
+                  onPress={() => router.push('/feedback/create')}
+                  className="mt-l h-11 flex-row items-center justify-center gap-s rounded-btn bg-brand-primary px-l active:opacity-80"
+                >
+                  <Icon name="add" size={18} color="#020B0D" />
+                  <Text className="text-sm font-extrabold text-background-app">Асуулга үүсгэх</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
         </ScrollView>
       )}
     </SafeAreaView>

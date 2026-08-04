@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { router } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -59,6 +59,7 @@ function newQuestion(): DraftQuestion {
 }
 
 export default function CreateFeedbackFormScreen() {
+  const titleInputRef = useRef<TextInput>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
@@ -67,6 +68,7 @@ export default function CreateFeedbackFormScreen() {
   const [error, setError] = useState('');
 
   const updateQuestion = (key: string, patch: Partial<DraftQuestion>) => {
+    setError('');
     setQuestions((current) => current.map((q) => (q.key === key ? { ...q, ...patch } : q)));
   };
 
@@ -96,17 +98,32 @@ export default function CreateFeedbackFormScreen() {
     );
   };
 
-  const canPublish =
-    title.trim().length > 0 &&
-    questions.length > 0 &&
-    questions.every(
-      (q) =>
-        q.label.trim().length > 0 &&
-        (!hasOptions(q.type) || q.options.filter((o) => o.trim()).length >= 2),
+  const getValidationError = () => {
+    if (!title.trim()) return 'Асуулгын гарчиг оруулна уу.';
+    if (!questions.length) return 'Хамгийн багадаа нэг асуулт нэмнэ үү.';
+
+    const emptyQuestionIndex = questions.findIndex((question) => !question.label.trim());
+    if (emptyQuestionIndex >= 0) return `Асуулт ${emptyQuestionIndex + 1}-ийн текстийг оруулна уу.`;
+
+    const invalidOptionsIndex = questions.findIndex(
+      (question) =>
+        hasOptions(question.type) && question.options.filter((option) => option.trim()).length < 2,
     );
+    if (invalidOptionsIndex >= 0) {
+      return `Асуулт ${invalidOptionsIndex + 1}-д хамгийн багадаа хоёр сонголт оруулна уу.`;
+    }
+
+    return '';
+  };
 
   const publish = async () => {
-    if (!canPublish || submitting) return;
+    if (submitting) return;
+    const validationError = getValidationError();
+    if (validationError) {
+      setError(validationError);
+      if (!title.trim()) titleInputRef.current?.focus();
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -141,9 +158,15 @@ export default function CreateFeedbackFormScreen() {
             <Icon name="close" size={24} color="#FFFFFF" />
           </Pressable>
           <Text className="text-base font-extrabold text-text-primary">Асуулга үүсгэх</Text>
-          <Pressable disabled={!canPublish || submitting} onPress={() => void publish()}>
+          <Pressable
+            disabled={submitting}
+            onPress={() => void publish()}
+            accessibilityRole="button"
+            accessibilityLabel="Асуулга нийтлэх"
+            hitSlop={10}
+          >
             <Text
-              className={`text-sm font-bold ${canPublish && !submitting ? 'text-brand-primary' : 'text-text-muted'}`}
+              className={`text-sm font-bold ${submitting ? 'text-text-muted' : 'text-brand-primary'}`}
             >
               {submitting ? '...' : 'Нийтлэх'}
             </Text>
@@ -155,21 +178,38 @@ export default function CreateFeedbackFormScreen() {
           contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
           keyboardShouldPersistTaps="handled"
         >
+          {!!error && (
+            <View className="mb-m rounded-btn border border-danger/40 bg-danger/10 px-m py-s">
+              <Text className="text-sm font-semibold text-danger">{error}</Text>
+            </View>
+          )}
+
           <View className="rounded-card border border-border bg-background-paper p-m">
+            <Text className="mb-2 text-xs font-bold text-text-secondary">
+              Гарчиг <Text className="text-danger">*</Text>
+            </Text>
             <TextInput
+              ref={titleInputRef}
               value={title}
-              onChangeText={setTitle}
-              placeholder="Асуулгын гарчиг"
+              onChangeText={(value) => {
+                setTitle(value);
+                setError('');
+              }}
+              placeholder="Жишээ: Үйлчилгээний санал хүсэлт"
               placeholderTextColor="#A7AEB0"
               className="text-lg font-extrabold text-text-primary"
             />
+            <View className="my-s h-px bg-border" />
+            <Text className="mb-1 text-xs font-bold text-text-secondary">
+              Тайлбар <Text className="font-normal text-text-muted">(заавал биш)</Text>
+            </Text>
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="Тайлбар (заавал биш)"
+              placeholder="Асуулгынхаа талаар товч тайлбар бичнэ үү"
               placeholderTextColor="#A7AEB0"
               multiline
-              className="mt-s text-sm text-text-secondary"
+              className="text-sm text-text-primary"
             />
           </View>
 
@@ -264,8 +304,6 @@ export default function CreateFeedbackFormScreen() {
             <Icon name="add" size={18} color="#9AF000" />
             <Text className="text-sm font-bold text-brand-primary">Асуулт нэмэх</Text>
           </Pressable>
-
-          {!!error && <Text className="mt-m text-danger">{error}</Text>}
         </ScrollView>
       </KeyboardAvoidingView>
 

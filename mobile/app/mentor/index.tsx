@@ -3,11 +3,13 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   Text,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -18,6 +20,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { TextInput } from '@/components/ui/TextInput';
+import { Icon } from '@/components/ui/Icon';
 import { api } from '@/services/api';
 import { useUser } from '@/providers/UserProvider';
 import { getApiError } from '@/utils/auth';
@@ -27,6 +30,12 @@ import type { CollaborationRequest } from '@/types/collaboration';
 const lime = '#9AF000';
 const categories = ['Бүгд', 'Ментор', 'Бизнес & Стартап'] as const;
 type Category = (typeof categories)[number];
+
+const webScreenStyle = {
+  height: '100vh',
+  minHeight: '100vh',
+  maxHeight: '100vh',
+} as unknown as ViewStyle;
 
 function initials(name: string | null, email: string) {
   return (name?.trim() || email).slice(0, 2).toUpperCase();
@@ -60,23 +69,29 @@ function MentorRow({
   return (
     <Pressable
       onPress={() => router.push(`/users/${user.id}` as Href)}
-      className="mb-s rounded-card border border-border bg-background-paper p-m"
+      className="mb-s overflow-hidden rounded-[20px] border border-[#254238] bg-[#081915] p-m active:opacity-80"
     >
       <View className="flex-row items-center">
-        {user.avatarUrl ? (
-          <Image source={{ uri: user.avatarUrl }} className="h-12 w-12 rounded-avatar" />
-        ) : (
-          <View className="h-12 w-12 items-center justify-center rounded-avatar border border-border bg-background-app">
-            <Text className="font-extrabold text-brand-primary">
-              {initials(user.displayName, user.email)}
-            </Text>
-          </View>
-        )}
-        <View className="ml-s min-w-0 flex-1">
-          <Text numberOfLines={1} className="text-sm font-extrabold text-text-primary">
+        <View className="relative">
+          {user.avatarUrl ? (
+            <Image
+              source={{ uri: user.avatarUrl }}
+              className="h-14 w-14 rounded-avatar border border-[#345448]"
+            />
+          ) : (
+            <View className="h-14 w-14 items-center justify-center rounded-avatar border border-[#345448] bg-[#102921]">
+              <Text className="text-base font-black text-brand-primary">
+                {initials(user.displayName, user.email)}
+              </Text>
+            </View>
+          )}
+          <View className="absolute bottom-0 right-0 h-4 w-4 rounded-avatar border-[3px] border-[#081915] bg-brand-primary" />
+        </View>
+        <View className="ml-m min-w-0 flex-1">
+          <Text numberOfLines={1} className="text-base font-black text-text-primary">
             {displayName(user)}
           </Text>
-          <Text numberOfLines={1} className="mt-1 text-xs text-text-muted">
+          <Text numberOfLines={2} className="mt-1 text-xs leading-5 text-text-muted">
             {user.accountType === 'BUSINESS'
               ? user.industry || 'Бизнес'
               : user.bio || 'GrowX гишүүн'}
@@ -95,20 +110,26 @@ function MentorRow({
       </View>
 
       {isSelf ? (
-        <View className="mt-s h-9 items-center justify-center rounded-avatar border border-brand-primary/40">
+        <View className="mt-m h-10 flex-row items-center justify-center gap-s rounded-avatar border border-brand-primary/40 bg-[#10271F]">
+          <Icon name="checkmark-circle" size={16} color={lime} />
           <Text className="text-xs font-bold text-brand-primary">Таны ментор профайл</Text>
         </View>
       ) : (
-        <View className="mt-s flex-row gap-s">
+        <View className="mt-m flex-row gap-s border-t border-[#1E382F] pt-m">
           <Pressable
             onPress={(event) => {
               event.stopPropagation();
               onToggleFollow();
             }}
-            className={`h-9 flex-1 items-center justify-center rounded-avatar border ${
+            className={`h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border ${
               isFollowing ? 'border-border' : 'border-brand-primary bg-brand-primary'
             }`}
           >
+            <Icon
+              name={isFollowing ? 'checkmark' : 'person-add-outline'}
+              size={15}
+              color={isFollowing ? '#A7AEB0' : '#020B0D'}
+            />
             <Text
               className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
             >
@@ -120,8 +141,9 @@ function MentorRow({
               event.stopPropagation();
               onMessage();
             }}
-            className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
+            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border border-[#30483F] bg-[#0D211B]"
           >
+            <Icon name="chatbubble-outline" size={15} color="#D8DFDC" />
             <Text className="text-xs font-bold text-text-secondary">Мессеж</Text>
           </Pressable>
           <Pressable
@@ -129,8 +151,9 @@ function MentorRow({
               event.stopPropagation();
               onRequestCollaboration();
             }}
-            className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
+            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border border-[#30483F] bg-[#0D211B]"
           >
+            <Icon name="people-outline" size={15} color="#D8DFDC" />
             <Text className="text-xs font-bold text-text-secondary">Хамтрах</Text>
           </Pressable>
         </View>
@@ -145,6 +168,28 @@ function statusLabel(status: CollaborationRequest['status']) {
   return 'Хүлээгдэж буй';
 }
 
+function EmptyState({
+  icon,
+  title,
+  copy,
+}: {
+  icon: 'search' | 'mail';
+  title: string;
+  copy: string;
+}) {
+  return (
+    <View className="mt-l items-center rounded-[20px] border border-dashed border-[#315143] bg-[#071915] px-l py-xl">
+      <View className="h-14 w-14 items-center justify-center rounded-avatar bg-[#123025]">
+        <Icon name={icon === 'search' ? 'search-outline' : 'mail-outline'} size={25} color={lime} />
+      </View>
+      <Text className="mt-m text-base font-black text-text-primary">{title}</Text>
+      <Text className="mt-1 max-w-[380px] text-center text-xs leading-5 text-text-muted">
+        {copy}
+      </Text>
+    </View>
+  );
+}
+
 function RequestRow({
   request,
   showActions,
@@ -157,20 +202,23 @@ function RequestRow({
   return (
     <Pressable
       onPress={() => router.push(`/users/${request.user.id}` as Href)}
-      className="mb-s rounded-card border border-border bg-background-paper p-m"
+      className="mb-s rounded-[20px] border border-[#254238] bg-[#081915] p-m active:opacity-80"
     >
       <View className="flex-row items-center">
         {request.user.avatarUrl ? (
-          <Image source={{ uri: request.user.avatarUrl }} className="h-10 w-10 rounded-avatar" />
+          <Image
+            source={{ uri: request.user.avatarUrl }}
+            className="h-12 w-12 rounded-avatar border border-[#345448]"
+          />
         ) : (
-          <View className="h-10 w-10 items-center justify-center rounded-avatar border border-border bg-background-app">
+          <View className="h-12 w-12 items-center justify-center rounded-avatar border border-[#345448] bg-[#102921]">
             <Text className="font-extrabold text-brand-primary">
               {initials(request.user.displayName, request.user.email)}
             </Text>
           </View>
         )}
-        <View className="ml-s min-w-0 flex-1">
-          <Text numberOfLines={1} className="text-sm font-extrabold text-text-primary">
+        <View className="ml-m min-w-0 flex-1">
+          <Text numberOfLines={1} className="text-sm font-black text-text-primary">
             {displayName(request.user)}
           </Text>
           <Text numberOfLines={2} className="mt-1 text-xs text-text-muted">
@@ -191,13 +239,13 @@ function RequestRow({
         )}
       </View>
       {showActions && request.status === 'PENDING' && (
-        <View className="mt-s flex-row gap-s">
+        <View className="mt-m flex-row gap-s border-t border-[#1E382F] pt-m">
           <Pressable
             onPress={(event) => {
               event.stopPropagation();
               onRespond?.(true);
             }}
-            className="h-9 flex-1 items-center justify-center rounded-avatar border border-brand-primary bg-brand-primary"
+            className="h-10 flex-1 items-center justify-center rounded-avatar border border-brand-primary bg-brand-primary"
           >
             <Text className="text-xs font-bold text-background-app">Зөвшөөрөх</Text>
           </Pressable>
@@ -206,7 +254,7 @@ function RequestRow({
               event.stopPropagation();
               onRespond?.(false);
             }}
-            className="h-9 flex-1 items-center justify-center rounded-avatar border border-border"
+            className="h-10 flex-1 items-center justify-center rounded-avatar border border-[#30483F] bg-[#0D211B]"
           >
             <Text className="text-xs font-bold text-text-secondary">Татгалзах</Text>
           </Pressable>
@@ -370,112 +418,172 @@ export default function MentorScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
-      <View className="h-16 flex-row items-center justify-between px-l">
-        <Text className="text-xl font-extrabold text-text-primary">Менторууд</Text>
-        <NotificationBell />
-      </View>
+    <SafeAreaView
+      className="min-h-0 flex-1 overflow-hidden bg-background-app"
+      style={Platform.OS === 'web' ? webScreenStyle : undefined}
+    >
+      <View className="min-h-0 w-full max-w-[900px] flex-1 self-center">
+        <View className="h-16 shrink-0 flex-row items-center justify-between border-b border-[#172D27] px-l">
+          <Text className="text-2xl font-black tracking-[-1px] text-text-primary">
+            Grow<Text className="text-brand-primary">X</Text>
+          </Text>
+          <NotificationBell />
+        </View>
 
-      <View className="px-l pb-s">
-        <SegmentedControl
-          options={[
-            'Нээх',
-            pendingReceivedCount > 0 ? `Хүсэлтүүд (${pendingReceivedCount})` : 'Хүсэлтүүд',
-          ]}
-          selectedIndex={section}
-          onChange={setSection}
-        />
-      </View>
-
-      {section === 0 ? (
-        <>
-          <View className="px-l pb-s">
-            <SearchBar value={query} onChangeText={setQuery} placeholder="Ментор, бизнес хайх" />
-          </View>
-          <View className="flex-row gap-s px-l pb-s">
-            {categories.map((item) => (
-              <Tag
-                key={item}
-                label={item}
-                selected={category === item}
-                onPress={() => setCategory(item)}
-              />
-            ))}
-          </View>
-
-          {loading ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color={lime} size="large" />
+        <View className="mx-l mb-m mt-m shrink-0 overflow-hidden rounded-[24px] border border-[#1E4938] bg-[#08271D] px-l py-m">
+          <View className="flex-row items-center justify-between gap-m">
+            <View className="min-w-0 flex-1">
+              <Text className="text-[10px] font-black tracking-[2px] text-brand-primary">
+                GROWX MENTOR NETWORK
+              </Text>
+              <Text className="mt-1 text-[25px] font-black leading-8 tracking-[-0.8px] text-text-primary">
+                Зөв хүнтэйгээ холбогд.
+              </Text>
+              <Text className="mt-1 max-w-[520px] text-xs leading-5 text-[#8FA099]">
+                Туршлагатай ментор, бизнес эрхлэгчидтэй холбогдож дараагийн алхмаа хурдан хий.
+              </Text>
             </View>
-          ) : (
+            <View className="h-14 w-14 shrink-0 items-center justify-center rounded-avatar border border-[#3C5B4E] bg-[#102F24]">
+              <Icon name="people" size={26} color={lime} />
+            </View>
+          </View>
+          <View className="mt-m flex-row gap-s border-t border-[#204436] pt-m">
+            <View className="flex-1">
+              <Text className="text-lg font-black text-text-primary">{visibleUsers.length}</Text>
+              <Text className="text-[10px] font-bold text-text-muted">Нээлттэй профайл</Text>
+            </View>
+            <View className="w-px bg-[#28493C]" />
+            <View className="flex-1 pl-m">
+              <Text className="text-lg font-black text-brand-primary">{pendingReceivedCount}</Text>
+              <Text className="text-[10px] font-bold text-text-muted">Шинэ хүсэлт</Text>
+            </View>
+          </View>
+        </View>
+
+        <View className="shrink-0 px-l pb-s">
+          <SegmentedControl
+            options={[
+              'Ментор хайх',
+              pendingReceivedCount > 0 ? `Хүсэлтүүд (${pendingReceivedCount})` : 'Хүсэлтүүд',
+            ]}
+            selectedIndex={section}
+            onChange={setSection}
+          />
+        </View>
+
+        {section === 0 ? (
+          <View className="min-h-0 flex-1">
+            <View className="shrink-0 px-l pb-s">
+              <SearchBar value={query} onChangeText={setQuery} placeholder="Ментор, бизнес хайх" />
+            </View>
             <ScrollView
-              className="flex-1 px-l"
-              contentContainerStyle={{ paddingBottom: 24 }}
-              showsVerticalScrollIndicator={false}
+              horizontal
+              className="max-h-12 shrink-0"
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: 'flex-start',
+                gap: 8,
+                paddingHorizontal: 22,
+                paddingBottom: 8,
+              }}
+              showsHorizontalScrollIndicator={false}
             >
-              {!!error && <Text className="pb-s text-danger">{error}</Text>}
-              {visibleUsers.map((item) => (
-                <MentorRow
-                  key={item.id}
-                  user={item}
-                  isFollowing={followingIds.has(item.id)}
-                  onToggleFollow={() => void toggleFollow(item.id)}
-                  onMessage={() => void startConversation(item.id)}
-                  onRequestCollaboration={() => {
-                    setComposerUser(item);
-                    setComposerMessage('');
-                    setComposerError('');
-                  }}
-                  isSelf={item.id === user?.id}
+              {categories.map((item) => (
+                <Tag
+                  key={item}
+                  label={item}
+                  selected={category === item}
+                  onPress={() => setCategory(item)}
                 />
               ))}
-              {!visibleUsers.length && (
-                <Text className="pt-20 text-center text-text-muted">Ментор олдсонгүй.</Text>
-              )}
             </ScrollView>
-          )}
-        </>
-      ) : (
-        <View className="flex-1">
-          <View className="px-l pb-s">
-            <SegmentedControl
-              options={['Ирсэн', 'Илгээсэн']}
-              selectedIndex={requestSection}
-              onChange={setRequestSection}
-            />
+
+            {loading ? (
+              <View className="min-h-0 flex-1 items-center justify-center">
+                <ActivityIndicator color={lime} size="large" />
+              </View>
+            ) : (
+              <ScrollView
+                className="min-h-0 flex-1 px-l"
+                contentContainerStyle={{ paddingBottom: 24 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {!!error && <Text className="pb-s text-danger">{error}</Text>}
+                {visibleUsers.map((item) => (
+                  <MentorRow
+                    key={item.id}
+                    user={item}
+                    isFollowing={followingIds.has(item.id)}
+                    onToggleFollow={() => void toggleFollow(item.id)}
+                    onMessage={() => void startConversation(item.id)}
+                    onRequestCollaboration={() => {
+                      setComposerUser(item);
+                      setComposerMessage('');
+                      setComposerError('');
+                    }}
+                    isSelf={item.id === user?.id}
+                  />
+                ))}
+                {!visibleUsers.length && (
+                  <EmptyState
+                    icon="search"
+                    title="Ментор олдсонгүй"
+                    copy="Хайлтын үг эсвэл сонгосон ангиллаа өөрчлөөд дахин оролдоорой."
+                  />
+                )}
+              </ScrollView>
+            )}
           </View>
-          {requestsLoading ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color={lime} size="large" />
+        ) : (
+          <View className="min-h-0 flex-1">
+            <View className="px-l pb-s">
+              <SegmentedControl
+                options={['Ирсэн', 'Илгээсэн']}
+                selectedIndex={requestSection}
+                onChange={setRequestSection}
+              />
             </View>
-          ) : (
-            <ScrollView
-              className="flex-1 px-l"
-              contentContainerStyle={{ paddingBottom: 24 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {requestSection === 0
-                ? received.map((request) => (
-                    <RequestRow
-                      key={request.id}
-                      request={request}
-                      showActions
-                      onRespond={(accept) => void respondToRequest(request.id, accept)}
-                    />
-                  ))
-                : sent.map((request) => (
-                    <RequestRow key={request.id} request={request} showActions={false} />
-                  ))}
-              {requestSection === 0 && !received.length && (
-                <Text className="pt-20 text-center text-text-muted">Ирсэн хүсэлт алга.</Text>
-              )}
-              {requestSection === 1 && !sent.length && (
-                <Text className="pt-20 text-center text-text-muted">Илгээсэн хүсэлт алга.</Text>
-              )}
-            </ScrollView>
-          )}
-        </View>
-      )}
+            {requestsLoading ? (
+              <View className="flex-1 items-center justify-center">
+                <ActivityIndicator color={lime} size="large" />
+              </View>
+            ) : (
+              <ScrollView
+                className="min-h-0 flex-1 px-l"
+                contentContainerStyle={{ paddingBottom: 24 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {requestSection === 0
+                  ? received.map((request) => (
+                      <RequestRow
+                        key={request.id}
+                        request={request}
+                        showActions
+                        onRespond={(accept) => void respondToRequest(request.id, accept)}
+                      />
+                    ))
+                  : sent.map((request) => (
+                      <RequestRow key={request.id} request={request} showActions={false} />
+                    ))}
+                {requestSection === 0 && !received.length && (
+                  <EmptyState
+                    icon="mail"
+                    title="Ирсэн хүсэлт алга"
+                    copy="Танд ирсэн хамтын ажиллагааны хүсэлтүүд энд харагдана."
+                  />
+                )}
+                {requestSection === 1 && !sent.length && (
+                  <EmptyState
+                    icon="mail"
+                    title="Илгээсэн хүсэлт алга"
+                    copy="Менторын профайлаас хамтрах хүсэлт илгээж эхлээрэй."
+                  />
+                )}
+              </ScrollView>
+            )}
+          </View>
+        )}
+      </View>
 
       <Modal visible={!!composerUser} onClose={() => setComposerUser(null)}>
         <Text className="text-lg font-extrabold text-text-primary">
