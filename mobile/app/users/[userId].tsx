@@ -19,10 +19,12 @@ import type { SocialProfile } from '@/types/social';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 
 export default function PublicUserProfileScreen() {
+  const { iconAccent } = useColorMode();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -139,7 +141,7 @@ export default function PublicUserProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ActivityIndicator color={lime} style={styles.loader} />
+        <ActivityIndicator color={iconAccent} style={styles.loader} />
       </SafeAreaView>
     );
   }

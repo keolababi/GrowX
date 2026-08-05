@@ -9,6 +9,7 @@ import { AppPageHeader } from '@/components/AppPageHeader';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState, LoadingState } from '@/components/ui/ContentState';
 import { design } from '@/constants/design';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 function notificationIcon(
   type: AppNotification['type'],
@@ -21,6 +22,7 @@ function notificationIcon(
 }
 
 export default function NotificationsScreen() {
+  const { iconAccent } = useColorMode();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -148,7 +150,11 @@ export default function NotificationsScreen() {
                     {notification.actor ? (
                       <Text style={styles.avatarText}>{actorName.charAt(0).toUpperCase()}</Text>
                     ) : (
-                      <Icon name={notificationIcon(notification.type)} size={21} color="#9AF000" />
+                      <Icon
+                        name={notificationIcon(notification.type)}
+                        size={21}
+                        color={iconAccent}
+                      />
                     )}
                   </View>
                 )}

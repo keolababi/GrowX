@@ -19,10 +19,12 @@ import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import type { PostComment, SocialPost } from '@/types/post';
 import { useUser } from '@/providers/UserProvider';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 
 export default function PostCommentsScreen() {
+  const { iconAccent } = useColorMode();
   const { user } = useUser();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
@@ -126,7 +128,7 @@ export default function PostCommentsScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={lime} size="large" />
+            <ActivityIndicator color={iconAccent} size="large" />
           </View>
         ) : (
           <ScrollView

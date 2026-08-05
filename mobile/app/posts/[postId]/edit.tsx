@@ -15,10 +15,12 @@ import {
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { SocialPost } from '@/types/post';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 
 export default function EditPostScreen() {
+  const { iconAccent } = useColorMode();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
   const [content, setContent] = useState('');
@@ -79,7 +81,7 @@ export default function EditPostScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={lime} size="large" />
+            <ActivityIndicator color={iconAccent} size="large" />
           </View>
         ) : (
           <View style={styles.editor}>

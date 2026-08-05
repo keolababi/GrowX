@@ -5,6 +5,8 @@ import '../global.css';
 import { UserProvider, useUser } from '@/providers/UserProvider';
 import { PresenceHeartbeat } from '@/components/PresenceHeartbeat';
 import { AppBottomNav } from '@/components/AppBottomNav';
+import { ColorModeProvider } from '@/providers/ColorModeProvider';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const publicRoutes = [
   '',
@@ -30,13 +32,16 @@ const routesWithOwnBottomNav = new Set([
 
 export default function RootLayout() {
   return (
-    <UserProvider>
-      <AppNavigator />
-    </UserProvider>
+    <ColorModeProvider>
+      <UserProvider>
+        <AppNavigator />
+      </UserProvider>
+    </ColorModeProvider>
   );
 }
 
 function AppNavigator() {
+  const { isDark } = useColorMode();
   const { token, loading } = useUser();
   const segments = useSegments();
   const first = segments[0];
@@ -51,13 +56,13 @@ function AppNavigator() {
   }, [first, isPublic, loading, token]);
 
   return (
-    <View style={styles.shell}>
+    <View style={[styles.shell, { backgroundColor: isDark ? '#020B0D' : '#F7F9F8' }]}>
       <View style={styles.stack}>
         <Stack
           screenOptions={{
             headerShown: false,
             animation: 'fade',
-            contentStyle: { backgroundColor: '#020B0D' },
+            contentStyle: { backgroundColor: isDark ? '#020B0D' : '#F7F9F8' },
           }}
         >
           <Stack.Screen name="feedback/index" />
@@ -73,6 +78,6 @@ function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#020B0D' },
+  shell: { flex: 1, minHeight: 0, overflow: 'hidden' },
   stack: { flex: 1, minHeight: 0, overflow: 'hidden' },
 });

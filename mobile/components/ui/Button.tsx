@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 type Props = {
   title: string;
@@ -39,20 +40,23 @@ export const Button: React.FC<Props> = ({
   size = 'md',
   disabled,
   loading,
-}) => (
-  <Pressable
-    onPress={onPress}
-    disabled={disabled || loading}
-    className={`flex-row items-center justify-center rounded-btn border ${variantClasses[variant]} ${sizeClasses[size]} ${
-      disabled ? 'opacity-50' : ''
-    }`}
-  >
-    {loading ? (
-      <ActivityIndicator color={variant === 'primary' ? '#020B0D' : '#9AF000'} />
-    ) : (
-      <Text className={`font-bold ${variantTextClasses[variant]} ${textSizeClasses[size]}`}>
-        {title}
-      </Text>
-    )}
-  </Pressable>
-);
+}) => {
+  const { iconAccent } = useColorMode();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || loading}
+      className={`flex-row items-center justify-center rounded-btn border ${variantClasses[variant]} ${sizeClasses[size]} ${
+        disabled ? 'opacity-50' : ''
+      }`}
+    >
+      {loading ? (
+        <ActivityIndicator color={variant === 'primary' ? '#020B0D' : iconAccent} />
+      ) : (
+        <Text className={`font-bold ${variantTextClasses[variant]} ${textSizeClasses[size]}`}>
+          {title}
+        </Text>
+      )}
+    </Pressable>
+  );
+};

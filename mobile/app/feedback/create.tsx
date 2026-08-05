@@ -17,6 +17,7 @@ import { AppPageHeader } from '@/components/AppPageHeader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackQuestionType } from '@/types/feedback';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const questionTypeLabels: Record<FeedbackQuestionType, string> = {
   SHORT_ANSWER: 'Богино хариулт',
@@ -60,6 +61,7 @@ function newQuestion(): DraftQuestion {
 }
 
 export default function CreateFeedbackFormScreen() {
+  const { iconAccent } = useColorMode();
   const titleInputRef = useRef<TextInput>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -245,7 +247,7 @@ export default function CreateFeedbackFormScreen() {
                 onPress={() => setTypePickerFor(question.key)}
                 className="mt-s flex-row items-center gap-s self-start rounded-avatar border border-border bg-background-app px-m py-s"
               >
-                <Icon name={questionTypeIcons[question.type]} size={16} color="#9AF000" />
+                <Icon name={questionTypeIcons[question.type]} size={16} color={iconAccent} />
                 <Text className="text-xs font-bold text-text-secondary">
                   {questionTypeLabels[question.type]}
                 </Text>
@@ -286,7 +288,7 @@ export default function CreateFeedbackFormScreen() {
                     onPress={() => addOption(question.key)}
                     className="flex-row items-center gap-s"
                   >
-                    <Icon name="add" size={16} color="#9AF000" />
+                    <Icon name="add" size={16} color={iconAccent} />
                     <Text className="text-xs font-bold text-brand-primary">Сонголт нэмэх</Text>
                   </Pressable>
                 </View>
@@ -308,7 +310,7 @@ export default function CreateFeedbackFormScreen() {
             onPress={() => setQuestions((current) => [...current, newQuestion()])}
             className="mt-m h-12 flex-row items-center justify-center gap-s rounded-btn border border-border"
           >
-            <Icon name="add" size={18} color="#9AF000" />
+            <Icon name="add" size={18} color={iconAccent} />
             <Text className="text-sm font-bold text-brand-primary">Асуулт нэмэх</Text>
           </Pressable>
         </ScrollView>
@@ -333,7 +335,7 @@ export default function CreateFeedbackFormScreen() {
               }}
               className="flex-row items-center gap-s rounded-btn px-s py-s active:bg-background-app"
             >
-              <Icon name={questionTypeIcons[type]} size={18} color="#9AF000" />
+              <Icon name={questionTypeIcons[type]} size={18} color={iconAccent} />
               <Text className="text-sm font-medium text-text-primary">
                 {questionTypeLabels[type]}
               </Text>

@@ -7,26 +7,26 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          primary: '#9AF000',
-          primaryDark: '#62B900',
-          accent: '#8EE817',
+          primary: 'rgb(var(--brand-primary) / <alpha-value>)',
+          primaryDark: 'rgb(var(--brand-primary-dark) / <alpha-value>)',
+          accent: 'rgb(var(--brand-accent) / <alpha-value>)',
         },
         text: {
-          primary: '#FFFFFF',
-          secondary: '#D6DBDC',
-          muted: '#A7AEB0',
+          primary: 'rgb(var(--text-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
+          muted: 'rgb(var(--text-muted) / <alpha-value>)',
         },
         background: {
-          app: '#020B0D',
-          paper: '#081713',
-          raised: '#0D1D19',
-          soft: '#10251E',
+          app: 'rgb(var(--background-app) / <alpha-value>)',
+          paper: 'rgb(var(--background-paper) / <alpha-value>)',
+          raised: 'rgb(var(--background-raised) / <alpha-value>)',
+          soft: 'rgb(var(--background-soft) / <alpha-value>)',
         },
-        border: '#233D34',
+        border: 'rgb(var(--border) / <alpha-value>)',
         success: '#16A34A',
         warning: '#F59E0B',
         danger: '#EF4444',
-        disabled: '#263033',
+        disabled: 'rgb(var(--disabled) / <alpha-value>)',
       },
       spacing: {
         xs: '6px',

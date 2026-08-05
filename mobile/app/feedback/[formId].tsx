@@ -17,12 +17,13 @@ import { AppPageHeader } from '@/components/AppPageHeader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackAnswerInput, FeedbackFormDetail } from '@/types/feedback';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
-const lime = '#9AF000';
 const stars = [1, 2, 3, 4, 5];
 const scaleValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export default function FeedbackFormScreen() {
+  const { iconAccent: lime } = useColorMode();
   const { formId } = useLocalSearchParams<{ formId: string }>();
   const [form, setForm] = useState<FeedbackFormDetail | null>(null);
   const [loading, setLoading] = useState(true);

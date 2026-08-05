@@ -8,8 +8,10 @@ import { lessons as fallbackLessons } from '@/data/lessons';
 import { api } from '@/services/api';
 import { useLearningStore } from '@/store/learningStore';
 import type { Lesson } from '@/types/learning';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function LessonDetailScreen() {
+  const { iconAccent } = useColorMode();
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const fallbackLesson = fallbackLessons.find((item) => item.id === lessonId);
   const [lesson, setLesson] = useState<Lesson | undefined>(fallbackLesson);
@@ -52,7 +54,7 @@ export default function LessonDetailScreen() {
   if (loading && !lesson) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background-app">
-        <ActivityIndicator color="#9AF000" size="large" />
+        <ActivityIndicator color={iconAccent} size="large" />
       </SafeAreaView>
     );
   }
