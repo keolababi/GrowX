@@ -22,7 +22,7 @@ import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
 import { Icon } from '@/components/ui/Icon';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
 
 function displayName(user: ChatUser | null) {
@@ -56,9 +56,6 @@ export default function ConversationScreen() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [unsendingId, setUnsendingId] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const isActive = Boolean(
-    otherUser?.lastSeenAt && Date.now() - new Date(otherUser.lastSeenAt).getTime() < 60_000,
-  );
   const lastSeenMessageId = useMemo(() => {
     if (!otherLastReadAt || !user?.id) return null;
     const readAt = new Date(otherLastReadAt).getTime();
@@ -257,12 +254,6 @@ export default function ConversationScreen() {
               <Text numberOfLines={1} style={styles.name}>
                 {displayName(otherUser)}
               </Text>
-              <View style={styles.presenceRow}>
-                <View style={[styles.presenceDot, !isActive && styles.offlineDot]} />
-                <Text style={[styles.status, isActive && styles.activeStatus]}>
-                  {isActive ? 'Идэвхтэй' : 'Офлайн'}
-                </Text>
-              </View>
             </View>
           </Pressable>
         </View>
@@ -280,6 +271,9 @@ export default function ConversationScreen() {
           >
             {!messages.length && (
               <View style={styles.empty}>
+                <View style={styles.emptyIcon}>
+                  <Icon name="chatbubble-ellipses-outline" size={29} color={lime} />
+                </View>
                 <Text style={styles.emptyTitle}>Шинэ яриа</Text>
                 <Text style={styles.emptyCopy}>Эхний мессежээ илгээгээрэй.</Text>
               </View>
@@ -449,45 +443,70 @@ export default function ConversationScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#031015' },
-  keyboard: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
+  keyboard: { flex: 1, width: '100%', maxWidth: 780, alignSelf: 'center' },
   header: {
-    height: 68,
-    paddingHorizontal: 12,
+    height: 76,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#173029',
+    borderBottomColor: '#183128',
+    backgroundColor: '#04110E',
   },
-  backButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    marginRight: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0C211A',
+    borderWidth: 1,
+    borderColor: '#29473B',
+  },
   back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   headerAvatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
     backgroundColor: '#173126',
+    borderWidth: 1,
+    borderColor: '#365548',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerAvatarText: { color: lime, fontSize: 17, fontWeight: '900' },
   headerCopy: { flex: 1, marginLeft: 11 },
   profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  name: { color: '#F2F6F4', fontSize: 16, fontWeight: '800' },
-  presenceRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
-  presenceDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: lime },
-  offlineDot: { backgroundColor: '#68756F' },
-  status: { color: '#73827B', fontSize: 11 },
-  activeStatus: { color: lime },
+  name: { color: '#F5F8F6', fontSize: 16, fontWeight: '900', letterSpacing: -0.2 },
   loader: { flex: 1 },
-  scroll: { flex: 1 },
-  messages: { flexGrow: 1, padding: 14, justifyContent: 'flex-end', gap: 7 },
-  empty: { alignItems: 'center', marginBottom: 60 },
-  emptyTitle: { color: '#EAF0ED', fontSize: 17, fontWeight: '800' },
+  scroll: { flex: 1, backgroundColor: '#020D0B' },
+  messages: {
+    flexGrow: 1,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 14,
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  empty: { alignItems: 'center', marginBottom: 70 },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#102A20',
+    borderWidth: 1,
+    borderColor: '#294B3D',
+  },
+  emptyTitle: { color: '#EAF0ED', fontSize: 17, fontWeight: '900', marginTop: 14 },
   emptyCopy: { color: '#77857F', fontSize: 13, marginTop: 7 },
   messageLine: { alignItems: 'flex-start' },
   mineLine: { alignItems: 'flex-end' },
   selectedMessageLine: { zIndex: 30 },
-  messageCluster: { maxWidth: '84%', flexDirection: 'row', alignItems: 'center', gap: 3 },
+  messageCluster: { maxWidth: '82%', flexDirection: 'row', alignItems: 'center', gap: 5 },
   mineMessageCluster: { flexDirection: 'row' },
   moreWrap: {
     width: 30,
@@ -498,9 +517,10 @@ const styles = StyleSheet.create({
     height: 30,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 15,
   },
-  moreButtonActive: { opacity: 0.72 },
-  moreButtonPressed: { opacity: 0.72 },
+  moreButtonActive: { backgroundColor: '#112A21' },
+  moreButtonPressed: { opacity: 0.65 },
   moreButtonText: {
     color: '#8D9B95',
     fontSize: 12,
@@ -520,10 +540,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 154,
     overflow: 'hidden',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#315447',
-    backgroundColor: '#0A1B17',
+    backgroundColor: '#0A1D17',
     shadowColor: '#000000',
     shadowOpacity: 0.28,
     shadowRadius: 12,
@@ -551,15 +571,26 @@ const styles = StyleSheet.create({
   popoverItemText: { color: '#EEF4F1', fontSize: 13, fontWeight: '700' },
   popoverDeleteIcon: { width: 20, color: '#E64C55', fontSize: 17, textAlign: 'center' },
   popoverDeleteText: { color: '#E64C55', fontSize: 13, fontWeight: '700' },
-  bubble: { flexShrink: 1, borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9 },
-  theirBubble: { backgroundColor: '#12241F', borderBottomLeftRadius: 5 },
-  mineBubble: { backgroundColor: lime, borderBottomRightRadius: 5 },
+  bubble: {
+    flexShrink: 1,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 8,
+  },
+  theirBubble: {
+    backgroundColor: '#10251E',
+    borderWidth: 1,
+    borderColor: '#203B31',
+    borderBottomLeftRadius: 6,
+  },
+  mineBubble: { backgroundColor: lime, borderBottomRightRadius: 6 },
   messageText: { color: '#EAF0ED', fontSize: 14, lineHeight: 20 },
   mineText: { color: '#142000' },
   messageTime: { color: '#77877F', fontSize: 9, marginTop: 4, alignSelf: 'flex-end' },
   mineTime: { color: '#446016' },
   seenText: {
-    color: '#79A84A',
+    color: '#82B84D',
     fontSize: 9,
     fontWeight: '700',
     marginTop: 3,
@@ -569,7 +600,8 @@ const styles = StyleSheet.create({
   composerShell: {
     borderTopWidth: 1,
     borderTopColor: '#173029',
-    backgroundColor: '#061411',
+    backgroundColor: '#04130F',
+    paddingTop: 2,
   },
   editingHeader: {
     minHeight: 52,
@@ -594,37 +626,40 @@ const styles = StyleSheet.create({
   },
   cancelEditingText: { color: '#E8EEEB', fontSize: 26, lineHeight: 28, fontWeight: '400' },
   composer: {
-    height: 66,
-    minHeight: 66,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    minHeight: 72,
+    paddingHorizontal: 15,
+    paddingVertical: 11,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
   },
   input: {
     flex: 1,
-    height: 46,
-    minHeight: 46,
-    maxHeight: 46,
+    height: 50,
+    minHeight: 50,
+    maxHeight: 50,
     paddingHorizontal: 15,
     paddingTop: 11,
     paddingBottom: 10,
-    borderRadius: 23,
+    borderRadius: 25,
     color: '#F0F5F2',
     fontSize: 14,
-    backgroundColor: '#10211D',
+    backgroundColor: '#0C211A',
     borderWidth: 1,
-    borderColor: '#25443A',
+    borderColor: '#2C4C3F',
     overflow: 'hidden',
   },
   sendButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: lime,
+    shadowColor: lime,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   sendDisabled: { opacity: 0.35 },
   sendIcon: { color: '#142000', fontSize: 25, fontWeight: '900', lineHeight: 27 },
