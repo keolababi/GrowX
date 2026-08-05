@@ -21,6 +21,7 @@ import { AppBottomNav } from '@/components/AppBottomNav';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { Icon } from '@/components/ui/Icon';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 
@@ -44,6 +45,7 @@ function PodcastRow({
   activeEpisodeId: string | null;
   onActivateEpisode: (episodeId: string) => void;
 }) {
+  const { iconAccent } = useColorMode();
   const episode = podcast.episodes[0];
   const mediaUrl = episode?.audioUrl ?? episode?.videoUrl ?? null;
   const player = useAudioPlayer(mediaUrl, { updateInterval: 250 });
@@ -123,7 +125,7 @@ function PodcastRow({
           <Image source={{ uri: podcast.coverUrl }} style={styles.podcastCover} />
         ) : (
           <View style={styles.podcastCoverFallback}>
-            <Icon name="mic" size={30} color={lime} />
+            <Icon name="mic" size={30} color={iconAccent} />
           </View>
         )}
         <View style={styles.podcastHeroCopy}>
@@ -223,7 +225,7 @@ function PodcastRow({
               <Icon
                 name={saved ? 'bookmark' : 'bookmark-outline'}
                 size={20}
-                color={saved ? lime : '#D6DBDC'}
+                color={saved ? iconAccent : '#D6DBDC'}
               />
             </Pressable>
             <Pressable
@@ -241,6 +243,7 @@ function PodcastRow({
 }
 
 export default function PodcastScreen() {
+  const { iconAccent } = useColorMode();
   const { podcastId } = useLocalSearchParams<{ podcastId?: string }>();
   const { user } = useUser();
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
@@ -357,7 +360,7 @@ export default function PodcastScreen() {
             {!podcasts.length && (
               <View style={styles.emptyCard}>
                 <View style={styles.emptyIcon}>
-                  <Icon name="mic-outline" size={30} color={lime} />
+                  <Icon name="mic-outline" size={30} color={iconAccent} />
                 </View>
                 <Text style={styles.emptyTitle}>Подкаст алга</Text>
                 <Text style={styles.emptyDescription}>

@@ -32,8 +32,8 @@ import type { Lesson } from '@/types/learning';
 import type { Podcast } from '@/types/media';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
-const lime = '#9AF000';
 const categories = ['Бүгд', 'Хүмүүс', 'Групп', 'Пост', 'Хичээл', 'Подкаст'] as const;
 type Category = (typeof categories)[number];
 
@@ -133,6 +133,7 @@ function ResultRow({
   imageUrl?: string | null;
   onPress: () => void;
 }) {
+  const { iconAccent } = useColorMode();
   return (
     <Pressable
       onPress={onPress}
@@ -142,7 +143,7 @@ function ResultRow({
         <Image source={{ uri: imageUrl }} className="h-12 w-12 rounded-btn bg-background-soft" />
       ) : (
         <View className="h-12 w-12 items-center justify-center rounded-btn bg-background-soft">
-          <Icon name={icon} size={22} color={lime} />
+          <Icon name={icon} size={22} color={iconAccent} />
         </View>
       )}
       <View className="ml-s min-w-0 flex-1">
@@ -232,6 +233,7 @@ function PodcastResult({ item }: { item: SearchPodcast }) {
 }
 
 export default function DiscoverScreen() {
+  const { iconAccent } = useColorMode();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Бүгд');
   const [results, setResults] = useState<GlobalSearchResponse>(emptyResults);
@@ -319,7 +321,7 @@ export default function DiscoverScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={lime} size="large" />
+          <ActivityIndicator color={iconAccent} size="large" />
           <Text className="mt-s text-xs text-text-muted">Хайж байна...</Text>
         </View>
       ) : (
@@ -363,7 +365,7 @@ export default function DiscoverScreen() {
           {!error && visibleCount === 0 && (
             <View className="mt-xl items-center rounded-card border border-dashed border-border bg-background-paper px-l py-12">
               <View className="h-16 w-16 items-center justify-center rounded-avatar bg-background-soft">
-                <Icon name="search-outline" size={30} color={lime} />
+                <Icon name="search-outline" size={30} color={iconAccent} />
               </View>
               <Text className="mt-m text-lg font-black text-text-primary">Илэрц олдсонгүй</Text>
               <Text className="mt-2 max-w-[360px] text-center text-sm leading-5 text-text-muted">

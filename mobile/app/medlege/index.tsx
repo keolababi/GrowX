@@ -21,6 +21,7 @@ import { lessons as fallbackLessons } from '@/data/lessons';
 import { api } from '@/services/api';
 import { useLearningStore } from '@/store/learningStore';
 import type { Lesson, LessonCategory } from '@/types/learning';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 const categories: (LessonCategory | 'Бүгд')[] = [
@@ -61,13 +62,14 @@ function SectionHeader({
   action?: string;
   onAction?: () => void;
 }) {
+  const { iconAccent } = useColorMode();
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {!!action && !!onAction && (
         <Pressable onPress={onAction} style={styles.sectionAction}>
           <Text style={styles.sectionActionText}>{action}</Text>
-          <Icon name="chevron-forward" size={16} color={lime} />
+          <Icon name="chevron-forward" size={16} color={iconAccent} />
         </Pressable>
       )}
     </View>
@@ -87,6 +89,7 @@ function LessonCard({
   featured?: boolean;
   compact?: boolean;
 }) {
+  const { iconAccent } = useColorMode();
   return (
     <Pressable
       onPress={() => router.push(`/medlege/${lesson.id}`)}
@@ -100,7 +103,7 @@ function LessonCard({
         <View style={[styles.lessonArtwork, compact && styles.lessonArtworkCompact]}>
           <View style={styles.targetOuter}>
             <View style={styles.targetMiddle}>
-              <Icon name="trending-up" size={35} color={lime} />
+              <Icon name="trending-up" size={35} color={iconAccent} />
             </View>
           </View>
         </View>
@@ -152,6 +155,7 @@ function LessonCard({
 }
 
 export default function KnowledgeScreen() {
+  const { iconAccent } = useColorMode();
   const { width } = useWindowDimensions();
   const compact = width < 680;
   const [category, setCategory] = useState<(typeof categories)[number]>('Бүгд');
@@ -278,7 +282,7 @@ export default function KnowledgeScreen() {
                 onPress={shortcut.onPress}
                 style={({ pressed }) => [styles.shortcutCard, pressed && styles.cardPressed]}
               >
-                <Icon name={shortcut.icon} size={28} color={lime} />
+                <Icon name={shortcut.icon} size={28} color={iconAccent} />
                 <Text style={styles.shortcutLabel}>{shortcut.label}</Text>
               </Pressable>
             ))}
@@ -333,7 +337,7 @@ export default function KnowledgeScreen() {
           >
             <View style={styles.podcastArt}>
               <Text style={styles.podcastBrand}>GrowX</Text>
-              <Icon name="mic" size={30} color={lime} />
+              <Icon name="mic" size={30} color={iconAccent} />
               <Text style={styles.podcastWord}>PODCAST</Text>
             </View>
             <View style={styles.mediaCopy}>
@@ -357,7 +361,7 @@ export default function KnowledgeScreen() {
             style={({ pressed }) => [styles.mentorCard, pressed && styles.cardPressed]}
           >
             <View style={styles.mentorAvatar}>
-              <Icon name="person" size={28} color={lime} />
+              <Icon name="person" size={28} color={iconAccent} />
             </View>
             <View style={styles.mediaCopy}>
               <Text style={styles.mediaTitle}>Туршлагатай ментортой холбогдох</Text>
@@ -380,7 +384,7 @@ export default function KnowledgeScreen() {
             ))}
             {!visibleLessons.length && (
               <View style={styles.emptyCard}>
-                <Icon name="book-outline" size={29} color={lime} />
+                <Icon name="book-outline" size={29} color={iconAccent} />
                 <Text style={styles.emptyTitle}>Хичээл олдсонгүй</Text>
                 <Text style={styles.emptyCopy}>Өөр ангилал сонгоод дахин үзээрэй.</Text>
               </View>

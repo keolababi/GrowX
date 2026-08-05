@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Icon } from './Icon';
 import { VideoPlayer } from './VideoPlayer';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 export type PostCardAuthor = {
   id: string;
@@ -119,116 +120,119 @@ export const PostCard: React.FC<Props> = ({
   onEdit,
   onDelete,
   footer,
-}) => (
-  <View className="border-b border-border px-l py-l">
-    <View className="flex-row items-center">
-      <Pressable onPress={onPressAuthor} className="flex-1 flex-row items-center min-w-0">
-        <AuthorAvatar author={author} />
-        <View className="ml-s flex-1 min-w-0">
-          <View className="flex-row items-center gap-s">
-            <Text
-              numberOfLines={1}
-              className="flex-shrink text-base font-extrabold text-text-primary"
-            >
-              {author.displayName || author.email.split('@')[0]}
+}) => {
+  const { iconAccent } = useColorMode();
+  return (
+    <View className="border-b border-border px-l py-l">
+      <View className="flex-row items-center">
+        <Pressable onPress={onPressAuthor} className="flex-1 flex-row items-center min-w-0">
+          <AuthorAvatar author={author} />
+          <View className="ml-s flex-1 min-w-0">
+            <View className="flex-row items-center gap-s">
+              <Text
+                numberOfLines={1}
+                className="flex-shrink text-base font-extrabold text-text-primary"
+              >
+                {author.displayName || author.email.split('@')[0]}
+              </Text>
+              {!!author.company && (
+                <View className="rounded-avatar border border-border bg-background-paper px-s py-[1px]">
+                  <Text numberOfLines={1} className="text-[10px] font-bold text-text-secondary">
+                    {author.company}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text className="mt-[2px] text-xs text-text-muted">
+              {timestamp}
+              {communityName ? ` · ${communityName}` : ''}
             </Text>
-            {!!author.company && (
-              <View className="rounded-avatar border border-border bg-background-paper px-s py-[1px]">
-                <Text numberOfLines={1} className="text-[10px] font-bold text-text-secondary">
-                  {author.company}
-                </Text>
-              </View>
+          </View>
+        </Pressable>
+
+        {!isOwnPost && onToggleFollow && (
+          <Pressable
+            onPress={onToggleFollow}
+            className={`ml-s h-8 items-center justify-center rounded-avatar border px-s ${
+              isFollowing ? 'border-border bg-transparent' : 'border-brand-primary bg-brand-primary'
+            }`}
+          >
+            <Text
+              className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
+            >
+              {isFollowing ? 'Дагаж буй' : 'Дагах'}
+            </Text>
+          </Pressable>
+        )}
+        {isOwnPost && (onEdit || onDelete) && (
+          <View className="ml-s flex-row items-center gap-m">
+            {onEdit && (
+              <Pressable accessibilityLabel="Post засах" hitSlop={10} onPress={onEdit}>
+                <Icon name="create-outline" size={20} color={iconAccent} />
+              </Pressable>
+            )}
+            {onDelete && (
+              <Pressable accessibilityLabel="Post устгах" hitSlop={10} onPress={onDelete}>
+                <Icon name="trash-outline" size={19} color="#FF817B" />
+              </Pressable>
             )}
           </View>
-          <Text className="mt-[2px] text-xs text-text-muted">
-            {timestamp}
-            {communityName ? ` · ${communityName}` : ''}
-          </Text>
-        </View>
-      </Pressable>
-
-      {!isOwnPost && onToggleFollow && (
-        <Pressable
-          onPress={onToggleFollow}
-          className={`ml-s h-8 items-center justify-center rounded-avatar border px-s ${
-            isFollowing ? 'border-border bg-transparent' : 'border-brand-primary bg-brand-primary'
-          }`}
-        >
-          <Text
-            className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
-          >
-            {isFollowing ? 'Дагаж буй' : 'Дагах'}
-          </Text>
-        </Pressable>
-      )}
-      {isOwnPost && (onEdit || onDelete) && (
-        <View className="ml-s flex-row items-center gap-m">
-          {onEdit && (
-            <Pressable accessibilityLabel="Post засах" hitSlop={10} onPress={onEdit}>
-              <Icon name="create-outline" size={20} color="#9AF000" />
-            </Pressable>
-          )}
-          {onDelete && (
-            <Pressable accessibilityLabel="Post устгах" hitSlop={10} onPress={onDelete}>
-              <Icon name="trash-outline" size={19} color="#FF817B" />
-            </Pressable>
-          )}
-        </View>
-      )}
-    </View>
-
-    {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}
-    <MediaGrid media={media} />
-
-    <View className="mt-m flex-row items-center gap-l">
-      <Pressable onPress={onPressLike} className="flex-row items-center gap-1">
-        <Icon
-          name={likedByMe ? 'heart' : 'heart-outline'}
-          size={22}
-          color={likedByMe ? '#EF4444' : '#D6DBDC'}
-        />
-        {likeCount > 0 && (
-          <Text className={`text-xs font-bold ${likedByMe ? 'text-danger' : 'text-text-muted'}`}>
-            {likeCount}
-          </Text>
         )}
-      </Pressable>
-      {onPressComment ? (
-        <Pressable onPress={onPressComment} className="flex-row items-center gap-1">
-          <Icon name="chatbubble-outline" size={21} color="#D6DBDC" />
-          {commentCount > 0 && (
-            <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
-          )}
-        </Pressable>
-      ) : (
-        <View className="flex-row items-center gap-1">
-          <Icon name="chatbubble-outline" size={21} color="#D6DBDC" />
-          {commentCount > 0 && (
-            <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
-          )}
-        </View>
-      )}
-      {onToggleRepost && (
-        <Pressable onPress={onToggleRepost}>
-          <Icon name="repeat" size={22} color={reposted ? '#9AF000' : '#D6DBDC'} />
-        </Pressable>
-      )}
-      {onPressShare && (
-        <Pressable onPress={onPressShare}>
-          <Icon name="arrow-redo-outline" size={22} color="#D6DBDC" />
-        </Pressable>
-      )}
-      {onToggleSave && (
-        <Pressable onPress={onToggleSave} className="ml-auto">
-          <Icon
-            name={saved ? 'bookmark' : 'bookmark-outline'}
-            size={21}
-            color={saved ? '#9AF000' : '#D6DBDC'}
-          />
-        </Pressable>
-      )}
-    </View>
+      </View>
 
-    {footer}
-  </View>
-);
+      {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}
+      <MediaGrid media={media} />
+
+      <View className="mt-m flex-row items-center gap-l">
+        <Pressable onPress={onPressLike} className="flex-row items-center gap-1">
+          <Icon
+            name={likedByMe ? 'heart' : 'heart-outline'}
+            size={22}
+            color={likedByMe ? '#EF4444' : '#D6DBDC'}
+          />
+          {likeCount > 0 && (
+            <Text className={`text-xs font-bold ${likedByMe ? 'text-danger' : 'text-text-muted'}`}>
+              {likeCount}
+            </Text>
+          )}
+        </Pressable>
+        {onPressComment ? (
+          <Pressable onPress={onPressComment} className="flex-row items-center gap-1">
+            <Icon name="chatbubble-outline" size={21} color="#D6DBDC" />
+            {commentCount > 0 && (
+              <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
+            )}
+          </Pressable>
+        ) : (
+          <View className="flex-row items-center gap-1">
+            <Icon name="chatbubble-outline" size={21} color="#D6DBDC" />
+            {commentCount > 0 && (
+              <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
+            )}
+          </View>
+        )}
+        {onToggleRepost && (
+          <Pressable onPress={onToggleRepost}>
+            <Icon name="repeat" size={22} color={reposted ? iconAccent : '#D6DBDC'} />
+          </Pressable>
+        )}
+        {onPressShare && (
+          <Pressable onPress={onPressShare}>
+            <Icon name="arrow-redo-outline" size={22} color="#D6DBDC" />
+          </Pressable>
+        )}
+        {onToggleSave && (
+          <Pressable onPress={onToggleSave} className="ml-auto">
+            <Icon
+              name={saved ? 'bookmark' : 'bookmark-outline'}
+              size={21}
+              color={saved ? iconAccent : '#D6DBDC'}
+            />
+          </Pressable>
+        )}
+      </View>
+
+      {footer}
+    </View>
+  );
+};

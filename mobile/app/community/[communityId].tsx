@@ -19,6 +19,7 @@ import type { CommunityDetail, CommunityMember } from '@/types/community';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 type GroupTab = 'discussions' | 'articles' | 'members';
@@ -30,6 +31,7 @@ const tabs: Array<{ value: GroupTab; label: string }> = [
 ];
 
 export default function CommunityDetailScreen() {
+  const { iconAccent } = useColorMode();
   const { communityId } = useLocalSearchParams<{ communityId: string }>();
   const [community, setCommunity] = useState<CommunityDetail | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -243,7 +245,7 @@ export default function CommunityDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ActivityIndicator color={lime} style={styles.loader} size="large" />
+        <ActivityIndicator color={iconAccent} style={styles.loader} size="large" />
       </SafeAreaView>
     );
   }
@@ -266,7 +268,7 @@ export default function CommunityDetailScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            tintColor={lime}
+            tintColor={iconAccent}
             onRefresh={() => void load(true)}
           />
         }
@@ -311,7 +313,7 @@ export default function CommunityDetailScreen() {
               ]}
             >
               {membershipBusy ? (
-                <ActivityIndicator color={community.joinedByMe ? lime : '#142000'} />
+                <ActivityIndicator color={community.joinedByMe ? iconAccent : '#142000'} />
               ) : (
                 <Text
                   style={[

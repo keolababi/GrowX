@@ -27,12 +27,14 @@ import type { SocialPost } from '@/types/post';
 import type { SocialProfile } from '@/types/social';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const profileTabs = ['Пост', 'Дахин нийтэлсэн', 'Хадгалсан'];
 
 const lime = '#9AF000';
 
 export default function ProfileScreen() {
+  const { iconAccent } = useColorMode();
   const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useUser();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
@@ -161,7 +163,7 @@ export default function ProfileScreen() {
               onPress={() => router.push('/profile/settings' as Href)}
               style={styles.settingsButton}
             >
-              <Icon name="settings-outline" size={20} color={lime} />
+              <Icon name="settings-outline" size={20} color={iconAccent} />
             </Pressable>
           </>
         }
@@ -232,7 +234,7 @@ export default function ProfileScreen() {
                           : 'person-outline'
                       }
                       size={13}
-                      color={lime}
+                      color={iconAccent}
                     />
                     <Text style={styles.accountBadgeText}>
                       {profile.user.accountType === 'BUSINESS'
@@ -242,7 +244,7 @@ export default function ProfileScreen() {
                   </View>
                   {profile.user.isMentor && (
                     <View style={styles.accountBadge}>
-                      <Icon name="people-outline" size={13} color={lime} />
+                      <Icon name="people-outline" size={13} color={iconAccent} />
                       <Text style={styles.accountBadgeText}>Ментор</Text>
                     </View>
                   )}

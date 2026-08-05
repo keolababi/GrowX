@@ -23,6 +23,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import type { SocialPost } from '@/types/post';
 import { relativeTime } from '@/utils/relativeTime';
 import { useUser } from '@/providers/UserProvider';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 type Tab = 'discussions' | 'articles' | 'groups';
@@ -30,6 +31,7 @@ const tabOrder: Tab[] = ['groups', 'discussions', 'articles'];
 const tabLabels = ['Бүлгүүд', 'Хэлэлцүүлэг', 'Нийтлэл'];
 
 export default function CommunityScreen() {
+  const { iconAccent } = useColorMode();
   const { user } = useUser();
   const [tab, setTab] = useState<Tab>('groups');
   const [query, setQuery] = useState('');
@@ -163,7 +165,7 @@ export default function CommunityScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={lime} size="large" />
+            <ActivityIndicator color={iconAccent} size="large" />
           </View>
         ) : (
           <ScrollView

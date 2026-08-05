@@ -5,8 +5,7 @@ import { AppPageHeader } from '@/components/AppPageHeader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackResponsesPayload } from '@/types/feedback';
-
-const lime = '#9AF000';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 function QuestionSummary({
   question,
@@ -95,6 +94,7 @@ function QuestionSummary({
 }
 
 export default function FeedbackResponsesScreen() {
+  const { iconAccent: lime } = useColorMode();
   const { formId } = useLocalSearchParams<{ formId: string }>();
   const [data, setData] = useState<FeedbackResponsesPayload | null>(null);
   const [loading, setLoading] = useState(true);

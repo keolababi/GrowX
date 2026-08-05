@@ -4,6 +4,7 @@ import { Pressable, SafeAreaView, Text, View } from 'react-native';
 import { MessageUnreadBadge } from './MessageUnreadBadge';
 import { BottomSheet } from './ui/BottomSheet';
 import { Icon } from './ui/Icon';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 type NavSection = 'home' | 'knowledge' | 'messages' | 'profile';
 
@@ -131,13 +132,14 @@ function CreateOption({
   badge?: string;
   onPress: () => void;
 }) {
+  const { iconAccent } = useColorMode();
   return (
     <Pressable
       onPress={onPress}
       className="min-w-[96px] flex-1 items-center gap-s rounded-card border border-border bg-background-paper px-s py-m active:opacity-70"
     >
       <View className="h-11 w-11 items-center justify-center rounded-avatar bg-background-paper">
-        <Icon name={icon} size={22} color="#9AF000" />
+        <Icon name={icon} size={22} color={iconAccent} />
       </View>
       <Text className="text-center text-xs font-bold text-text-primary">{label}</Text>
       {!!badge && <Text className="text-center text-[10px] text-text-muted">{badge}</Text>}
@@ -158,6 +160,7 @@ function NavItem({
   showUnread?: boolean;
   onPress: () => void;
 }) {
+  const { iconAccent } = useColorMode();
   return (
     <Pressable
       accessibilityRole="button"
@@ -165,7 +168,7 @@ function NavItem({
       onPress={onPress}
       className="w-[69px] items-center gap-1 active:opacity-60"
     >
-      <Icon name={icon} size={26} color={active ? '#9AF000' : '#D8DFDC'} />
+      <Icon name={icon} size={26} color={active ? iconAccent : '#D8DFDC'} />
       {showUnread && <MessageUnreadBadge />}
       <Text
         className={`text-xs font-semibold ${active ? 'text-brand-primary' : 'text-text-secondary'}`}

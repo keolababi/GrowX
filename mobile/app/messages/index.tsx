@@ -21,6 +21,7 @@ import { api } from '@/services/api';
 import type { ChatUser, Conversation } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
 import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 const webScreenStyle = {
@@ -54,6 +55,7 @@ function UserAvatar({ user }: { user: ChatUser | null }) {
 }
 
 export default function MessagesScreen() {
+  const { iconAccent } = useColorMode();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [presenceUsers, setPresenceUsers] = useState<ChatUser[]>([]);
@@ -206,7 +208,7 @@ export default function MessagesScreen() {
 
         {!!error && <Text style={styles.error}>{error}</Text>}
         {loading ? (
-          <ActivityIndicator color={lime} style={styles.loader} />
+          <ActivityIndicator color={iconAccent} style={styles.loader} />
         ) : (
           <ScrollView
             style={styles.scroll}
@@ -214,7 +216,7 @@ export default function MessagesScreen() {
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
-                tintColor={lime}
+                tintColor={iconAccent}
                 onRefresh={() => {
                   setRefreshing(true);
                   void loadConversations();
@@ -283,7 +285,7 @@ export default function MessagesScreen() {
                   <Icon
                     name={newChatOpen ? 'person-add-outline' : 'chatbubbles-outline'}
                     size={28}
-                    color={lime}
+                    color={iconAccent}
                   />
                 </View>
                 <Text style={styles.emptyTitle}>

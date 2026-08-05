@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import {
   ActivityIndicator,
@@ -27,9 +27,8 @@ import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 import { useUser } from '@/providers/UserProvider';
 import { useEngagementStore } from '@/store/engagementStore';
 import type { PostComment, SocialPost } from '@/types/post';
-
-const lime = '#9AF000';
-const tabs = ['Санал болгосон', 'Дагадаг'];
+import { useColorMode } from '@/providers/ColorModeProvider';
+const tabs = ['Пост', 'Reel'];
 const webFeedScrollStyle = {
   height: 'calc(100vh - 215px)',
   flexGrow: 0,
@@ -79,6 +78,7 @@ function CommentRow({ comment }: { comment: PostComment }) {
 }
 
 export default function PostsScreen() {
+  const { iconAccent: lime } = useColorMode();
   const { user } = useUser();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -86,7 +86,6 @@ export default function PostsScreen() {
   const savedIds = useEngagementStore((state) => state.savedIds);
   const toggleRepost = useEngagementStore((state) => state.toggleRepost);
   const toggleSave = useEngagementStore((state) => state.toggleSave);
-  const [tabIndex, setTabIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -125,11 +124,6 @@ export default function PostsScreen() {
   useEffect(() => {
     void loadPosts();
   }, [loadPosts]);
-
-  const visiblePosts = useMemo(() => {
-    if (tabIndex === 0) return posts;
-    return posts.filter((post) => followingIds.has(post.authorId));
-  }, [followingIds, posts, tabIndex]);
 
   const toggleLike = async (post: SocialPost) => {
     if (busyIds.includes(post.id)) return;
@@ -255,7 +249,7 @@ export default function PostsScreen() {
               name="add"
               accessibilityLabel="Шинэ post"
               variant="filled"
-              color="#9AF000"
+              color={lime}
               onPress={() => router.push('/posts/create')}
             />
           </>
@@ -263,7 +257,13 @@ export default function PostsScreen() {
       />
 
       <View className="w-full max-w-[680px] self-center px-l py-s">
-        <SegmentedControl options={tabs} selectedIndex={tabIndex} onChange={setTabIndex} />
+        <SegmentedControl
+          options={tabs}
+          selectedIndex={0}
+          onChange={(index) => {
+            if (index === 1) router.push('/reels');
+          }}
+        />
       </View>
 
       {loading ? (
@@ -287,28 +287,22 @@ export default function PostsScreen() {
         >
           {!!error && <Text className="px-l py-s text-danger">{error}</Text>}
 
-          {visiblePosts.length === 0 && (
+          {posts.length === 0 && (
             <View className="items-center px-9 pt-24">
-              <Text className="text-xl font-bold text-text-primary">
-                {tabIndex === 1 ? 'Дагаж буй хэн ч байхгүй' : 'Одоогоор post алга'}
-              </Text>
+              <Text className="text-xl font-bold text-text-primary">Одоогоор post алга</Text>
               <Text className="mt-2 text-center text-sm leading-5 text-text-muted">
-                {tabIndex === 1
-                  ? 'Хэрэглэгчдийг дагаад тэдний post-уудыг эндээс хараарай.'
-                  : 'Анхны post-оо оруулаад бусадтай санаагаа хуваалцаарай.'}
+                Анхны post-оо оруулаад бусадтай санаагаа хуваалцаарай.
               </Text>
-              {tabIndex === 0 && (
-                <Pressable
-                  onPress={() => router.push('/posts/create')}
-                  className="mt-l h-12 items-center justify-center rounded-btn bg-brand-primary px-l"
-                >
-                  <Text className="text-sm font-bold text-background-app">Post оруулах</Text>
-                </Pressable>
-              )}
+              <Pressable
+                onPress={() => router.push('/posts/create')}
+                className="mt-l h-12 items-center justify-center rounded-btn bg-brand-primary px-l"
+              >
+                <Text className="text-sm font-bold text-background-app">Post оруулах</Text>
+              </Pressable>
             </View>
           )}
 
-          {visiblePosts.map((post) => (
+          {posts.map((post) => (
             <PostCard
               key={post.id}
               author={post.author}

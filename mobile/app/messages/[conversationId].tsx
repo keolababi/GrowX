@@ -22,6 +22,7 @@ import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
 import { Icon } from '@/components/ui/Icon';
 import { getSocket } from '@/services/socket';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
@@ -45,6 +46,7 @@ function canModifyMessage(message: ChatMessage) {
 }
 
 export default function ConversationScreen() {
+  const { iconAccent } = useColorMode();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useUser();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -392,7 +394,7 @@ export default function ConversationScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={lime} style={styles.loader} />
+          <ActivityIndicator color={iconAccent} style={styles.loader} />
         ) : (
           <ScrollView
             ref={scrollRef}
@@ -405,7 +407,7 @@ export default function ConversationScreen() {
             {!messages.length && (
               <View style={styles.empty}>
                 <View style={styles.emptyIcon}>
-                  <Icon name="chatbubble-ellipses-outline" size={29} color={lime} />
+                  <Icon name="chatbubble-ellipses-outline" size={29} color={iconAccent} />
                 </View>
                 <Text style={styles.emptyTitle}>Шинэ яриа</Text>
                 <Text style={styles.emptyCopy}>Эхний мессежээ илгээгээрэй.</Text>
@@ -442,7 +444,7 @@ export default function ConversationScreen() {
                           <Icon
                             name="ellipsis-horizontal"
                             size={18}
-                            color={selected ? lime : '#8D9B95'}
+                            color={selected ? iconAccent : '#8D9B95'}
                           />
                         </Pressable>
                       </View>
@@ -560,7 +562,7 @@ export default function ConversationScreen() {
                     pressed && styles.popoverItemPressed,
                   ]}
                 >
-                  <Icon name="create-outline" size={17} color={lime} />
+                  <Icon name="create-outline" size={17} color={iconAccent} />
                   <Text style={styles.popoverItemText}>Засах</Text>
                 </Pressable>
                 <Pressable

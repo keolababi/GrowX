@@ -25,11 +25,11 @@ import { TextInput } from '@/components/ui/TextInput';
 import { Icon } from '@/components/ui/Icon';
 import { api } from '@/services/api';
 import { useUser } from '@/providers/UserProvider';
+import { useColorMode } from '@/providers/ColorModeProvider';
 import { getApiError } from '@/utils/auth';
 import type { DiscoverUser } from '@/types/discover';
 import type { CollaborationRequest } from '@/types/collaboration';
 
-const lime = '#9AF000';
 const categories = ['Бүгд', 'Ментор', 'Бизнес & Стартап'] as const;
 type Category = (typeof categories)[number];
 
@@ -68,6 +68,7 @@ function MentorRow({
   onRequestCollaboration: () => void;
   isSelf: boolean;
 }) {
+  const { iconAccent: lime } = useColorMode();
   return (
     <Pressable
       onPress={() => router.push(`/users/${user.id}` as Href)}
@@ -179,6 +180,7 @@ function EmptyState({
   title: string;
   copy: string;
 }) {
+  const { iconAccent: lime } = useColorMode();
   return (
     <View className="mt-l items-center rounded-[20px] border border-dashed border-[#315143] bg-[#071915] px-l py-xl">
       <View className="h-14 w-14 items-center justify-center rounded-avatar bg-[#123025]">
@@ -268,6 +270,7 @@ function RequestRow({
 
 export default function MentorScreen() {
   const { user } = useUser();
+  const { iconAccent: lime } = useColorMode();
   const [section, setSection] = useState(0);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Бүгд');

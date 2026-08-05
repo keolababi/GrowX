@@ -14,11 +14,13 @@ import { api } from '@/services/api';
 import { useUser } from '@/providers/UserProvider';
 import type { SocialConnection } from '@/types/social';
 import { getApiError } from '@/utils/auth';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 type Tab = 'followers' | 'following';
 const lime = '#9AF000';
 
 export default function ConnectionsScreen() {
+  const { iconAccent } = useColorMode();
   const params = useLocalSearchParams<{ userId?: string; tab?: string }>();
   const { user } = useUser();
   const userId = params.userId || user?.id;
@@ -89,7 +91,7 @@ export default function ConnectionsScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={lime} style={styles.loader} />
+        <ActivityIndicator color={iconAccent} style={styles.loader} />
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
           {!!error && <Text style={styles.error}>{error}</Text>}

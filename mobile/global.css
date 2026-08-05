@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  button:focus:not(:focus-visible),
+  [role='button']:focus:not(:focus-visible),
+  video:focus {
+    outline: none;
+  }
+}
+
+@layer base {
   input,
   textarea,
   input:focus,

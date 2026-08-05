@@ -78,6 +78,16 @@ export default function CreateContentScreen() {
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
     const type = mode === 'reel' ? 'video' : 'image';
+    const isUnsupportedWebVideo =
+      Platform.OS === 'web' &&
+      type === 'video' &&
+      (asset.mimeType === 'video/quicktime' || /\.mov$/i.test(asset.fileName || asset.uri));
+    if (isUnsupportedWebVideo) {
+      setMedia(null);
+      setError('Chrome дээр MOV видео тоглохгүй. MP4 (H.264) эсвэл WebM файл сонгоно уу.');
+      return;
+    }
+    setError('');
     setMedia({
       type,
       uri: asset.uri,

@@ -7,10 +7,10 @@ import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import type { FeedbackFormSummary } from '@/types/feedback';
 import { AppPageHeader } from '@/components/AppPageHeader';
-
-const lime = '#9AF000';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function FeedbackFormsScreen() {
+  const { iconAccent: lime } = useColorMode();
   const [forms, setForms] = useState<FeedbackFormSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
