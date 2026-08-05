@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -11,6 +12,7 @@ import {
   Text,
   TextInput,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppBottomNav } from '@/components/AppBottomNav';
@@ -20,7 +22,12 @@ import type { ChatUser, Conversation } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
 import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
+const webScreenStyle = {
+  height: '100vh',
+  minHeight: '100vh',
+  maxHeight: '100vh',
+} as unknown as ViewStyle;
 
 function displayName(user: ChatUser | null) {
   return user?.displayName || user?.email.split('@')[0] || 'GrowX хэрэглэгч';
@@ -28,15 +35,6 @@ function displayName(user: ChatUser | null) {
 
 function isUserActive(user: ChatUser | null) {
   return Boolean(user?.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 60_000);
-}
-
-function Presence({ user }: { user: ChatUser | null }) {
-  const active = isUserActive(user);
-  return (
-    <Text style={[styles.presenceText, active && styles.activeText]}>
-      {active ? 'Идэвхтэй' : 'Офлайн'}
-    </Text>
-  );
 }
 
 function UserAvatar({ user }: { user: ChatUser | null }) {
@@ -140,155 +138,167 @@ export default function MessagesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{newChatOpen ? 'Шинэ чат' : 'Мессеж'}</Text>
-        <View style={styles.headerActions}>
-          <NotificationBell />
-          <Pressable
-            accessibilityLabel={newChatOpen ? 'Буцах' : 'Шинэ чат'}
-            onPress={() => {
-              setNewChatOpen((open) => !open);
-              setQuery('');
-              setError('');
-            }}
-            style={styles.newButton}
-          >
-            <Icon name={newChatOpen ? 'close' : 'create-outline'} size={22} color="#142000" />
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.search}>
-        <Icon name="search-outline" size={20} color="#A5B0AB" />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          autoCapitalize="none"
-          placeholder={newChatOpen ? 'Нэр эсвэл и-мэйлээр хайх' : 'Chat хайх'}
-          placeholderTextColor="#718079"
-          style={styles.searchInput}
-        />
-      </View>
-
-      {!newChatOpen && presenceUsers.length > 0 && (
-        <View style={styles.presenceSection}>
-          <Text style={styles.presenceHeading}>Хүмүүс</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.presenceList}
-          >
-            {presenceUsers.map((presenceUser) => {
-              const active = isUserActive(presenceUser);
-              return (
-                <Pressable
-                  key={presenceUser.id}
-                  accessibilityLabel={`${displayName(presenceUser)}, ${active ? 'Идэвхтэй' : 'Идэвхгүй'}`}
-                  onPress={() => void startChat(presenceUser.id)}
-                  style={({ pressed }) => [
-                    styles.presenceCard,
-                    pressed && styles.presenceCardPressed,
-                  ]}
-                >
-                  <UserAvatar user={presenceUser} />
-                  <Text numberOfLines={1} style={styles.presenceName}>
-                    {displayName(presenceUser)}
-                  </Text>
-                  <Text style={[styles.presenceStatus, active && styles.presenceStatusActive]}>
-                    {active ? 'Идэвхтэй' : 'Идэвхгүй'}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
-
-      {!!error && <Text style={styles.error}>{error}</Text>}
-      {loading ? (
-        <ActivityIndicator color={lime} style={styles.loader} />
-      ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              tintColor={lime}
-              onRefresh={() => {
-                setRefreshing(true);
-                void loadConversations();
+    <SafeAreaView style={[styles.safeArea, Platform.OS === 'web' && webScreenStyle]}>
+      <View style={styles.page}>
+        <View style={styles.header}>
+          <View style={styles.titleGroup}>
+            <Text style={styles.eyebrow}>GROWX CONNECT</Text>
+            <Text style={styles.title}>{newChatOpen ? 'Шинэ чат' : 'Мессеж'}</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <NotificationBell />
+            <Pressable
+              accessibilityLabel={newChatOpen ? 'Буцах' : 'Шинэ чат'}
+              onPress={() => {
+                setNewChatOpen((open) => !open);
+                setQuery('');
+                setError('');
               }}
-            />
-          }
-        >
-          {newChatOpen
-            ? users.map((user) => (
-                <Pressable
-                  key={user.id}
-                  onPress={() => void startChat(user.id)}
-                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                >
-                  <UserAvatar user={user} />
-                  <View style={styles.rowCopy}>
-                    <View style={styles.nameRow}>
-                      <Text numberOfLines={1} style={styles.name}>
-                        {displayName(user)}
-                      </Text>
-                      <Presence user={user} />
-                    </View>
-                    <Text style={styles.preview}>{user.email}</Text>
-                  </View>
-                  <Icon name="chevron-forward" size={21} color="#89968F" />
-                </Pressable>
-              ))
-            : filtered.map((conversation) => (
-                <Pressable
-                  key={conversation.id}
-                  onPress={() => router.push(`/messages/${conversation.id}`)}
-                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                >
-                  <UserAvatar user={conversation.otherUser} />
-                  <View style={styles.rowCopy}>
-                    <View style={styles.nameRow}>
-                      <Text numberOfLines={1} style={styles.name}>
-                        {displayName(conversation.otherUser)}
-                      </Text>
-                      <Presence user={conversation.otherUser} />
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.preview, conversation.unreadCount > 0 && styles.unreadPreview]}
-                    >
-                      {conversation.lastMessage?.content || 'Шинэ chat'}
+              style={styles.newButton}
+            >
+              <Icon name={newChatOpen ? 'close' : 'create-outline'} size={22} color="#142000" />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.search}>
+          <Icon name="search-outline" size={20} color="#A5B0AB" />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
+            placeholder={newChatOpen ? 'Нэр эсвэл и-мэйлээр хайх' : 'Chat хайх'}
+            placeholderTextColor="#718079"
+            style={styles.searchInput}
+          />
+        </View>
+
+        {!newChatOpen && presenceUsers.length > 0 && (
+          <View style={styles.presenceSection}>
+            <Text style={styles.presenceHeading}>Хүмүүс</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.presenceList}
+            >
+              {presenceUsers.map((presenceUser) => {
+                const active = isUserActive(presenceUser);
+                return (
+                  <Pressable
+                    key={presenceUser.id}
+                    accessibilityLabel={`${displayName(presenceUser)}, ${active ? 'Идэвхтэй' : 'Идэвхгүй'}`}
+                    onPress={() => void startChat(presenceUser.id)}
+                    style={({ pressed }) => [
+                      styles.presenceCard,
+                      pressed && styles.presenceCardPressed,
+                    ]}
+                  >
+                    <UserAvatar user={presenceUser} />
+                    <Text numberOfLines={1} style={styles.presenceName}>
+                      {displayName(presenceUser)}
                     </Text>
-                  </View>
-                  <View style={styles.rowMeta}>
-                    <Text style={styles.time}>{relativeTime(conversation.updatedAt)}</Text>
-                    {conversation.unreadCount > 0 && (
-                      <View style={styles.unreadBadge}>
-                        <Text style={styles.unreadText}>
-                          {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {!!error && <Text style={styles.error}>{error}</Text>}
+        {loading ? (
+          <ActivityIndicator color={lime} style={styles.loader} />
+        ) : (
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                tintColor={lime}
+                onRefresh={() => {
+                  setRefreshing(true);
+                  void loadConversations();
+                }}
+              />
+            }
+          >
+            {newChatOpen
+              ? users.map((user) => (
+                  <Pressable
+                    key={user.id}
+                    onPress={() => void startChat(user.id)}
+                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                  >
+                    <UserAvatar user={user} />
+                    <View style={styles.rowCopy}>
+                      <View style={styles.nameRow}>
+                        <Text numberOfLines={1} style={styles.name}>
+                          {displayName(user)}
                         </Text>
                       </View>
-                    )}
-                  </View>
-                </Pressable>
-              ))}
+                      <Text style={styles.preview}>{user.email}</Text>
+                    </View>
+                    <Icon name="chevron-forward" size={21} color="#89968F" />
+                  </Pressable>
+                ))
+              : filtered.map((conversation) => (
+                  <Pressable
+                    key={conversation.id}
+                    onPress={() => router.push(`/messages/${conversation.id}`)}
+                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                  >
+                    <UserAvatar user={conversation.otherUser} />
+                    <View style={styles.rowCopy}>
+                      <View style={styles.nameRow}>
+                        <Text numberOfLines={1} style={styles.name}>
+                          {displayName(conversation.otherUser)}
+                        </Text>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.preview,
+                          conversation.unreadCount > 0 && styles.unreadPreview,
+                        ]}
+                      >
+                        {conversation.lastMessage?.content || 'Шинэ chat'}
+                      </Text>
+                    </View>
+                    <View style={styles.rowMeta}>
+                      <Text style={styles.time}>{relativeTime(conversation.updatedAt)}</Text>
+                      {conversation.unreadCount > 0 && (
+                        <View style={styles.unreadBadge}>
+                          <Text style={styles.unreadText}>
+                            {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </Pressable>
+                ))}
 
-          {((newChatOpen && !users.length) || (!newChatOpen && !filtered.length)) && (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>
-                {newChatOpen ? 'Хэрэглэгч олдсонгүй' : 'Одоогоор chat алга'}
-              </Text>
-              <Text style={styles.emptyCopy}>
-                {newChatOpen ? 'Өөр нэр эсвэл и-мэйл хайгаарай.' : '＋ дарж шинэ chat эхлүүлээрэй.'}
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      )}
+            {((newChatOpen && !users.length) || (!newChatOpen && !filtered.length)) && (
+              <View style={styles.empty}>
+                <View style={styles.emptyIcon}>
+                  <Icon
+                    name={newChatOpen ? 'person-add-outline' : 'chatbubbles-outline'}
+                    size={28}
+                    color={lime}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {newChatOpen ? 'Хэрэглэгч олдсонгүй' : 'Одоогоор chat алга'}
+                </Text>
+                <Text style={styles.emptyCopy}>
+                  {newChatOpen
+                    ? 'Өөр нэр эсвэл и-мэйл хайгаарай.'
+                    : '＋ дарж шинэ chat эхлүүлээрэй.'}
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        )}
+      </View>
 
       <AppBottomNav />
     </SafeAreaView>
@@ -296,15 +306,20 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#031015' },
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#020B0D' },
+  page: { flex: 1, minHeight: 0, width: '100%', maxWidth: 780, alignSelf: 'center' },
   header: {
-    height: 66,
+    minHeight: 82,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#152D26',
   },
-  title: { color: '#F4F8F5', fontSize: 29, fontWeight: '900' },
+  titleGroup: { flex: 1, minWidth: 0 },
+  eyebrow: { color: lime, fontSize: 9, fontWeight: '900', letterSpacing: 1.8 },
+  title: { color: '#F7FAF8', fontSize: 27, fontWeight: '900', letterSpacing: -0.7, marginTop: 2 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   newButton: {
     width: 42,
@@ -313,66 +328,80 @@ const styles = StyleSheet.create({
     backgroundColor: lime,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: lime,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   newButtonText: { color: '#142000', fontSize: 26, lineHeight: 28, fontWeight: '800' },
   search: {
     height: 48,
     marginHorizontal: 20,
-    marginBottom: 10,
-    borderRadius: 14,
+    marginTop: 14,
+    marginBottom: 14,
+    borderRadius: 24,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0A191A',
+    backgroundColor: '#081915',
     borderWidth: 1,
-    borderColor: '#19302B',
+    borderColor: '#28453A',
   },
   searchInput: { flex: 1, marginLeft: 9, color: '#F1F5F3', fontSize: 14 },
   presenceSection: {
-    paddingTop: 4,
-    paddingBottom: 10,
+    paddingTop: 2,
+    paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#142824',
+    borderBottomColor: '#152D26',
   },
   presenceHeading: {
     color: '#DCE4E0',
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '900',
     paddingHorizontal: 20,
     marginBottom: 10,
   },
-  presenceList: { gap: 13, paddingHorizontal: 20 },
-  presenceCard: { width: 70, alignItems: 'center' },
+  presenceList: { gap: 10, paddingHorizontal: 20 },
+  presenceCard: {
+    width: 86,
+    minHeight: 88,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    borderRadius: 18,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
   presenceCardPressed: { opacity: 0.65 },
   presenceName: {
-    width: 70,
+    width: 76,
     color: '#E6ECE9',
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
     marginTop: 6,
   },
-  presenceStatus: { color: '#75837D', fontSize: 9, fontWeight: '600', marginTop: 2 },
-  presenceStatusActive: { color: lime },
   error: { color: '#FF7777', paddingHorizontal: 20, paddingVertical: 7 },
   loader: { marginTop: 60 },
   scroll: { flex: 1, minHeight: 0 },
-  list: { paddingHorizontal: 14, paddingBottom: 116 },
+  list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 28, gap: 9 },
   row: {
-    minHeight: 78,
-    paddingHorizontal: 9,
+    minHeight: 82,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#142824',
+    borderRadius: 19,
+    backgroundColor: 'transparent',
   },
-  rowPressed: { backgroundColor: '#0B1E1A' },
+  rowPressed: { backgroundColor: '#0D251D' },
   avatarWrap: { position: 'relative' },
   avatar: {
     width: 51,
     height: 51,
     borderRadius: 26,
-    backgroundColor: '#173126',
+    backgroundColor: '#153126',
+    borderWidth: 1,
+    borderColor: '#345347',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -385,15 +414,13 @@ const styles = StyleSheet.create({
     height: 13,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#031015',
+    borderColor: '#071713',
     backgroundColor: lime,
   },
   rowCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
   nameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, gap: 9 },
-  name: { color: '#F2F5F4', fontSize: 15, fontWeight: '800', flexShrink: 1 },
+  name: { color: '#F5F8F6', fontSize: 15, fontWeight: '900', flexShrink: 1 },
   offlineDot: { backgroundColor: '#68756F' },
-  presenceText: { color: '#75837D', fontSize: 10, fontWeight: '600' },
-  activeText: { color: lime },
   preview: { color: '#83908B', fontSize: 13, marginTop: 5 },
   unreadPreview: { color: '#DCE5E1', fontWeight: '700' },
   rowMeta: { alignItems: 'flex-end', gap: 7, marginLeft: 8 },
@@ -409,9 +436,26 @@ const styles = StyleSheet.create({
   },
   unreadText: { color: '#142000', fontSize: 10, fontWeight: '900' },
   chevron: { color: '#89968F', fontSize: 30 },
-  empty: { alignItems: 'center', paddingTop: 85 },
-  emptyTitle: { color: '#EDF3F0', fontSize: 17, fontWeight: '800' },
-  emptyCopy: { color: '#7C8983', fontSize: 13, marginTop: 8 },
+  empty: {
+    alignItems: 'center',
+    marginTop: 24,
+    paddingVertical: 42,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#29483C',
+    borderRadius: 22,
+    backgroundColor: '#061511',
+  },
+  emptyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#112D22',
+  },
+  emptyTitle: { color: '#EDF3F0', fontSize: 17, fontWeight: '900', marginTop: 14 },
+  emptyCopy: { color: '#7C8983', fontSize: 13, marginTop: 7 },
   bottomNav: {
     position: 'absolute',
     left: 0,
