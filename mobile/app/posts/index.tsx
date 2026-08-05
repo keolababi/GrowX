@@ -16,6 +16,8 @@ import {
   View,
 } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
+import { AppPageHeader } from '@/components/AppPageHeader';
+import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { IconButton } from '@/components/ui/IconButton';
 import { PostCard, type PostCardAuthor } from '@/components/ui/PostCard';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -238,26 +240,27 @@ export default function PostsScreen() {
 
   return (
     <SafeAreaView className="min-h-0 flex-1 overflow-hidden bg-background-app">
-      <View className="h-[64px] w-full max-w-[680px] self-center flex-row items-center justify-between border-b border-border px-l">
-        <Text className="text-2xl font-black text-text-primary">
-          Grow<Text className="text-brand-primary">X</Text>
-        </Text>
-        <View className="flex-row items-center gap-s">
-          <NotificationBell />
-          <IconButton
-            name="film-outline"
-            accessibilityLabel="Reels үзэх"
-            onPress={() => router.push('/reels')}
-          />
-          <IconButton
-            name="add"
-            accessibilityLabel="Шинэ post"
-            variant="filled"
-            color="#9AF000"
-            onPress={() => router.push('/posts/create')}
-          />
-        </View>
-      </View>
+      <AppPageHeader
+        maxWidth={680}
+        actions={
+          <>
+            <GlobalSearchButton />
+            <NotificationBell />
+            <IconButton
+              name="film-outline"
+              accessibilityLabel="Reels үзэх"
+              onPress={() => router.push('/reels')}
+            />
+            <IconButton
+              name="add"
+              accessibilityLabel="Шинэ post"
+              variant="filled"
+              color="#9AF000"
+              onPress={() => router.push('/posts/create')}
+            />
+          </>
+        }
+      />
 
       <View className="w-full max-w-[680px] self-center px-l py-s">
         <SegmentedControl options={tabs} selectedIndex={tabIndex} onChange={setTabIndex} />

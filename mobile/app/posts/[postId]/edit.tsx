@@ -16,7 +16,7 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { SocialPost } from '@/types/post';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 
 export default function EditPostScreen() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
@@ -105,7 +105,7 @@ export default function EditPostScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   keyboard: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
   header: {
     height: 70,

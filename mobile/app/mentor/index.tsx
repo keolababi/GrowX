@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
+import { AppPageHeader } from '@/components/AppPageHeader';
+import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { Tag } from '@/components/ui/Tag';
 import { Badge } from '@/components/ui/Badge';
@@ -423,12 +425,15 @@ export default function MentorScreen() {
       style={Platform.OS === 'web' ? webScreenStyle : undefined}
     >
       <View className="min-h-0 w-full max-w-[900px] flex-1 self-center">
-        <View className="h-16 shrink-0 flex-row items-center justify-between border-b border-[#172D27] px-l">
-          <Text className="text-2xl font-black tracking-[-1px] text-text-primary">
-            Grow<Text className="text-brand-primary">X</Text>
-          </Text>
-          <NotificationBell />
-        </View>
+        <AppPageHeader
+          maxWidth={900}
+          actions={
+            <>
+              <GlobalSearchButton />
+              <NotificationBell />
+            </>
+          }
+        />
 
         <View className="mx-l mb-m mt-m shrink-0 overflow-hidden rounded-[24px] border border-[#1E4938] bg-[#08271D] px-l py-m">
           <View className="flex-row items-center justify-between gap-m">

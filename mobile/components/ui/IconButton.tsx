@@ -7,7 +7,7 @@ type Props = {
   onPress?: () => void;
   size?: number;
   color?: string;
-  variant?: 'plain' | 'filled';
+  variant?: 'plain' | 'filled' | 'primary';
   accessibilityLabel: string;
 };
 
@@ -23,8 +23,12 @@ export const IconButton: React.FC<Props> = ({
     accessibilityRole="button"
     accessibilityLabel={accessibilityLabel}
     onPress={onPress}
-    className={`h-10 w-10 items-center justify-center rounded-avatar active:opacity-70 ${
-      variant === 'filled' ? 'bg-background-paper border border-border' : ''
+    className={`h-[42px] w-[42px] items-center justify-center rounded-avatar active:opacity-70 ${
+      variant === 'filled'
+        ? 'border border-border bg-background-raised'
+        : variant === 'primary'
+          ? 'bg-brand-primary'
+          : ''
     }`}
   >
     <Icon name={name} size={size} color={color} />

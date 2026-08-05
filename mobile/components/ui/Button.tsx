@@ -11,8 +11,8 @@ type Props = {
 };
 
 const sizeClasses: Record<NonNullable<Props['size']>, string> = {
-  md: 'py-s px-l',
-  sm: 'py-xs px-m',
+  md: 'min-h-[48px] py-s px-l',
+  sm: 'min-h-[40px] py-xs px-m',
 };
 
 const textSizeClasses: Record<NonNullable<Props['size']>, string> = {
@@ -50,7 +50,7 @@ export const Button: React.FC<Props> = ({
     {loading ? (
       <ActivityIndicator color={variant === 'primary' ? '#020B0D' : '#9AF000'} />
     ) : (
-      <Text className={`font-medium ${variantTextClasses[variant]} ${textSizeClasses[size]}`}>
+      <Text className={`font-bold ${variantTextClasses[variant]} ${textSizeClasses[size]}`}>
         {title}
       </Text>
     )}

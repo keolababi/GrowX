@@ -20,7 +20,7 @@ import { relativeTime } from '@/utils/relativeTime';
 import type { PostComment, SocialPost } from '@/types/post';
 import { useUser } from '@/providers/UserProvider';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 
 export default function PostCommentsScreen() {
   const { user } = useUser();
@@ -213,7 +213,7 @@ export default function PostCommentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   keyboard: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
   header: {
     height: 70,

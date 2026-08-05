@@ -8,7 +8,7 @@ type Props = ViewProps & {
 
 export const Card: React.FC<Props> = ({ children, className, ...rest }) => (
   <View
-    className={`rounded-card border border-border bg-background-paper p-m ${className ?? ''}`}
+    className={`rounded-card border border-border bg-background-paper p-l ${className ?? ''}`}
     {...rest}
   >
     {children}

@@ -19,7 +19,7 @@ import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import type { Community } from '@/types/community';
 import { getApiError } from '@/utils/auth';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 
 export default function CreateGroupScreen() {
   const [name, setName] = useState('');
@@ -190,7 +190,7 @@ export default function CreateGroupScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   keyboard: { flex: 1 },
   header: {
     height: 68,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#173029',
+    borderBottomColor: '#233D34',
   },
   backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
   back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },

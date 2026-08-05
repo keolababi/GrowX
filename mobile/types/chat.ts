@@ -8,6 +8,7 @@ export type ChatUser = {
 
 export type ChatMessage = {
   id: string;
+  clientMessageId?: string | null;
   conversationId: string;
   senderId: string;
   content: string;

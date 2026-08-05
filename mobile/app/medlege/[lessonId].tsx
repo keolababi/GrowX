@@ -1,14 +1,19 @@
-import { useEffect } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
-import { lessons } from '@/data/lessons';
+import { AppPageHeader } from '@/components/AppPageHeader';
+import { lessons as fallbackLessons } from '@/data/lessons';
+import { api } from '@/services/api';
 import { useLearningStore } from '@/store/learningStore';
+import type { Lesson } from '@/types/learning';
 
 export default function LessonDetailScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
-  const lesson = lessons.find((item) => item.id === lessonId);
+  const fallbackLesson = fallbackLessons.find((item) => item.id === lessonId);
+  const [lesson, setLesson] = useState<Lesson | undefined>(fallbackLesson);
+  const [loading, setLoading] = useState(true);
   const startedIds = useLearningStore((state) => state.startedIds);
   const completedIds = useLearningStore((state) => state.completedIds);
   const markStarted = useLearningStore((state) => state.markStarted);
@@ -20,8 +25,37 @@ export default function LessonDetailScreen() {
   }, [hydrate]);
 
   useEffect(() => {
+    if (!lessonId) return;
+    let active = true;
+    setLoading(true);
+    setLesson(fallbackLesson);
+    void api
+      .get<{ lesson: Lesson }>(`/lessons/${lessonId}`)
+      .then(({ data }) => {
+        if (active) setLesson(data.lesson);
+      })
+      .catch(() => {
+        // The bundled copy keeps existing lessons readable while offline.
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [fallbackLesson, lessonId]);
+
+  useEffect(() => {
     if (lesson) markStarted(lesson.id);
   }, [lesson, markStarted]);
+
+  if (loading && !lesson) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background-app">
+        <ActivityIndicator color="#9AF000" size="large" />
+      </SafeAreaView>
+    );
+  }
 
   if (!lesson) {
     return (
@@ -36,15 +70,18 @@ export default function LessonDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-app">
-      <View className="h-16 flex-row items-center justify-between border-b border-border px-l">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="chevron-back" size={26} color="#FFFFFF" />
-        </Pressable>
-        <Text className="text-base font-extrabold text-text-primary">Хичээл</Text>
-        <View className="w-6" />
-      </View>
+      <AppPageHeader title="Хичээл" back />
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          width: '100%',
+          maxWidth: 900,
+          alignSelf: 'center',
+          padding: 24,
+          paddingBottom: 48,
+        }}
+      >
         <View className="flex-row items-center gap-s">
           <Badge label={lesson.category} variant="muted" />
           <Badge label={lesson.difficulty} variant="brand" />

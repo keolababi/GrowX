@@ -1,4 +1,4 @@
-export type NotificationType = 'LIKE' | 'COMMENT' | 'FOLLOW' | 'SYSTEM';
+export type NotificationType = 'LIKE' | 'COMMENT' | 'FOLLOW' | 'SYSTEM' | 'COLLABORATION_REQUEST';
 
 export type AppNotification = {
   id: string;

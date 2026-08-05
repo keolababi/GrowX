@@ -16,7 +16,7 @@ import type { SocialConnection } from '@/types/social';
 import { getApiError } from '@/utils/auth';
 
 type Tab = 'followers' | 'following';
-const lime = '#8EE817';
+const lime = '#9AF000';
 
 export default function ConnectionsScreen() {
   const params = useLocalSearchParams<{ userId?: string; tab?: string }>();
@@ -144,7 +144,7 @@ export default function ConnectionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#031015' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   header: {
     height: 66,
     paddingHorizontal: 12,

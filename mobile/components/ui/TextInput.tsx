@@ -17,8 +17,8 @@ type Props = Pick<
 
 export const TextInput: React.FC<Props> = ({ multiline, ...rest }) => (
   <RNTextInput
-    className={`rounded-card border border-border bg-background-paper px-m text-base text-text-primary ${
-      multiline ? 'py-s' : 'h-11'
+    className={`rounded-btn border border-border bg-background-paper px-m text-base text-text-primary ${
+      multiline ? 'min-h-[112px] py-m' : 'h-[50px]'
     }`}
     placeholderTextColor="#A7AEB0"
     multiline={multiline}

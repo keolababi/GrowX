@@ -8,17 +8,17 @@ type Props = {
 };
 
 export const Tabs: React.FC<Props> = ({ tabs, activeIndex, onChange }) => (
-  <View className="flex-row border-b border-border">
+  <View className="min-h-[48px] flex-row border-b border-border">
     {tabs.map((tab, i) => {
       const active = i === activeIndex;
       return (
         <Pressable
           key={tab}
           onPress={() => onChange(i)}
-          className={`flex-1 items-center py-s border-b-2 ${active ? 'border-brand-primary' : 'border-transparent'}`}
+          className={`flex-1 items-center justify-center border-b-2 px-xs py-s ${active ? 'border-brand-primary' : 'border-transparent'}`}
         >
           <Text
-            className={`text-base ${active ? 'font-bold text-brand-primary' : 'text-text-muted'}`}
+            className={`text-center text-sm ${active ? 'font-bold text-brand-primary' : 'font-semibold text-text-muted'}`}
           >
             {tab}
           </Text>

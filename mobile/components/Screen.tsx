@@ -1,13 +1,14 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { GrowXLogo } from './GrowXLogo';
+import { design } from '@/constants/design';
 
 export const colors = {
-  background: '#020B0D',
-  surface: '#0D1517',
-  border: '#263033',
-  muted: '#A7AEB0',
-  lime: '#9AF000',
+  background: design.colors.background,
+  surface: design.colors.surface,
+  border: design.colors.border,
+  muted: design.colors.muted,
+  lime: design.colors.primary,
   limeDark: '#62B900',
 };
 
@@ -55,7 +56,15 @@ export function AuthHeader({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 18, paddingBottom: 28 },
+  content: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 28,
+  },
   topbar: { minHeight: 120, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
   title: {
     color: '#FFFFFF',

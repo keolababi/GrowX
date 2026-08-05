@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { router, type Href } from 'expo-router';
+import axios from 'axios';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -10,300 +12,400 @@ import {
   View,
 } from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import { NotificationBell } from '@/components/NotificationBell';
+import { Icon } from '@/components/ui/Icon';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { Tag } from '@/components/ui/Tag';
 import { api } from '@/services/api';
-import { useUser } from '@/providers/UserProvider';
-import { getApiError } from '@/utils/auth';
+import type {
+  GlobalSearchResponse,
+  SearchCommunity,
+  SearchLesson,
+  SearchPodcast,
+  SearchPost,
+} from '@/types/search';
 import type { DiscoverUser } from '@/types/discover';
 import type { Community } from '@/types/community';
+import type { SocialPost } from '@/types/post';
+import type { Lesson } from '@/types/learning';
+import type { Podcast } from '@/types/media';
+import { getApiError } from '@/utils/auth';
+import { relativeTime } from '@/utils/relativeTime';
 
 const lime = '#9AF000';
-const categories = ['Бүгд', 'Хэрэглэгчид', 'Бизнес', 'Групп'] as const;
+const categories = ['Бүгд', 'Хүмүүс', 'Групп', 'Пост', 'Хичээл', 'Подкаст'] as const;
 type Category = (typeof categories)[number];
 
-function initials(name: string | null, email: string) {
-  return (name?.trim() || email).slice(0, 2).toUpperCase();
+const emptyResults: GlobalSearchResponse = {
+  query: '',
+  users: [],
+  communities: [],
+  posts: [],
+  lessons: [],
+  podcasts: [],
+};
+
+const webScreenStyle = {
+  height: '100vh',
+  minHeight: '100vh',
+  maxHeight: '100vh',
+} as never;
+
+async function loadFromExistingRoutes(query: string): Promise<GlobalSearchResponse> {
+  const [usersResponse, communitiesResponse, postsResponse, lessonsResponse, podcastsResponse] =
+    await Promise.all([
+      api.get<{ users: DiscoverUser[] }>('/conversations/users', { params: { q: query } }),
+      api.get<{ communities: Community[] }>('/communities'),
+      api.get<{ posts: SocialPost[] }>('/posts'),
+      api.get<{ lessons: Lesson[] }>('/lessons'),
+      api.get<{ podcasts: Podcast[] }>('/media/podcasts'),
+    ]);
+  const q = query.trim().toLocaleLowerCase();
+  const includes = (...parts: Array<string | null | undefined>) =>
+    !q || parts.filter(Boolean).join(' ').toLocaleLowerCase().includes(q);
+
+  return {
+    query: query.trim(),
+    users: usersResponse.data.users.slice(0, 8),
+    communities: communitiesResponse.data.communities
+      .filter((item) => includes(item.name, item.description))
+      .slice(0, 8),
+    posts: postsResponse.data.posts
+      .filter((item) =>
+        includes(item.content, item.author.displayName, item.author.company, item.community?.name),
+      )
+      .slice(0, 8)
+      .map((item) => ({
+        id: item.id,
+        content: item.content,
+        imageUrl: item.imageUrl,
+        createdAt: item.createdAt,
+        community: item.community,
+        author: item.author,
+        likeCount: item.likeCount,
+        commentCount: item.commentCount,
+      })),
+    lessons: lessonsResponse.data.lessons
+      .filter((item) => includes(item.title, item.description, item.content, item.category))
+      .slice(0, 8),
+    podcasts: podcastsResponse.data.podcasts
+      .filter((item) => includes(item.title, item.description, item.author.displayName))
+      .slice(0, 8),
+  };
 }
 
-function UserCard({
-  user,
-  isFollowing,
-  onToggleFollow,
+function Section({
+  title,
+  count,
+  children,
 }: {
-  user: DiscoverUser;
-  isFollowing: boolean;
-  onToggleFollow: () => void;
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  if (!count) return null;
+  return (
+    <View className="mt-xl">
+      <View className="mb-s flex-row items-center gap-s">
+        <Text className="text-lg font-black text-text-primary">{title}</Text>
+        <View className="min-w-[24px] items-center rounded-avatar bg-background-soft px-2 py-1">
+          <Text className="text-[10px] font-black text-brand-primary">{count}</Text>
+        </View>
+      </View>
+      <View className="gap-s">{children}</View>
+    </View>
+  );
+}
+
+function ResultRow({
+  icon,
+  title,
+  subtitle,
+  meta,
+  imageUrl,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Icon>['name'];
+  title: string;
+  subtitle?: string | null;
+  meta?: string;
+  imageUrl?: string | null;
+  onPress: () => void;
 }) {
   return (
     <Pressable
-      onPress={() => router.push(`/users/${user.id}` as Href)}
-      className="mr-s w-[180px] rounded-card border border-border bg-background-paper p-m"
+      onPress={onPress}
+      className="min-h-[78px] flex-row items-center rounded-card border border-border bg-background-paper p-m active:opacity-70"
     >
-      {user.avatarUrl ? (
-        <Image source={{ uri: user.avatarUrl }} className="h-12 w-12 rounded-avatar" />
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} className="h-12 w-12 rounded-btn bg-background-soft" />
       ) : (
-        <View className="h-12 w-12 items-center justify-center rounded-avatar border border-border bg-background-app">
-          <Text className="font-extrabold text-brand-primary">
-            {initials(user.displayName, user.email)}
-          </Text>
+        <View className="h-12 w-12 items-center justify-center rounded-btn bg-background-soft">
+          <Icon name={icon} size={22} color={lime} />
         </View>
       )}
-      <Text numberOfLines={1} className="mt-s text-sm font-extrabold text-text-primary">
-        {user.accountType === 'BUSINESS' && user.company
-          ? user.company
-          : user.displayName || user.email.split('@')[0]}
-      </Text>
-      <Text numberOfLines={2} className="mt-1 h-9 text-xs leading-4 text-text-muted">
-        {user.accountType === 'BUSINESS' ? user.industry || 'Бизнес' : user.bio || 'GrowX гишүүн'}
-      </Text>
-      <Pressable
-        onPress={(event) => {
-          event.stopPropagation();
-          onToggleFollow();
-        }}
-        className={`mt-s h-8 items-center justify-center rounded-avatar border ${
-          isFollowing ? 'border-border' : 'border-brand-primary bg-brand-primary'
-        }`}
-      >
-        <Text
-          className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
-        >
-          {isFollowing ? 'Дагаж буй' : 'Дагах'}
+      <View className="ml-s min-w-0 flex-1">
+        <Text numberOfLines={1} className="text-sm font-extrabold text-text-primary">
+          {title}
         </Text>
-      </Pressable>
+        {!!subtitle && (
+          <Text numberOfLines={2} className="mt-1 text-xs leading-4 text-text-muted">
+            {subtitle}
+          </Text>
+        )}
+        {!!meta && <Text className="mt-1 text-[10px] font-bold text-brand-primary">{meta}</Text>}
+      </View>
+      <Icon name="chevron-forward" size={18} color="#65736D" />
     </Pressable>
   );
 }
 
-function TopicCard({ community }: { community: Community }) {
+function UserResult({ item }: { item: DiscoverUser }) {
+  const title =
+    item.accountType === 'BUSINESS' && item.company
+      ? item.company
+      : item.displayName || item.email.split('@')[0];
   return (
-    <Pressable
-      onPress={() => router.push(`/community/${community.id}` as Href)}
-      className="mr-s w-[150px] rounded-card border border-border bg-background-paper p-m"
-    >
-      {community.coverUrl ? (
-        <Image source={{ uri: community.coverUrl }} className="h-16 w-full rounded-btn" />
-      ) : (
-        <View className="h-16 w-full items-center justify-center rounded-btn bg-background-app">
-          <Text className="font-extrabold text-brand-primary">
-            {community.name.slice(0, 2).toUpperCase()}
-          </Text>
-        </View>
-      )}
-      <Text numberOfLines={1} className="mt-s text-sm font-extrabold text-text-primary">
-        {community.name}
-      </Text>
-      <Text className="mt-1 text-xs text-text-muted">{community.memberCount} гишүүн</Text>
-    </Pressable>
+    <ResultRow
+      icon={item.accountType === 'BUSINESS' ? 'business-outline' : 'person-outline'}
+      title={title}
+      subtitle={item.industry || item.bio || (item.isMentor ? 'GrowX ментор' : 'GrowX гишүүн')}
+      meta={item.accountType === 'BUSINESS' ? 'БИЗНЕС' : item.isMentor ? 'МЕНТОР' : undefined}
+      imageUrl={item.avatarUrl}
+      onPress={() => router.push(`/users/${item.id}` as Href)}
+    />
+  );
+}
+
+function CommunityResult({ item }: { item: SearchCommunity }) {
+  return (
+    <ResultRow
+      icon="people-outline"
+      title={item.name}
+      subtitle={item.description || 'GrowX групп'}
+      meta={`${item.memberCount} гишүүн · ${item.postCount} пост`}
+      imageUrl={item.coverUrl}
+      onPress={() => router.push(`/community/${item.id}` as Href)}
+    />
+  );
+}
+
+function PostResult({ item }: { item: SearchPost }) {
+  const author = item.author.displayName || item.author.company || item.author.email.split('@')[0];
+  return (
+    <ResultRow
+      icon="document-text-outline"
+      title={author}
+      subtitle={item.content}
+      meta={`${relativeTime(item.createdAt)} · ${item.likeCount} like · ${item.commentCount} comment`}
+      imageUrl={item.imageUrl}
+      onPress={() => router.push(`/posts/${item.id}`)}
+    />
+  );
+}
+
+function LessonResult({ item }: { item: SearchLesson }) {
+  return (
+    <ResultRow
+      icon="book-outline"
+      title={item.title}
+      subtitle={item.description}
+      meta={`${item.category} · ${item.difficulty} · ${item.durationMin} мин`}
+      onPress={() => router.push(`/medlege/${item.id}`)}
+    />
+  );
+}
+
+function PodcastResult({ item }: { item: SearchPodcast }) {
+  const host = item.author.displayName || item.author.email?.split('@')[0] || 'GrowX';
+  return (
+    <ResultRow
+      icon="mic-outline"
+      title={item.title}
+      subtitle={item.description || `${host}-ийн подкаст`}
+      meta={`${host} · ${item.episodes.length ? 'Шинэ дугаартай' : 'Дугаар хүлээгдэж байна'}`}
+      imageUrl={item.coverUrl}
+      onPress={() => router.push({ pathname: '/podcast', params: { podcastId: item.id } })}
+    />
   );
 }
 
 export default function DiscoverScreen() {
-  const { user } = useUser();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Бүгд');
-  const [users, setUsers] = useState<DiscoverUser[]>([]);
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<GlobalSearchResponse>(emptyResults);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback(
-    async (search = '') => {
-      setLoading(true);
-      setError('');
-      try {
-        const [usersResponse, communitiesResponse, followingResponse] = await Promise.all([
-          api.get<{ users: DiscoverUser[] }>('/conversations/users', { params: { q: search } }),
-          api.get<{ communities: Community[] }>('/communities'),
-          user?.id
-            ? api.get<{ users: { id: string }[] }>(`/users/${user.id}/following`)
-            : Promise.resolve(null),
-        ]);
-        setUsers(usersResponse.data.users);
-        setCommunities(communitiesResponse.data.communities);
-        if (followingResponse) {
-          setFollowingIds(new Set(followingResponse.data.users.map((item) => item.id)));
-        }
-      } catch (value) {
-        setError(getApiError(value, 'Нээх мэдээллийг ачаалж чадсангүй.'));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [user?.id],
-  );
-
   useEffect(() => {
-    const timer = setTimeout(() => void load(query), 250);
-    return () => clearTimeout(timer);
-  }, [load, query]);
-
-  const toggleFollow = async (targetId: string) => {
-    const wasFollowing = followingIds.has(targetId);
-    setFollowingIds((current) => {
-      const next = new Set(current);
-      if (wasFollowing) next.delete(targetId);
-      else next.add(targetId);
-      return next;
-    });
-    try {
-      await api.post(`/users/${targetId}/follow`);
-    } catch (value) {
-      setFollowingIds((current) => {
-        const next = new Set(current);
-        if (wasFollowing) next.add(targetId);
-        else next.delete(targetId);
-        return next;
-      });
-      setError(getApiError(value, 'Дагах үйлдэл амжилтгүй боллоо.'));
-    }
-  };
-
-  const mentors = useMemo(() => users.filter((item) => item.accountType === 'PERSONAL'), [users]);
-  const businesses = useMemo(
-    () => users.filter((item) => item.accountType === 'BUSINESS'),
-    [users],
-  );
-  const trendingTopics = useMemo(
-    () =>
-      [...communities]
-        .sort((a, b) => b.memberCount + b.postCount - (a.memberCount + a.postCount))
-        .slice(0, 8),
-    [communities],
-  );
-  const filteredCommunities = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
-    if (!normalized) return communities;
-    return communities.filter((community) =>
-      community.name.toLocaleLowerCase().includes(normalized),
+    let active = true;
+    const timer = setTimeout(
+      async () => {
+        setLoading(true);
+        setError('');
+        try {
+          const { data } = await api.get<GlobalSearchResponse>('/search', { params: { q: query } });
+          if (active) setResults(data);
+        } catch (value) {
+          if (axios.isAxiosError(value) && value.response?.status === 404) {
+            try {
+              const fallback = await loadFromExistingRoutes(query);
+              if (active) setResults(fallback);
+            } catch (fallbackError) {
+              if (active) setError(getApiError(fallbackError, 'Хайлтын үр дүнг авч чадсангүй.'));
+            }
+          } else if (active) {
+            setError(getApiError(value, 'Хайлтын үр дүнг авч чадсангүй.'));
+          }
+        } finally {
+          if (active) setLoading(false);
+        }
+      },
+      query.trim() ? 280 : 0,
     );
-  }, [communities, query]);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
-  const showMentors = category === 'Бүгд' || category === 'Хэрэглэгчид';
-  const showBusinesses = category === 'Бүгд' || category === 'Бизнес';
-  const showGroups = category === 'Бүгд' || category === 'Групп';
-  const isSearching = query.trim().length > 0;
+  const count = useMemo(
+    () =>
+      results.users.length +
+      results.communities.length +
+      results.posts.length +
+      results.lessons.length +
+      results.podcasts.length,
+    [results],
+  );
+  const visibleCount = useMemo(() => {
+    if (category === 'Хүмүүс') return results.users.length;
+    if (category === 'Групп') return results.communities.length;
+    if (category === 'Пост') return results.posts.length;
+    if (category === 'Хичээл') return results.lessons.length;
+    if (category === 'Подкаст') return results.podcasts.length;
+    return count;
+  }, [category, count, results]);
+  const show = (target: Category) => category === 'Бүгд' || category === target;
+  const searching = query.trim().length > 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
-      <View className="h-16 flex-row items-center justify-between px-l">
-        <Text className="text-xl font-extrabold text-text-primary">Нээх</Text>
-        <NotificationBell />
-      </View>
+    <SafeAreaView
+      className="min-h-0 flex-1 overflow-hidden bg-background-app"
+      style={Platform.OS === 'web' ? webScreenStyle : undefined}
+    >
+      <AppPageHeader title="Нэгдсэн хайлт" actions={<NotificationBell />} />
 
-      <View className="px-l pb-s">
-        <SearchBar
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Хэрэглэгч, бизнес, групп хайх"
-        />
-      </View>
-
-      <View className="flex-row gap-s px-l pb-s">
-        {categories.map((item) => (
-          <Tag
-            key={item}
-            label={item}
-            selected={category === item}
-            onPress={() => setCategory(item)}
+      <View className="w-full max-w-[900px] self-center px-l pt-m">
+        <View className="rounded-card border border-border bg-background-paper p-s">
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Хүн, групп, пост, хичээл, подкаст хайх"
           />
-        ))}
+          <View className="mt-s flex-row flex-wrap gap-xs px-1 pb-1">
+            {categories.map((item) => (
+              <Tag
+                key={item}
+                label={item}
+                selected={category === item}
+                onPress={() => setCategory(item)}
+              />
+            ))}
+          </View>
+        </View>
       </View>
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color={lime} size="large" />
+          <Text className="mt-s text-xs text-text-muted">Хайж байна...</Text>
         </View>
       ) : (
         <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 40 }}
+          className="min-h-0 flex-1"
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            width: '100%',
+            maxWidth: 900,
+            alignSelf: 'center',
+            paddingHorizontal: 20,
+            paddingBottom: 40,
+          }}
         >
-          {!!error && <Text className="px-l py-s text-danger">{error}</Text>}
-
-          {!isSearching && !!trendingTopics.length && showGroups && (
-            <View className="mt-m">
-              <Text className="px-l text-lg font-extrabold text-text-primary">Тренд групп</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-s px-l">
-                {trendingTopics.map((community) => (
-                  <TopicCard key={community.id} community={community} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {showMentors && !!mentors.length && (
-            <View className="mt-l">
-              <Text className="px-l text-lg font-extrabold text-text-primary">
-                Санал болгож буй хэрэглэгчид
+          <View className="mt-m flex-row items-center justify-between">
+            <View>
+              <Text className="text-xl font-black text-text-primary">
+                {searching ? `“${query.trim()}”` : 'Танд санал болгох'}
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-s px-l">
-                {mentors.map((item) => (
-                  <UserCard
-                    key={item.id}
-                    user={item}
-                    isFollowing={followingIds.has(item.id)}
-                    onToggleFollow={() => void toggleFollow(item.id)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {showBusinesses && !!businesses.length && (
-            <View className="mt-l">
-              <Text className="px-l text-lg font-extrabold text-text-primary">
-                Бизнес, Стартапууд
+              <Text className="mt-1 text-xs text-text-muted">
+                {searching ? `${visibleCount} үр дүн олдлоо` : 'GrowX-ийн бүх хэсгээс нэг дор'}
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-s px-l">
-                {businesses.map((item) => (
-                  <UserCard
-                    key={item.id}
-                    user={item}
-                    isFollowing={followingIds.has(item.id)}
-                    onToggleFollow={() => void toggleFollow(item.id)}
-                  />
-                ))}
-              </ScrollView>
+            </View>
+            {searching && (
+              <Pressable
+                onPress={() => setQuery('')}
+                className="rounded-avatar bg-background-soft px-s py-xs"
+              >
+                <Text className="text-xs font-bold text-text-secondary">Цэвэрлэх</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {!!error && (
+            <View className="mt-m rounded-btn border border-danger/40 bg-danger/10 p-m">
+              <Text className="text-sm font-semibold text-danger">{error}</Text>
             </View>
           )}
 
-          {isSearching && showGroups && !!filteredCommunities.length && (
-            <View className="mt-l px-l">
-              <Text className="text-lg font-extrabold text-text-primary">Групп</Text>
-              {filteredCommunities.map((community) => (
-                <Pressable
-                  key={community.id}
-                  onPress={() => router.push(`/community/${community.id}` as Href)}
-                  className="mt-s flex-row items-center gap-s rounded-card border border-border bg-background-paper p-m"
-                >
-                  <View className="h-11 w-11 items-center justify-center rounded-btn bg-background-app">
-                    <Text className="font-extrabold text-brand-primary">
-                      {community.name.slice(0, 2).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text numberOfLines={1} className="text-sm font-extrabold text-text-primary">
-                      {community.name}
-                    </Text>
-                    <Text className="text-xs text-text-muted">{community.memberCount} гишүүн</Text>
-                  </View>
-                </Pressable>
+          {!error && visibleCount === 0 && (
+            <View className="mt-xl items-center rounded-card border border-dashed border-border bg-background-paper px-l py-12">
+              <View className="h-16 w-16 items-center justify-center rounded-avatar bg-background-soft">
+                <Icon name="search-outline" size={30} color={lime} />
+              </View>
+              <Text className="mt-m text-lg font-black text-text-primary">Илэрц олдсонгүй</Text>
+              <Text className="mt-2 max-w-[360px] text-center text-sm leading-5 text-text-muted">
+                Үгээ богиносгох эсвэл өөр ангиллаар хайж үзээрэй.
+              </Text>
+            </View>
+          )}
+
+          {show('Хүмүүс') && (
+            <Section title="Хүмүүс ба бизнес" count={results.users.length}>
+              {results.users.map((item) => (
+                <UserResult key={item.id} item={item} />
               ))}
-            </View>
+            </Section>
           )}
-
-          {!mentors.length && !businesses.length && !filteredCommunities.length && (
-            <View className="items-center px-9 pt-20">
-              <Text className="text-lg font-bold text-text-primary">Үр дүн олдсонгүй</Text>
-              <Text className="mt-2 text-center text-sm text-text-muted">
-                Өөр түлхүүр үгээр хайж үзнэ үү.
-              </Text>
-            </View>
+          {show('Групп') && (
+            <Section title="Групп" count={results.communities.length}>
+              {results.communities.map((item) => (
+                <CommunityResult key={item.id} item={item} />
+              ))}
+            </Section>
+          )}
+          {show('Пост') && (
+            <Section title="Пост" count={results.posts.length}>
+              {results.posts.map((item) => (
+                <PostResult key={item.id} item={item} />
+              ))}
+            </Section>
+          )}
+          {show('Хичээл') && (
+            <Section title="Хичээл" count={results.lessons.length}>
+              {results.lessons.map((item) => (
+                <LessonResult key={item.id} item={item} />
+              ))}
+            </Section>
+          )}
+          {show('Подкаст') && (
+            <Section title="Подкаст" count={results.podcasts.length}>
+              {results.podcasts.map((item) => (
+                <PodcastResult key={item.id} item={item} />
+              ))}
+            </Section>
           )}
         </ScrollView>
       )}

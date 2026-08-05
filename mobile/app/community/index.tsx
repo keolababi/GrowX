@@ -15,14 +15,16 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { Community } from '@/types/community';
 import { NotificationBell } from '@/components/NotificationBell';
-import { MessageUnreadBadge } from '@/components/MessageUnreadBadge';
+import { AppBottomNav } from '@/components/AppBottomNav';
+import { AppPageHeader } from '@/components/AppPageHeader';
+import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { PostCard } from '@/components/ui/PostCard';
 import { Tabs } from '@/components/ui/Tabs';
 import type { SocialPost } from '@/types/post';
 import { relativeTime } from '@/utils/relativeTime';
 import { useUser } from '@/providers/UserProvider';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 type Tab = 'discussions' | 'articles' | 'groups';
 const tabOrder: Tab[] = ['groups', 'discussions', 'articles'];
 const tabLabels = ['Бүлгүүд', 'Хэлэлцүүлэг', 'Нийтлэл'];
@@ -36,22 +38,6 @@ export default function CommunityScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const defaultCommunityId = communities.find((community) => community.joinedByMe)?.id;
-
-  const openComposer = () => {
-    if (!defaultCommunityId) {
-      setTab('groups');
-      setError('Нийтлэл эсвэл хэлэлцүүлэг оруулахын тулд эхлээд бүлэгт нэгдэнэ үү.');
-      return;
-    }
-    router.push({
-      pathname: '/posts/create',
-      params: {
-        type: 'post',
-        communityId: defaultCommunityId,
-        communityKind: tab,
-      },
-    });
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -142,24 +128,19 @@ export default function CommunityScreen() {
     }
   };
 
-  const runPrimaryAction = () => {
-    if (tab === 'groups') {
-      router.push('/community/create-group' as Href);
-      return;
-    }
-    openComposer();
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.heading}>Community</Text>
-          <View style={styles.headerActions}>
-            <NotificationBell />
-            <Text style={styles.searchIcon}>⌕</Text>
-          </View>
-        </View>
+        <AppPageHeader
+          title="Community"
+          maxWidth={900}
+          actions={
+            <>
+              <GlobalSearchButton />
+              <NotificationBell />
+            </>
+          }
+        />
 
         <View style={styles.search}>
           <Text style={styles.searchSmall}>⌕</Text>
@@ -283,25 +264,8 @@ export default function CommunityScreen() {
             )}
           </ScrollView>
         )}
-
-        <Pressable
-          accessibilityLabel={tab === 'groups' ? 'Шинэ бүлэг үүсгэх' : 'Шинэ community post'}
-          onPress={runPrimaryAction}
-          style={styles.floatingAdd}
-        >
-          <Text style={styles.floatingAddText}>＋</Text>
-        </Pressable>
       </View>
-
-      <View style={styles.bottomNav}>
-        <NavItem icon="⌂" label="Нүүр" active onPress={() => router.replace('/posts')} />
-        <NavItem icon="⌘" label="Мэдлэг" onPress={() => router.replace('/medlege')} />
-        <Pressable onPress={runPrimaryAction} style={styles.addButton}>
-          <Text style={styles.addIcon}>＋</Text>
-        </Pressable>
-        <NavItem icon="○" label="Мессеж" onPress={() => router.replace('/messages')} />
-        <NavItem icon="♙" label="Профайл" onPress={() => router.replace('/profile')} />
-      </View>
+      <AppBottomNav />
     </SafeAreaView>
   );
 }
@@ -315,46 +279,18 @@ function EmptyState({ title, copy }: { title: string; copy: string }) {
   );
 }
 
-function NavItem({
-  icon,
-  label,
-  active,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={styles.navItem}>
-      <Text style={[styles.navIcon, active && styles.navActive]}>{icon}</Text>
-      {label === 'Мессеж' && <MessageUnreadBadge />}
-      <Text style={[styles.navLabel, active && styles.navActive]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
-  page: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', paddingBottom: 94 },
-  header: {
-    height: 72,
-    paddingHorizontal: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  heading: { color: '#F5F7F6', fontSize: 29, fontWeight: '900', letterSpacing: -0.5 },
-  searchIcon: { color: '#F1F5F3', fontSize: 39, lineHeight: 42, transform: [{ rotate: '-20deg' }] },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
+  page: { flex: 1, width: '100%', maxWidth: 900, alignSelf: 'center' },
   search: {
     height: 54,
     marginHorizontal: 22,
-    marginTop: 15,
+    marginTop: 16,
     paddingHorizontal: 15,
     borderRadius: 14,
-    backgroundColor: '#08171C',
+    borderWidth: 1,
+    borderColor: '#233D34',
+    backgroundColor: '#081713',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -409,49 +345,4 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 70, paddingHorizontal: 30 },
   emptyTitle: { color: '#EFF3F1', fontSize: 18, fontWeight: '900' },
   emptyCopy: { color: '#7B8983', fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 8 },
-  floatingAdd: {
-    position: 'absolute',
-    right: 24,
-    bottom: 116,
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: lime,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-  },
-  floatingAddText: { color: '#142000', fontSize: 39, lineHeight: 41 },
-  bottomNav: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 94,
-    paddingBottom: 9,
-    backgroundColor: '#061712',
-    borderTopWidth: 1,
-    borderTopColor: '#132822',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  navItem: { width: 69, alignItems: 'center', gap: 4 },
-  navIcon: { color: '#D8DFDC', fontSize: 29, lineHeight: 31 },
-  navLabel: { color: '#C8D0CD', fontSize: 12, fontWeight: '600' },
-  navActive: { color: lime },
-  addButton: {
-    width: 61,
-    height: 61,
-    borderRadius: 31,
-    marginTop: -27,
-    backgroundColor: lime,
-    borderWidth: 4,
-    borderColor: '#061712',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addIcon: { color: '#142000', fontSize: 38, lineHeight: 40 },
 });
