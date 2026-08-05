@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const ProfileHeader: React.FC<Props> = ({ name, bio, avatarSource, stats }) => (
-  <View className="items-center gap-s rounded-card border border-border bg-background-paper p-l">
+  <View className="items-center gap-s rounded-card border border-border bg-background-paper p-xl">
     <Avatar source={avatarSource} size={72} />
     <View className="items-center gap-1">
       <Text className="text-lg font-bold text-text-primary">{name}</Text>

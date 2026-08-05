@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useSegments } from 'expo-router';
 import { api } from '@/services/api';
+import { design } from '@/constants/design';
 
 export function NotificationBell() {
   const segments = useSegments();
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0D1D19',
+    backgroundColor: design.colors.surfaceRaised,
   },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
   bell: { width: 23, height: 25, alignItems: 'center' },
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     height: 17,
     borderWidth: 2,
     borderBottomWidth: 0,
-    borderColor: '#F4F8F5',
+    borderColor: design.colors.text,
     borderTopLeftRadius: 9,
     borderTopRightRadius: 9,
   },
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     height: 5,
     borderWidth: 2,
     borderTopWidth: 0,
-    borderColor: '#F4F8F5',
+    borderColor: design.colors.text,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
   },
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     height: 3,
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
-    backgroundColor: '#F4F8F5',
+    backgroundColor: design.colors.text,
   },
   badge: {
     position: 'absolute',

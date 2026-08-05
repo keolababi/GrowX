@@ -1,19 +1,24 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, router, type Href } from 'expo-router';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '@/services/api';
 import type { AppNotification } from '@/types/notification';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
+import { AppPageHeader } from '@/components/AppPageHeader';
+import { Icon } from '@/components/ui/Icon';
+import { EmptyState, LoadingState } from '@/components/ui/ContentState';
+import { design } from '@/constants/design';
+
+function notificationIcon(
+  type: AppNotification['type'],
+): React.ComponentProps<typeof Icon>['name'] {
+  if (type === 'LIKE') return 'heart';
+  if (type === 'COMMENT') return 'chatbubble-ellipses';
+  if (type === 'FOLLOW') return 'person-add';
+  if (type === 'COLLABORATION_REQUEST') return 'people';
+  return 'information-circle';
+}
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -47,9 +52,11 @@ export default function NotificationsScreen() {
       );
       await api.patch(`/notifications/${notification.id}/read`).catch(() => undefined);
     }
-    if (notification.postId) router.push('/posts');
+    if (notification.postId) router.push(`/posts/${notification.postId}`);
     else if (notification.type === 'FOLLOW' && notification.actor) {
       router.push(`/users/${notification.actor.id}` as Href);
+    } else if (notification.type === 'COLLABORATION_REQUEST') {
+      router.push('/mentor');
     }
   };
 
@@ -60,30 +67,66 @@ export default function NotificationsScreen() {
   };
 
   const hasUnread = notifications.some((notification) => !notification.readAt);
+  const unreadCount = notifications.filter((notification) => !notification.readAt).length;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>‹</Text>
-        </Pressable>
-        <Text style={styles.title}>Мэдэгдэл</Text>
-        <Pressable disabled={!hasUnread} onPress={() => void markAllRead()}>
-          <Text style={[styles.readAll, !hasUnread && styles.readAllDisabled]}>Бүгдийг унших</Text>
-        </Pressable>
+      <AppPageHeader
+        title="Мэдэгдэл"
+        back
+        actions={
+          <Pressable
+            disabled={!hasUnread}
+            onPress={() => void markAllRead()}
+            style={({ pressed }) => [
+              styles.readAllButton,
+              !hasUnread && styles.readAllDisabled,
+              pressed && hasUnread && styles.readAllPressed,
+            ]}
+          >
+            <Icon
+              name="checkmark-done"
+              size={16}
+              color={hasUnread ? design.colors.ink : design.colors.muted}
+            />
+            <Text style={[styles.readAll, !hasUnread && styles.readAllDisabled]}>
+              Уншсан болгох
+            </Text>
+          </Pressable>
+        }
+      />
+
+      <View style={styles.filterShell}>
+        <View style={styles.filterInner}>
+          <View style={styles.summaryRow}>
+            <View>
+              <Text style={styles.summaryEyebrow}>ТАНЫ МЭДЭГДЭЛ</Text>
+              <Text style={styles.summaryTitle}>
+                {unreadCount > 0 ? `${unreadCount} шинэ мэдэгдэл` : 'Бүх мэдэгдлээ уншсан'}
+              </Text>
+            </View>
+            <View style={[styles.summaryIcon, unreadCount > 0 && styles.summaryIconActive]}>
+              <Icon
+                name={unreadCount > 0 ? 'notifications' : 'checkmark-circle'}
+                size={22}
+                color={design.colors.primary}
+              />
+            </View>
+          </View>
+        </View>
       </View>
 
       {loading ? (
-        <ActivityIndicator color="#8ee817" style={styles.loader} />
+        <LoadingState label="Мэдэгдлүүдийг уншиж байна..." />
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {!!error && <Text style={styles.error}>{error}</Text>}
           {!notifications.length && !error && (
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>♧</Text>
-              <Text style={styles.emptyTitle}>Одоогоор мэдэгдэл алга</Text>
-              <Text style={styles.emptyCopy}>Like, comment ирэхэд энд харагдана.</Text>
-            </View>
+            <EmptyState
+              icon="notifications-outline"
+              title="Одоогоор мэдэгдэл алга"
+              description="Like, comment, дагагч болон хамтрах хүсэлт ирэхэд энд харагдана."
+            />
           )}
           {notifications.map((notification) => {
             const actorName =
@@ -92,18 +135,39 @@ export default function NotificationsScreen() {
               <Pressable
                 key={notification.id}
                 onPress={() => void openNotification(notification)}
-                style={[styles.item, !notification.readAt && styles.unreadItem]}
+                style={({ pressed }) => [
+                  styles.item,
+                  !notification.readAt && styles.unreadItem,
+                  pressed && styles.itemPressed,
+                ]}
               >
                 {notification.actor?.avatarUrl ? (
                   <Image source={{ uri: notification.actor.avatarUrl }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{actorName.charAt(0).toUpperCase()}</Text>
+                    {notification.actor ? (
+                      <Text style={styles.avatarText}>{actorName.charAt(0).toUpperCase()}</Text>
+                    ) : (
+                      <Icon name={notificationIcon(notification.type)} size={21} color="#9AF000" />
+                    )}
                   </View>
                 )}
                 <View style={styles.itemCopy}>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.typeLabel}>
+                      {notification.type === 'LIKE'
+                        ? 'LIKE'
+                        : notification.type === 'COMMENT'
+                          ? 'COMMENT'
+                          : notification.type === 'FOLLOW'
+                            ? 'ШИНЭ ДАГАГЧ'
+                            : notification.type === 'COLLABORATION_REQUEST'
+                              ? 'ХАМТРАХ ХҮСЭЛТ'
+                              : 'СИСТЕМ'}
+                    </Text>
+                    <Text style={styles.time}>{relativeTime(notification.createdAt)}</Text>
+                  </View>
                   <Text style={styles.message}>{notification.message}</Text>
-                  <Text style={styles.time}>{relativeTime(notification.createdAt)}</Text>
                 </View>
                 {!notification.readAt && <View style={styles.unreadDot} />}
               </Pressable>
@@ -116,51 +180,105 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#031015' },
-  header: {
-    height: 68,
-    paddingHorizontal: 18,
+  safeArea: { flex: 1, backgroundColor: design.colors.background },
+  readAllButton: {
+    minHeight: 34,
+    paddingHorizontal: 12,
+    borderRadius: 17,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: design.colors.primary,
+  },
+  readAll: { color: design.colors.ink, fontSize: 11, fontWeight: '900' },
+  readAllDisabled: { opacity: 0.45 },
+  readAllPressed: { backgroundColor: design.colors.primaryPressed },
+  filterShell: { borderBottomWidth: 1, borderBottomColor: design.colors.border },
+  filterInner: {
+    width: '100%',
+    maxWidth: design.layout.maxWidth,
+    alignSelf: 'center',
+    paddingHorizontal: design.layout.pagePadding,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  summaryRow: {
+    minHeight: 64,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: design.colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#173029',
   },
-  backButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-  backText: { color: '#F4F8F5', fontSize: 38, lineHeight: 40 },
-  title: { color: '#F4F8F5', fontSize: 22, fontWeight: '900' },
-  readAll: { color: '#8ee817', fontSize: 12, fontWeight: '800' },
-  readAllDisabled: { opacity: 0.35 },
-  loader: { marginTop: 60 },
+  summaryEyebrow: {
+    color: design.colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+  },
+  summaryTitle: { color: design.colors.text, fontSize: 17, fontWeight: '900', marginTop: 3 },
+  summaryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: design.colors.surfaceRaised,
+  },
+  summaryIconActive: { backgroundColor: design.colors.surfaceSoft },
   scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40, gap: 8 },
+  content: {
+    width: '100%',
+    maxWidth: design.layout.maxWidth,
+    alignSelf: 'center',
+    padding: design.layout.pagePadding,
+    paddingBottom: 40,
+    gap: 8,
+  },
   error: { color: '#ff7777', padding: 14 },
-  empty: { alignItems: 'center', paddingTop: 90 },
-  emptyIcon: { color: '#8ee817', fontSize: 42 },
-  emptyTitle: { color: '#F4F8F5', fontSize: 18, fontWeight: '800', marginTop: 16 },
-  emptyCopy: { color: '#8F9B97', fontSize: 13, marginTop: 8 },
   item: {
-    minHeight: 78,
-    borderRadius: 14,
-    padding: 12,
+    minHeight: 70,
+    borderRadius: 17,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#09171A',
+    backgroundColor: design.colors.surface,
     borderWidth: 1,
-    borderColor: '#14272A',
+    borderColor: 'transparent',
   },
-  unreadItem: { backgroundColor: '#10251D', borderColor: '#285137' },
+  unreadItem: {
+    backgroundColor: design.colors.surfaceSoft,
+    borderColor: design.colors.borderStrong,
+  },
+  itemPressed: { opacity: 0.76, transform: [{ scale: 0.995 }] },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#20382C',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: design.colors.surfaceRaised,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: '#8ee817', fontSize: 18, fontWeight: '900' },
-  itemCopy: { flex: 1, marginHorizontal: 12 },
-  message: { color: '#EDF3F0', fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  time: { color: '#84918C', fontSize: 12, marginTop: 4 },
-  unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#8ee817' },
+  avatarText: { color: design.colors.primary, fontSize: 17, fontWeight: '900' },
+  itemCopy: { flex: 1, minWidth: 0, marginHorizontal: 12 },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 3,
+  },
+  typeLabel: {
+    flexShrink: 1,
+    color: design.colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.7,
+  },
+  message: { color: design.colors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  time: { flexShrink: 0, color: design.colors.muted, fontSize: 10 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: design.colors.primary },
 });

@@ -6,6 +6,7 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import type { FeedbackFormSummary } from '@/types/feedback';
+import { AppPageHeader } from '@/components/AppPageHeader';
 
 const lime = '#9AF000';
 
@@ -37,23 +38,10 @@ export default function FeedbackFormsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-app">
-      <View className="shrink-0 border-b border-border">
-        <View className="h-16 w-full max-w-[900px] self-center flex-row items-center justify-between px-l">
-          <View className="flex-row items-center gap-s">
-            <Pressable
-              onPress={() => router.back()}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Буцах"
-              className="h-10 w-10 items-center justify-center rounded-avatar border border-border bg-background-paper active:opacity-70"
-            >
-              <Icon name="chevron-back" size={22} color="#FFFFFF" />
-            </Pressable>
-            <View>
-              <Text className="text-lg font-extrabold text-text-primary">Feedback</Text>
-              <Text className="text-[11px] text-text-muted">Санал асуулгын төв</Text>
-            </View>
-          </View>
+      <AppPageHeader
+        title="Feedback"
+        back
+        actions={
           <Pressable
             onPress={() => router.push('/feedback/create')}
             accessibilityRole="button"
@@ -63,8 +51,8 @@ export default function FeedbackFormsScreen() {
             <Icon name="add" size={19} color="#020B0D" />
             <Text className="text-xs font-extrabold text-background-app">Шинэ асуулга</Text>
           </Pressable>
-        </View>
-      </View>
+        }
+      />
 
       {loading ? (
         <View className="flex-1 items-center justify-center">

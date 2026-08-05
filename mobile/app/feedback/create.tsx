@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackQuestionType } from '@/types/feedback';
@@ -153,29 +154,35 @@ export default function CreateFeedbackFormScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        <View className="h-16 flex-row items-center justify-between border-b border-border px-l">
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Icon name="close" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text className="text-base font-extrabold text-text-primary">Асуулга үүсгэх</Text>
-          <Pressable
-            disabled={submitting}
-            onPress={() => void publish()}
-            accessibilityRole="button"
-            accessibilityLabel="Асуулга нийтлэх"
-            hitSlop={10}
-          >
-            <Text
-              className={`text-sm font-bold ${submitting ? 'text-text-muted' : 'text-brand-primary'}`}
+        <AppPageHeader
+          title="Асуулга үүсгэх"
+          back
+          actions={
+            <Pressable
+              disabled={submitting}
+              onPress={() => void publish()}
+              accessibilityRole="button"
+              accessibilityLabel="Асуулга нийтлэх"
+              hitSlop={10}
             >
-              {submitting ? '...' : 'Нийтлэх'}
-            </Text>
-          </Pressable>
-        </View>
+              <Text
+                className={`text-sm font-bold ${submitting ? 'text-text-muted' : 'text-brand-primary'}`}
+              >
+                {submitting ? '...' : 'Нийтлэх'}
+              </Text>
+            </Pressable>
+          }
+        />
 
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
+          contentContainerStyle={{
+            width: '100%',
+            maxWidth: 900,
+            alignSelf: 'center',
+            padding: 20,
+            paddingBottom: 48,
+          }}
           keyboardShouldPersistTaps="handled"
         >
           {!!error && (

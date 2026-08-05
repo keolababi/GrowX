@@ -15,7 +15,7 @@ export default function IndexScreen() {
           justifyContent: 'center',
         }}
       >
-        <ActivityIndicator color="#8EE817" />
+        <ActivityIndicator color="#9AF000" />
       </View>
     );
   }

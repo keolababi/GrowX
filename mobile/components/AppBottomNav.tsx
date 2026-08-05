@@ -61,10 +61,10 @@ export function AppBottomNav() {
 
   return (
     <SafeAreaView
-      className="shrink-0 border-t border-border bg-background-paper"
+      className="shrink-0 border-t border-border bg-background-app"
       style={{ zIndex: 20 }}
     >
-      <View className="h-[85px] w-full max-w-[680px] self-center flex-row items-center justify-around pb-1">
+      <View className="h-[78px] w-full max-w-[680px] self-center flex-row items-center justify-around px-xs pb-1">
         <NavItem
           active={active === 'home'}
           icon={active === 'home' ? 'home' : 'home-outline'}
@@ -80,7 +80,7 @@ export function AppBottomNav() {
         <Pressable
           accessibilityLabel="Шинэ контент"
           onPress={openCreate}
-          className="-mt-7 h-[61px] w-[61px] items-center justify-center rounded-avatar border-4 border-background-paper bg-brand-primary active:opacity-80"
+          className="-mt-6 h-[58px] w-[58px] items-center justify-center rounded-avatar border-4 border-background-app bg-brand-primary active:opacity-80"
         >
           <Icon name="add" size={30} color="#020B0D" />
         </Pressable>
@@ -134,7 +134,7 @@ function CreateOption({
   return (
     <Pressable
       onPress={onPress}
-      className="w-[31%] items-center gap-s rounded-card border border-border bg-background-app px-s py-m active:opacity-70"
+      className="min-w-[96px] flex-1 items-center gap-s rounded-card border border-border bg-background-paper px-s py-m active:opacity-70"
     >
       <View className="h-11 w-11 items-center justify-center rounded-avatar bg-background-paper">
         <Icon name={icon} size={22} color="#9AF000" />

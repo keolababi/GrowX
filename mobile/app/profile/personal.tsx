@@ -22,7 +22,7 @@ import type { User } from '@/types/auth';
 
 type AccountType = 'PERSONAL' | 'BUSINESS';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 
 export default function PersonalInformationScreen() {
   const { user, refreshUser } = useUser();
@@ -318,7 +318,7 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#031015' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   keyboard: { flex: 1 },
   header: {
     height: 68,

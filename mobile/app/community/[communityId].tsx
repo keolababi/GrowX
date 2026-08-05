@@ -20,7 +20,7 @@ import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 type GroupTab = 'discussions' | 'articles' | 'members';
 
 const tabs: Array<{ value: GroupTab; label: string }> = [
@@ -579,7 +579,7 @@ function Empty({ title, copy }: { title: string; copy: string }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   loader: { flex: 1 },
   header: {
     height: 68,

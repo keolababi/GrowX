@@ -21,9 +21,16 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
 import { Icon } from '@/components/ui/Icon';
+import { getSocket } from '@/services/socket';
 
 const lime = '#9AF000';
 const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
+
+type DeliveryMessage = ChatMessage & {
+  deliveryStatus?: 'sending' | 'failed';
+};
+
+type SendAck = { ok: boolean; message?: ChatMessage; error?: string };
 
 function displayName(user: ChatUser | null) {
   return user?.displayName || user?.email.split('@')[0] || 'GrowX хэрэглэгч';
@@ -45,7 +52,7 @@ export default function ConversationScreen() {
   const inputRef = useRef<TextInput>(null);
   const [otherUser, setOtherUser] = useState<ChatUser | null>(null);
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<DeliveryMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -80,7 +87,20 @@ export default function ConversationScreen() {
         }>(`/conversations/${conversationId}/messages`);
         setOtherUser(data.otherUser);
         setOtherLastReadAt(data.otherLastReadAt);
-        setMessages(data.messages);
+        setMessages((current) => {
+          const serverClientIds = new Set(
+            data.messages.map((message) => message.clientMessageId).filter(Boolean),
+          );
+          const localOnly = current.filter(
+            (message) =>
+              message.deliveryStatus &&
+              message.clientMessageId &&
+              !serverClientIds.has(message.clientMessageId),
+          );
+          return [...data.messages, ...localOnly].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          );
+        });
         setError('');
         void api.patch(`/conversations/${conversationId}/read`).catch(() => undefined);
       } catch (value) {
@@ -105,6 +125,59 @@ export default function ConversationScreen() {
   }, [conversationId, loadMessages]);
 
   useEffect(() => {
+    if (!conversationId) return;
+    let active = true;
+    let connectedSocket: Awaited<ReturnType<typeof getSocket>> | null = null;
+    const joinConversation = () => {
+      connectedSocket?.emit('conversation:join', { conversationId });
+    };
+
+    const mergeMessage = (message: ChatMessage) => {
+      if (message.conversationId !== conversationId) return;
+      setMessages((items) => {
+        const next = items.filter(
+          (item) =>
+            item.id !== message.id &&
+            (!message.clientMessageId || item.clientMessageId !== message.clientMessageId),
+        );
+        return [...next, message].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+      });
+      if (message.senderId !== user?.id) {
+        connectedSocket?.emit('message:read', { conversationId });
+        void api.patch(`/conversations/${conversationId}/read`).catch(() => undefined);
+      }
+    };
+    const handleRead = (payload: { conversationId: string; userId: string; readAt: string }) => {
+      if (payload.conversationId === conversationId && payload.userId !== user?.id) {
+        setOtherLastReadAt(payload.readAt);
+      }
+    };
+
+    void getSocket()
+      .then((socket) => {
+        if (!active) return;
+        connectedSocket = socket;
+        socket.on('connect', joinConversation);
+        socket.on('message:new', mergeMessage);
+        socket.on('message:read', handleRead);
+        joinConversation();
+        socket.emit('message:read', { conversationId });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+      if (!connectedSocket) return;
+      connectedSocket.emit('conversation:leave', { conversationId });
+      connectedSocket.off('connect', joinConversation);
+      connectedSocket.off('message:new', mergeMessage);
+      connectedSocket.off('message:read', handleRead);
+    };
+  }, [conversationId, user?.id]);
+
+  useEffect(() => {
     if (!messages.length) return;
     const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(timer);
@@ -116,27 +189,87 @@ export default function ConversationScreen() {
     return () => clearTimeout(timer);
   }, [editingMessage]);
 
-  const send = async () => {
-    const content = draft.trim();
-    if (!content || sending || !conversationId) return;
-    setDraft('');
+  const deliverMessage = async (pending: DeliveryMessage) => {
+    if (!conversationId || !pending.clientMessageId) return;
     setSending(true);
+    setMessages((items) =>
+      items.map((item) =>
+        item.clientMessageId === pending.clientMessageId
+          ? { ...item, deliveryStatus: 'sending' }
+          : item,
+      ),
+    );
     try {
-      const { data } = await api.post<{ message: ChatMessage }>(
-        `/conversations/${conversationId}/messages`,
-        { content },
-      );
-      const message = data.message;
+      let delivered: ChatMessage | undefined;
+      try {
+        const socket = await getSocket();
+        const ack = await new Promise<SendAck>((resolve, reject) => {
+          socket.timeout(7_000).emit(
+            'message:send',
+            {
+              conversationId,
+              content: pending.content,
+              clientMessageId: pending.clientMessageId,
+            },
+            (timeoutError: Error | null, response: SendAck) => {
+              if (timeoutError) reject(timeoutError);
+              else resolve(response);
+            },
+          );
+        });
+        if (ack.ok) delivered = ack.message;
+        else throw new Error(ack.error || 'Socket send failed');
+      } catch {
+        const { data } = await api.post<{ message: ChatMessage }>(
+          `/conversations/${conversationId}/messages`,
+          { content: pending.content, clientMessageId: pending.clientMessageId },
+        );
+        delivered = data.message;
+      }
+      if (!delivered) throw new Error('Message acknowledgement missing');
       setMessages((items) =>
-        items.some((item) => item.id === message.id) ? items : [...items, message],
+        items.map((item) => (item.clientMessageId === pending.clientMessageId ? delivered! : item)),
       );
       setError('');
     } catch (value) {
-      setDraft(content);
-      setError(getApiError(value, 'Мессеж илгээж чадсангүй.'));
+      setMessages((items) =>
+        items.map((item) =>
+          item.clientMessageId === pending.clientMessageId
+            ? { ...item, deliveryStatus: 'failed' }
+            : item,
+        ),
+      );
+      setError(getApiError(value, 'Мессеж илгээгдсэнгүй. Дахин оролдоно уу.'));
     } finally {
       setSending(false);
     }
+  };
+
+  const send = async () => {
+    const content = draft.trim();
+    if (!content || sending || !conversationId || !user) return;
+    const clientMessageId = `gx-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const pending: DeliveryMessage = {
+      id: `pending:${clientMessageId}`,
+      clientMessageId,
+      conversationId,
+      senderId: user.id,
+      content,
+      createdAt: new Date().toISOString(),
+      editedAt: null,
+      deletedAt: null,
+      sender: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        lastSeenAt: new Date().toISOString(),
+      },
+      deliveryStatus: 'sending',
+    };
+    setDraft('');
+    setMessages((items) => [...items, pending]);
+    await deliverMessage(pending);
   };
 
   const unsend = async (messageId: string) => {
@@ -280,7 +413,7 @@ export default function ConversationScreen() {
             )}
             {messages.map((message) => {
               const mine = message.senderId === user?.id;
-              const actionAvailable = mine && canModifyMessage(message);
+              const actionAvailable = mine && !message.deliveryStatus && canModifyMessage(message);
               const selected = selectedMessage?.id === message.id;
               return (
                 <View
@@ -331,6 +464,14 @@ export default function ConversationScreen() {
                   </View>
                   {mine && message.id === lastSeenMessageId && (
                     <Text style={styles.seenText}>Уншсан</Text>
+                  )}
+                  {mine && message.deliveryStatus === 'sending' && (
+                    <Text style={styles.deliverySending}>Илгээж байна…</Text>
+                  )}
+                  {mine && message.deliveryStatus === 'failed' && (
+                    <Pressable onPress={() => void deliverMessage(message)} hitSlop={8}>
+                      <Text style={styles.deliveryFailed}>Илгээгдсэнгүй · Дахин илгээх</Text>
+                    </Pressable>
                   )}
                 </View>
               );
@@ -593,6 +734,14 @@ const styles = StyleSheet.create({
     color: '#82B84D',
     fontSize: 9,
     fontWeight: '700',
+    marginTop: 3,
+    marginRight: 4,
+  },
+  deliverySending: { color: '#718079', fontSize: 9, marginTop: 3, marginRight: 4 },
+  deliveryFailed: {
+    color: '#FF7777',
+    fontSize: 9,
+    fontWeight: '800',
     marginTop: 3,
     marginRight: 4,
   },

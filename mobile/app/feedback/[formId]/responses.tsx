@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
-import { Icon } from '@/components/ui/Icon';
+import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackResponsesPayload } from '@/types/feedback';
@@ -111,20 +111,23 @@ export default function FeedbackResponsesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-app">
-      <View className="h-16 flex-row items-center justify-between border-b border-border px-l">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="chevron-back" size={26} color="#FFFFFF" />
-        </Pressable>
-        <Text className="text-base font-extrabold text-text-primary">Хариултууд</Text>
-        <View className="w-6" />
-      </View>
+      <AppPageHeader title="Хариултууд" back />
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color={lime} size="large" />
         </View>
       ) : (
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            width: '100%',
+            maxWidth: 900,
+            alignSelf: 'center',
+            padding: 20,
+            paddingBottom: 48,
+          }}
+        >
           {!!error && <Text className="text-danger">{error}</Text>}
           {data && (
             <>

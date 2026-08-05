@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackAnswerInput, FeedbackFormDetail } from '@/types/feedback';
@@ -122,27 +123,36 @@ export default function FeedbackFormScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-app">
-      <View className="h-16 flex-row items-center justify-between border-b border-border px-l">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Icon name="chevron-back" size={26} color="#FFFFFF" />
-        </Pressable>
-        <Text className="text-base font-extrabold text-text-primary">Асуулга</Text>
-        <View className="flex-row items-center gap-s">
-          <Pressable onPress={() => void share()} hitSlop={8}>
-            <Icon name="arrow-redo-outline" size={22} color="#FFFFFF" />
-          </Pressable>
-          {form?.isOwner && (
-            <Pressable onPress={confirmDelete} hitSlop={8}>
-              <Icon name="trash-outline" size={20} color="#EF4444" />
+      <AppPageHeader
+        title="Асуулга"
+        back
+        actions={
+          <View className="flex-row items-center gap-s">
+            <Pressable onPress={() => void share()} hitSlop={8}>
+              <Icon name="arrow-redo-outline" size={22} color="#FFFFFF" />
             </Pressable>
-          )}
-        </View>
-      </View>
+            {form?.isOwner && (
+              <Pressable onPress={confirmDelete} hitSlop={8}>
+                <Icon name="trash-outline" size={20} color="#EF4444" />
+              </Pressable>
+            )}
+          </View>
+        }
+      />
 
       {!!error && <Text className="px-l pt-s text-danger">{error}</Text>}
 
       {form && (
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            width: '100%',
+            maxWidth: 900,
+            alignSelf: 'center',
+            padding: 20,
+            paddingBottom: 48,
+          }}
+        >
           <Text className="text-2xl font-extrabold leading-8 text-text-primary">{form.title}</Text>
           {!!form.description && (
             <Text className="mt-s text-sm leading-5 text-text-secondary">{form.description}</Text>

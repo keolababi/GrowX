@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { router, Stack, type Href } from 'expo-router';
+import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import {
   Image,
   type LayoutChangeEvent,
@@ -10,7 +10,6 @@ import {
   Share,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { api } from '@/services/api';
@@ -19,6 +18,8 @@ import { usePodcastStore } from '@/store/podcastStore';
 import type { Podcast } from '@/types/media';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppBottomNav } from '@/components/AppBottomNav';
+import { AppPageHeader } from '@/components/AppPageHeader';
+import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { Icon } from '@/components/ui/Icon';
 
 const lime = '#9AF000';
@@ -240,9 +241,8 @@ function PodcastRow({
 }
 
 export default function PodcastScreen() {
+  const { podcastId } = useLocalSearchParams<{ podcastId?: string }>();
   const { user } = useUser();
-  const [searching, setSearching] = useState(false);
-  const [query, setQuery] = useState('');
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [activeEpisodeId, setActiveEpisodeId] = useState<string | null>(null);
@@ -270,6 +270,13 @@ export default function PodcastScreen() {
     void load();
   }, [hydrateStore, load]);
 
+  useEffect(() => {
+    if (!podcastId) return;
+    const selected = podcasts.find((item) => item.id === podcastId);
+    const episode = selected?.episodes[0];
+    if (episode) setActiveEpisodeId(episode.id);
+  }, [podcastId, podcasts]);
+
   const toggleFollowHost = async (hostId: string) => {
     const wasFollowing = followingIds.has(hostId);
     setFollowingIds((current) => {
@@ -290,42 +297,18 @@ export default function PodcastScreen() {
     }
   };
 
-  const visiblePodcasts = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-    return podcasts.filter((podcast) => {
-      if (!normalizedQuery) return true;
-      return (
-        podcast.title.toLocaleLowerCase().includes(normalizedQuery) ||
-        (podcast.description ?? '').toLocaleLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [podcasts, query]);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.appHeader}>
-        <Text style={styles.wordmark}>
-          Grow<Text style={styles.wordmarkAccent}>X</Text>
-        </Text>
-        <View style={styles.appHeaderActions}>
-          <Pressable
-            accessibilityLabel="Podcast хайх"
-            onPress={() => {
-              setSearching((current) => !current);
-              if (searching) setQuery('');
-            }}
-            style={[styles.topHeaderIcon, searching && styles.topHeaderIconActive]}
-          >
-            <Icon
-              name={searching ? 'close' : 'search-outline'}
-              size={22}
-              color={searching ? '#142000' : lime}
-            />
-          </Pressable>
-          <NotificationBell />
-        </View>
-      </View>
+      <AppPageHeader
+        maxWidth={900}
+        actions={
+          <>
+            <GlobalSearchButton />
+            <NotificationBell />
+          </>
+        }
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -354,33 +337,14 @@ export default function PodcastScreen() {
             </View>
           </View>
 
-          {searching && (
-            <View style={styles.searchBar}>
-              <Icon name="search-outline" size={20} color="#7F8F88" />
-              <TextInput
-                autoFocus
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Гарчиг эсвэл тайлбараар хайх..."
-                placeholderTextColor="#687278"
-                style={styles.searchInput}
-              />
-              {!!query && (
-                <Pressable onPress={() => setQuery('')} hitSlop={8}>
-                  <Icon name="close-circle" size={19} color="#687278" />
-                </Pressable>
-              )}
-            </View>
-          )}
-
           <View style={styles.sectionHeader}>
-            <Text style={styles.allTitle}>{query ? 'Хайлтын үр дүн' : 'Сүүлийн дугаарууд'}</Text>
+            <Text style={styles.allTitle}>Сүүлийн дугаарууд</Text>
             <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{visiblePodcasts.length}</Text>
+              <Text style={styles.countBadgeText}>{podcasts.length}</Text>
             </View>
           </View>
           <View style={styles.uploadedList}>
-            {visiblePodcasts.map((podcast) => (
+            {podcasts.map((podcast) => (
               <PodcastRow
                 key={podcast.id}
                 podcast={podcast}
@@ -390,28 +354,24 @@ export default function PodcastScreen() {
                 onActivateEpisode={setActiveEpisodeId}
               />
             ))}
-            {!visiblePodcasts.length && (
+            {!podcasts.length && (
               <View style={styles.emptyCard}>
                 <View style={styles.emptyIcon}>
                   <Icon name="mic-outline" size={30} color={lime} />
                 </View>
-                <Text style={styles.emptyTitle}>{query ? 'Илэрц олдсонгүй' : 'Подкаст алга'}</Text>
+                <Text style={styles.emptyTitle}>Подкаст алга</Text>
                 <Text style={styles.emptyDescription}>
-                  {query
-                    ? 'Өөр түлхүүр үгээр дахин хайж үзээрэй.'
-                    : 'Анхны подкастаа оруулж GrowX хамт олонтой хуваалцаарай.'}
+                  Анхны подкастаа оруулж GrowX хамт олонтой хуваалцаарай.
                 </Text>
-                {!query && (
-                  <Pressable
-                    onPress={() =>
-                      router.push({ pathname: '/posts/create', params: { type: 'podcast' } })
-                    }
-                    style={styles.emptyButton}
-                  >
-                    <Icon name="add" size={18} color="#142000" />
-                    <Text style={styles.emptyButtonText}>Подкаст оруулах</Text>
-                  </Pressable>
-                )}
+                <Pressable
+                  onPress={() =>
+                    router.push({ pathname: '/posts/create', params: { type: 'podcast' } })
+                  }
+                  style={styles.emptyButton}
+                >
+                  <Icon name="add" size={18} color="#142000" />
+                  <Text style={styles.emptyButtonText}>Подкаст оруулах</Text>
+                </Pressable>
               </View>
             )}
           </View>
@@ -424,22 +384,7 @@ export default function PodcastScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#001014' },
-  appHeader: {
-    width: '100%',
-    maxWidth: 920,
-    height: 68,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#173029',
-  },
-  wordmark: { color: '#FFFFFF', fontSize: 27, fontWeight: '900', letterSpacing: -1 },
-  wordmarkAccent: { color: lime },
-  appHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   topHeaderIcon: {
     width: 42,
     height: 42,
@@ -453,7 +398,7 @@ const styles = StyleSheet.create({
   topHeaderIconActive: { borderColor: lime, backgroundColor: lime },
   scroll: { flex: 1 },
   content: { paddingBottom: 36 },
-  page: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: 20 },
+  page: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingHorizontal: 20 },
   header: {
     minHeight: 126,
     marginTop: 18,

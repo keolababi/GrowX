@@ -23,7 +23,7 @@ import { useUser } from '@/providers/UserProvider';
 type CreateMode = 'post' | 'reel' | 'podcast';
 type SelectedMedia = LocalUploadAsset & { type: 'image' | 'video' };
 
-const lime = '#8EE817';
+const lime = '#9AF000';
 const modes: Array<{ value: CreateMode; label: string }> = [
   { value: 'post', label: 'POST' },
   { value: 'reel', label: 'REEL' },
@@ -366,7 +366,7 @@ export default function CreateContentScreen() {
 
 const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  safeArea: { flex: 1, backgroundColor: '#020D12' },
+  safeArea: { flex: 1, backgroundColor: '#020B0D' },
   keyboard: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center' },
   header: {
     height: 68,

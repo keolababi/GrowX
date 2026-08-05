@@ -15,7 +15,7 @@ export const SearchBar: React.FC<Props> = ({
   placeholder = 'Хайх',
   autoCapitalize = 'none',
 }) => (
-  <View className="h-12 flex-row items-center rounded-card border border-border bg-background-paper px-m">
+  <View className="h-[50px] flex-row items-center rounded-avatar border border-border bg-background-paper px-m">
     <Icon name="search" size={18} color="#A7AEB0" />
     <TextInput
       value={value}
@@ -23,7 +23,7 @@ export const SearchBar: React.FC<Props> = ({
       placeholder={placeholder}
       placeholderTextColor="#A7AEB0"
       autoCapitalize={autoCapitalize}
-      className="ml-s flex-1 text-sm text-text-primary"
+      className="ml-s h-full flex-1 text-sm text-text-primary"
     />
   </View>
 );
