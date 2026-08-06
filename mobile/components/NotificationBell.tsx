@@ -4,6 +4,7 @@ import { router, useSegments } from 'expo-router';
 import { api } from '@/services/api';
 import { design } from '@/constants/design';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { Icon } from './ui/Icon';
 
 export function NotificationBell() {
   const { colors, isDark } = useColorMode();
@@ -36,11 +37,11 @@ export function NotificationBell() {
         pressed && styles.pressed,
       ]}
     >
-      <View style={styles.bell} accessibilityElementsHidden>
-        <View style={[styles.bellDome, { borderColor: colors.text }]} />
-        <View style={[styles.bellRim, { borderColor: colors.text }]} />
-        <View style={[styles.bellClapper, { backgroundColor: colors.text }]} />
-      </View>
+      <Icon
+        name={unreadCount > 0 ? 'notifications' : 'notifications-outline'}
+        size={24}
+        color={colors.text}
+      />
       {unreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
@@ -60,38 +61,6 @@ const styles = StyleSheet.create({
     backgroundColor: design.colors.surfaceRaised,
   },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
-  bell: { width: 23, height: 25, alignItems: 'center' },
-  bellDome: {
-    position: 'absolute',
-    top: 2,
-    width: 17,
-    height: 17,
-    borderWidth: 2,
-    borderBottomWidth: 0,
-    borderColor: design.colors.text,
-    borderTopLeftRadius: 9,
-    borderTopRightRadius: 9,
-  },
-  bellRim: {
-    position: 'absolute',
-    top: 17,
-    width: 22,
-    height: 5,
-    borderWidth: 2,
-    borderTopWidth: 0,
-    borderColor: design.colors.text,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-  },
-  bellClapper: {
-    position: 'absolute',
-    top: 22,
-    width: 5,
-    height: 3,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    backgroundColor: design.colors.text,
-  },
   badge: {
     position: 'absolute',
     right: -3,

@@ -123,14 +123,27 @@ function PodcastRow({
       style={[
         styles.uploadedCard,
         { backgroundColor: colors.surface, borderColor: colors.border },
-        isPlaying && [styles.uploadedCardActive, { borderColor: colors.primary }],
+        isPlaying && [
+          styles.uploadedCardActive,
+          { backgroundColor: colors.surface, borderColor: colors.primary },
+        ],
       ]}
     >
-      <View style={styles.podcastHero}>
+      <View
+        style={[
+          styles.podcastHero,
+          { backgroundColor: colors.surfaceRaised, borderBottomColor: colors.border },
+        ]}
+      >
         {podcast.coverUrl ? (
           <Image source={{ uri: podcast.coverUrl }} style={styles.podcastCover} />
         ) : (
-          <View style={[styles.podcastCoverFallback, { backgroundColor: colors.surfaceSoft }]}>
+          <View
+            style={[
+              styles.podcastCoverFallback,
+              { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
+            ]}
+          >
             <Icon name="mic" size={30} color={iconAccent} />
           </View>
         )}
@@ -148,7 +161,12 @@ function PodcastRow({
         </View>
       </View>
 
-      <View style={styles.playerControls}>
+      <View
+        style={[
+          styles.playerControls,
+          { backgroundColor: colors.surface, borderBottomColor: colors.border },
+        ]}
+      >
         <Pressable
           accessibilityRole="adjustable"
           onLayout={captureProgressWidth}
@@ -165,19 +183,26 @@ function PodcastRow({
           <View
             style={[
               styles.progressThumb,
-              { left: `${progress * 100}%`, backgroundColor: colors.primary },
+              {
+                left: `${progress * 100}%`,
+                backgroundColor: colors.primary,
+                borderColor: colors.surface,
+              },
             ]}
           />
         </Pressable>
         <View style={styles.controlRow}>
-          <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+          <Text style={[styles.timeText, { color: colors.muted }]}>{formatTime(currentTime)}</Text>
           <View style={styles.transportControls}>
             <Pressable
               accessibilityLabel="5 секунд ухраах"
               onPress={() => skip(-5)}
-              style={styles.skipButton}
+              style={[
+                styles.skipButton,
+                { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
+              ]}
             >
-              <Text style={styles.skipText}>−5</Text>
+              <Text style={[styles.skipText, { color: colors.text }]}>−5</Text>
             </Pressable>
             <Pressable
               accessibilityLabel={isPlaying ? 'Түр зогсоох' : 'Тоглуулах'}
@@ -189,12 +214,17 @@ function PodcastRow({
             <Pressable
               accessibilityLabel="5 секунд урагшлуулах"
               onPress={() => skip(5)}
-              style={styles.skipButton}
+              style={[
+                styles.skipButton,
+                { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
+              ]}
             >
-              <Text style={styles.skipText}>+5</Text>
+              <Text style={[styles.skipText, { color: colors.text }]}>+5</Text>
             </Pressable>
           </View>
-          <Text style={[styles.timeText, styles.durationText]}>{formatTime(duration)}</Text>
+          <Text style={[styles.timeText, styles.durationText, { color: colors.muted }]}>
+            {formatTime(duration)}
+          </Text>
         </View>
       </View>
 
@@ -227,7 +257,7 @@ function PodcastRow({
         >
           {podcast.description || 'Энэ видеонд тайлбар оруулаагүй байна.'}
         </Text>
-        <View style={styles.videoFooter}>
+        <View style={[styles.videoFooter, { borderTopColor: colors.border }]}>
           <Text style={[styles.episodeLabel, { color: colors.muted }]}>GROWX ORIGINALS</Text>
           <View style={styles.secondaryActions}>
             <Pressable
@@ -253,7 +283,10 @@ function PodcastRow({
             <Pressable
               accessibilityLabel="Хадгалах"
               onPress={() => toggleSaved(episode.id)}
-              style={styles.iconAction}
+              style={[
+                styles.iconAction,
+                { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+              ]}
             >
               <Icon
                 name={saved ? 'bookmark' : 'bookmark-outline'}
@@ -264,7 +297,10 @@ function PodcastRow({
             <Pressable
               accessibilityLabel="Хуваалцах"
               onPress={() => void share()}
-              style={styles.iconAction}
+              style={[
+                styles.iconAction,
+                { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+              ]}
             >
               <Icon name="arrow-redo-outline" size={20} color={colors.textSecondary} />
             </Pressable>
@@ -338,6 +374,8 @@ export default function PodcastScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppPageHeader
         maxWidth={900}
+        back
+        backFallback="/medlege"
         actions={
           <>
             <GlobalSearchButton />
@@ -360,18 +398,6 @@ export default function PodcastScreen() {
               <Text style={[styles.headingDescription, { color: colors.muted }]}>
                 Бизнесийн бодит түүх, туршлага, ярилцлага.
               </Text>
-            </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                accessibilityLabel="Шинэ подкаст оруулах"
-                onPress={() =>
-                  router.push({ pathname: '/posts/create', params: { type: 'podcast' } })
-                }
-                style={[styles.createButton, { backgroundColor: colors.primary }]}
-              >
-                <Icon name="mic" size={18} color={colors.ink} />
-                <Text style={[styles.createButtonText, { color: colors.ink }]}>Подкаст нэмэх</Text>
-              </Pressable>
             </View>
           </View>
 
@@ -465,18 +491,6 @@ const styles = StyleSheet.create({
   eyebrow: { color: lime, fontSize: 10, fontWeight: '900', letterSpacing: 1.7 },
   heading: { color: '#FFFFFF', fontSize: 32, fontWeight: '900', letterSpacing: -1, marginTop: 4 },
   headingDescription: { color: '#91A49B', fontSize: 12, marginTop: 6 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  createButton: {
-    height: 42,
-    paddingHorizontal: 15,
-    borderRadius: 21,
-    backgroundColor: lime,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-  },
-  createButtonText: { color: '#142000', fontSize: 12, fontWeight: '900' },
   searchBar: {
     height: 50,
     borderRadius: 25,

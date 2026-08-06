@@ -171,14 +171,14 @@ export const PostCard: React.FC<Props> = ({
           onPress={onPressMore || onEdit || onDelete}
           className="ml-m h-8 w-6 items-center justify-center"
         >
-          <Icon name="ellipsis-vertical" size={20} color={colors.text} />
+          <Icon name="ellipsis-horizontal" size={20} color={colors.text} />
         </Pressable>
       </View>
 
       {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}
       <MediaGrid media={media} />
 
-      <View className="mt-m flex-row items-center justify-between">
+      <View className="mt-m flex-row items-center justify-between gap-l">
         <Pressable onPress={onPressLike} className="flex-row items-center gap-1">
           <Icon
             name={likedByMe ? 'heart' : 'heart-outline'}
@@ -213,7 +213,7 @@ export const PostCard: React.FC<Props> = ({
         )}
         {onPressShare && (
           <Pressable onPress={onPressShare}>
-            <Icon name="paper-plane-outline" size={22} color={colors.textSecondary} />
+            <Icon name="share-social-outline" size={22} color={colors.textSecondary} />
           </Pressable>
         )}
         {onToggleSave && (

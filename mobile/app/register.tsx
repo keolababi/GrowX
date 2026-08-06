@@ -46,14 +46,14 @@ export default function RegisterScreen() {
       />
       <Field
         label="Нэр"
-        icon="♧"
+        icon="person-outline"
         placeholder="Бүтэн нэрээ оруулна уу"
         value={displayName}
         onChangeText={setDisplayName}
       />
       <Field
         label="И-мэйл хаяг"
-        icon="✉"
+        icon="mail-outline"
         placeholder="yourname@example.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -62,7 +62,7 @@ export default function RegisterScreen() {
       />
       <Field
         label="Нууц үг"
-        icon="♙"
+        icon="lock-closed-outline"
         placeholder="Нууц үгээ оруулна уу"
         secret
         value={password}
@@ -70,7 +70,7 @@ export default function RegisterScreen() {
       />
       <Field
         label="Нууц үгээ давтах"
-        icon="♙"
+        icon="lock-closed-outline"
         placeholder="Нууц үгээ давтана уу"
         secret
         value={confirmPassword}

@@ -133,7 +133,7 @@ function ResultRow({
   imageUrl?: string | null;
   onPress: () => void;
 }) {
-  const { iconAccent } = useColorMode();
+  const { colors, iconAccent } = useColorMode();
   return (
     <Pressable
       onPress={onPress}
@@ -157,7 +157,7 @@ function ResultRow({
         )}
         {!!meta && <Text className="mt-1 text-[10px] font-bold text-brand-primary">{meta}</Text>}
       </View>
-      <Icon name="chevron-forward" size={18} color="#65736D" />
+      <Icon name="chevron-forward" size={18} color={colors.muted} />
     </Pressable>
   );
 }
@@ -297,7 +297,12 @@ export default function DiscoverScreen() {
       className="min-h-0 flex-1 overflow-hidden bg-background-app"
       style={Platform.OS === 'web' ? webScreenStyle : undefined}
     >
-      <AppPageHeader title="Нэгдсэн хайлт" actions={<NotificationBell />} />
+      <AppPageHeader
+        title="Нэгдсэн хайлт"
+        back
+        backFallback="/posts"
+        actions={<NotificationBell />}
+      />
 
       <View className="w-full max-w-[900px] self-center px-l pt-m">
         <View className="rounded-card border border-border bg-background-paper p-s">

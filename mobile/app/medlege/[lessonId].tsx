@@ -107,14 +107,15 @@ export default function LessonDetailScreen() {
 
         <Pressable
           onPress={() => toggleCompleted(lesson.id)}
-          className={`mt-xl h-12 items-center justify-center rounded-btn ${
+          className={`mt-xl h-12 flex-row items-center justify-center gap-s rounded-btn ${
             completed ? 'border border-border' : 'bg-brand-primary'
           }`}
         >
+          {completed && <Icon name="checkmark-circle" size={18} color={colors.textSecondary} />}
           <Text
             className={`text-sm font-bold ${completed ? 'text-text-secondary' : 'text-background-app'}`}
           >
-            {completed ? 'Дуусгасан гэж тэмдэглэсэн ✓' : 'Дуусгасан гэж тэмдэглэх'}
+            {completed ? 'Дуусгасан гэж тэмдэглэсэн' : 'Дуусгасан гэж тэмдэглэх'}
           </Text>
         </Pressable>
       </ScrollView>

@@ -14,7 +14,6 @@ import {
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppPageHeader } from '@/components/AppPageHeader';
-import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { Tag } from '@/components/ui/Tag';
 import { Badge } from '@/components/ui/Badge';
@@ -428,15 +427,7 @@ export default function MentorScreen() {
       style={Platform.OS === 'web' ? webScreenStyle : undefined}
     >
       <View className="min-h-0 w-full max-w-[900px] flex-1 self-center">
-        <AppPageHeader
-          maxWidth={900}
-          actions={
-            <>
-              <GlobalSearchButton />
-              <NotificationBell />
-            </>
-          }
-        />
+        <AppPageHeader maxWidth={900} back backFallback="/medlege" actions={<NotificationBell />} />
 
         <View className="mx-l mb-m mt-m shrink-0 overflow-hidden rounded-[24px] border border-border bg-background-paper px-l py-m">
           <View className="flex-row items-center justify-between gap-m">

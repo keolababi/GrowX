@@ -130,11 +130,11 @@ export default function FeedbackFormScreen() {
         actions={
           <View className="flex-row items-center gap-s">
             <Pressable onPress={() => void share()} hitSlop={8}>
-              <Icon name="arrow-redo-outline" size={22} color={colors.text} />
+              <Icon name="share-social-outline" size={22} color={colors.text} />
             </Pressable>
             {form?.isOwner && (
               <Pressable onPress={confirmDelete} hitSlop={8}>
-                <Icon name="trash-outline" size={20} color="#EF4444" />
+                <Icon name="trash-outline" size={20} color={colors.danger} />
               </Pressable>
             )}
           </View>
@@ -197,6 +197,13 @@ export default function FeedbackFormScreen() {
                       onChangeText={(value) => setText(question.id, value)}
                       placeholder="Хариулт бичих..."
                       placeholderTextColor={colors.muted}
+                      cursorColor={colors.primary}
+                      selectionColor={colors.primary}
+                      style={{
+                        color: colors.text,
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                      }}
                       className="mt-s h-11 rounded-btn border border-border bg-background-app px-s text-sm text-text-primary"
                     />
                   )}
@@ -207,6 +214,13 @@ export default function FeedbackFormScreen() {
                       onChangeText={(value) => setText(question.id, value)}
                       placeholder="Дэлгэрэнгүй хариулт..."
                       placeholderTextColor={colors.muted}
+                      cursorColor={colors.primary}
+                      selectionColor={colors.primary}
+                      style={{
+                        color: colors.text,
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                      }}
                       multiline
                       className="mt-s min-h-20 rounded-btn border border-border bg-background-app p-s text-sm text-text-primary"
                     />

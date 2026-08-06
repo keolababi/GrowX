@@ -3,6 +3,7 @@ import { BackHandler, Image, Pressable, StyleSheet, Text, View } from 'react-nat
 import { router } from 'expo-router';
 import { colors, Logo, Screen } from '@/components/Screen';
 import { GrowXMark } from '@/components/GrowXLogo';
+import { Icon } from '@/components/ui/Icon';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const rocketImage = require('../assets/onboarding-rocket.png');
@@ -77,7 +78,7 @@ export default function Index() {
             style={styles.back}
             onPress={() => setPage((currentPage) => currentPage - 1)}
           >
-            <Text style={styles.backText}>‹</Text>
+            <Icon name="chevron-back" size={27} color="#FFFFFF" />
           </Pressable>
         ) : (
           <View />
@@ -106,7 +107,11 @@ export default function Index() {
           }
         >
           <Text style={styles.buttonText}>{page === 2 ? 'Эхлэх' : 'Дараах'}</Text>
-          <Text style={styles.arrow}>{page === 2 ? '' : '→'}</Text>
+          {page !== 2 && (
+            <View style={styles.arrow}>
+              <Icon name="arrow-forward" size={22} color="#071000" />
+            </View>
+          )}
         </Pressable>
       </View>
     </Screen>
@@ -182,7 +187,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   back: { minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { color: '#FFFFFF', fontSize: 34, lineHeight: 34, fontWeight: '300' },
   skip: { paddingVertical: 6, paddingLeft: 15 },
   skipText: { color: '#FFFFFF', fontSize: 13 },
   illustration: { height: 350, alignItems: 'center', justifyContent: 'center' },
@@ -208,5 +212,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonText: { color: '#071000', fontSize: 15, fontWeight: '800' },
-  arrow: { position: 'absolute', right: 20, color: '#071000', fontSize: 24 },
+  arrow: { position: 'absolute', right: 20 },
 });

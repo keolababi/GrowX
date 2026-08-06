@@ -190,6 +190,8 @@ export default function MessagesScreen() {
             autoCapitalize="none"
             placeholder={newChatOpen ? 'Нэр эсвэл и-мэйлээр хайх' : 'Chat хайх'}
             placeholderTextColor={colors.muted}
+            cursorColor={colors.primary}
+            selectionColor={colors.primary}
             style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
@@ -225,7 +227,7 @@ export default function MessagesScreen() {
           </View>
         )}
 
-        {!!error && <Text style={styles.error}>{error}</Text>}
+        {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
         {loading ? (
           <ActivityIndicator color={iconAccent} style={styles.loader} />
         ) : (
@@ -262,7 +264,7 @@ export default function MessagesScreen() {
                       </View>
                       <Text style={[styles.preview, { color: colors.muted }]}>{user.email}</Text>
                     </View>
-                    <Icon name="chevron-forward" size={21} color="#89968F" />
+                    <Icon name="chevron-forward" size={21} color={colors.muted} />
                   </Pressable>
                 ))
               : filtered.map((conversation) => (
@@ -327,7 +329,7 @@ export default function MessagesScreen() {
                 <Text style={[styles.emptyCopy, { color: colors.muted }]}>
                   {newChatOpen
                     ? 'Өөр нэр эсвэл и-мэйл хайгаарай.'
-                    : '＋ дарж шинэ chat эхлүүлээрэй.'}
+                    : 'Дээрх шинэ чат товчийг дарж эхлүүлээрэй.'}
                 </Text>
               </View>
             )}

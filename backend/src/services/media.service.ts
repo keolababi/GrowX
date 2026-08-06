@@ -192,6 +192,55 @@ export async function addReelComment(userId: string, reelId: string, content: st
   };
 }
 
+export async function updateReelComment(
+  userId: string,
+  reelId: string,
+  commentId: string,
+  content: string,
+) {
+  await requireReel(reelId);
+  const existing = await prisma.reelComment.findUnique({
+    where: { id: commentId },
+    select: { userId: true, reelId: true },
+  });
+  if (!existing || existing.reelId !== reelId) throw new HttpError(404, 'Сэтгэгдэл олдсонгүй.');
+  if (existing.userId !== userId) {
+    throw new HttpError(403, 'Зөвхөн өөрийн сэтгэгдлийг засах боломжтой.');
+  }
+
+  const comment = await prisma.reelComment.update({
+    where: { id: commentId },
+    data: { content },
+    include: { user: { select: reelAuthorSelect } },
+  });
+  return {
+    comment: {
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      author: {
+        id: comment.user.id,
+        email: comment.user.email,
+        displayName: comment.user.profile?.displayName ?? null,
+        avatarUrl: comment.user.profile?.avatarUrl ?? null,
+      },
+    },
+  };
+}
+
+export async function deleteReelComment(userId: string, reelId: string, commentId: string) {
+  await requireReel(reelId);
+  const comment = await prisma.reelComment.findUnique({
+    where: { id: commentId },
+    select: { userId: true, reelId: true },
+  });
+  if (!comment || comment.reelId !== reelId) throw new HttpError(404, 'Сэтгэгдэл олдсонгүй.');
+  if (comment.userId !== userId) {
+    throw new HttpError(403, 'Энэ сэтгэгдлийг устгах эрхгүй байна.');
+  }
+  await prisma.reelComment.delete({ where: { id: commentId } });
+}
+
 export async function deletePodcast(userId: string, podcastId: string) {
   const podcast = await prisma.podcast.findUnique({
     where: { id: podcastId },

@@ -13,3 +13,11 @@ mediaRouter.get('/reels/mine', asyncHandler(mediaController.listMyReels));
 mediaRouter.post('/reels', asyncHandler(mediaController.createReel));
 mediaRouter.post('/reels/:reelId/like', asyncHandler(mediaController.toggleReelLike));
 mediaRouter.post('/reels/:reelId/comments', asyncHandler(mediaController.addReelComment));
+mediaRouter.patch(
+  '/reels/:reelId/comments/:commentId',
+  asyncHandler(mediaController.updateReelComment),
+);
+mediaRouter.delete(
+  '/reels/:reelId/comments/:commentId',
+  asyncHandler(mediaController.removeReelComment),
+);

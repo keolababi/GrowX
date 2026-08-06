@@ -27,8 +27,15 @@ export function GrowXMark({ size = 72 }: { size?: number }) {
   );
 }
 
-export function GrowXLogo({ compact = false }: { compact?: boolean }) {
+export function GrowXLogo({
+  compact = false,
+  appearance = 'auto',
+}: {
+  compact?: boolean;
+  appearance?: 'auto' | 'dark' | 'light';
+}) {
   const { isDark } = useColorMode();
+  const onDarkBackground = appearance === 'dark' || (appearance === 'auto' && isDark);
   const width = compact ? 180 : 300;
   const height = compact ? 120 : 255;
 
@@ -38,7 +45,7 @@ export function GrowXLogo({ compact = false }: { compact?: boolean }) {
       height={height}
       preserveAspectRatio="xMidYMid meet"
       accessibilityLabel="GrowX"
-      style={isDark ? undefined : ({ filter: 'grayscale(1) brightness(0.16)' } as never)}
+      style={onDarkBackground ? undefined : ({ filter: 'grayscale(1) brightness(0.16)' } as never)}
     />
   );
 }

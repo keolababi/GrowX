@@ -16,8 +16,8 @@ const variantClasses: Record<NonNullable<Props['variant']>, string> = {
 const variantTextClasses: Record<NonNullable<Props['variant']>, string> = {
   brand: 'text-background-app',
   muted: 'text-text-secondary',
-  success: 'text-background-app',
-  danger: 'text-text-primary',
+  success: 'text-[#071209]',
+  danger: 'text-[#071209]',
 };
 
 export const Badge: React.FC<Props> = ({ label, variant = 'brand' }) => (

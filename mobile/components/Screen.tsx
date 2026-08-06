@@ -29,7 +29,7 @@ export function Screen({ children }: PropsWithChildren) {
 }
 
 export function Logo({ compact = false }: { compact?: boolean }) {
-  return <GrowXLogo compact={compact} />;
+  return <GrowXLogo compact={compact} appearance="dark" />;
 }
 
 export function AuthHeader({

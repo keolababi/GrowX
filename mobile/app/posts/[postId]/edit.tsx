@@ -99,12 +99,21 @@ export default function EditPostScreen() {
               onChangeText={setContent}
               placeholder="Post-ийн текст"
               placeholderTextColor={colors.muted}
-              style={[styles.input, { color: colors.text, backgroundColor: colors.surfaceRaised }]}
+              cursorColor={colors.primary}
+              selectionColor={colors.primary}
+              style={[
+                styles.input,
+                {
+                  color: colors.text,
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.border,
+                },
+              ]}
             />
             {!!post?.imageUrl && <Image source={{ uri: post.imageUrl }} style={styles.image} />}
             <Text style={[styles.hint, { color: colors.muted }]}>Зураг хэвээр хадгалагдана.</Text>
             <Text style={[styles.counter, { color: colors.muted }]}>{content.length}/5000</Text>
-            {!!error && <Text style={styles.error}>{error}</Text>}
+            {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
           </View>
         )}
       </KeyboardAvoidingView>
@@ -134,6 +143,7 @@ const styles = StyleSheet.create({
     minHeight: 170,
     padding: 15,
     borderRadius: 13,
+    borderWidth: 1,
     color: '#EDF2F0',
     backgroundColor: '#08191A',
     fontSize: 17,

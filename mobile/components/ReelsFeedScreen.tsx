@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import Slider from '@react-native-community/slider';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Linking,
@@ -26,6 +27,7 @@ import { getApiError } from '@/utils/auth';
 import type { Reel, ReelComment } from '@/types/reel';
 import { useEngagementStore } from '@/store/engagementStore';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useUser } from '@/providers/UserProvider';
 
 const controlAccent = '#FFFFFF';
 
@@ -312,10 +314,11 @@ function SeekTenButton({
       onPress={onPress}
       className="h-14 w-14 items-center justify-center rounded-avatar bg-black/65 outline-none"
     >
-      <View style={direction === 'back' ? { transform: [{ scaleX: -1 }] } : undefined}>
-        <Icon name="refresh-outline" size={40} color="#FFFFFF" />
-      </View>
-      <Text className="absolute text-xs font-black text-white">10</Text>
+      <Icon
+        name={direction === 'back' ? 'play-back-circle-outline' : 'play-forward-circle-outline'}
+        size={40}
+        color="#FFFFFF"
+      />
     </Pressable>
   );
 }
@@ -324,6 +327,8 @@ function ReelCard({
   reel,
   onToggleLike,
   onAddComment,
+  onEditComment,
+  onDeleteComment,
   saved,
   onToggleSave,
   videoHeight,
@@ -331,14 +336,23 @@ function ReelCard({
   reel: Reel;
   onToggleLike: () => void;
   onAddComment: (content: string) => Promise<void>;
+  onEditComment: (commentId: string, content: string) => Promise<void>;
+  onDeleteComment: (commentId: string) => Promise<void>;
   saved: boolean;
   onToggleSave: () => void;
   videoHeight: number;
 }) {
+  const { user } = useUser();
+  const { colors } = useColorMode();
   const { height: windowHeight } = useWindowDimensions();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentDraft, setCommentDraft] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [activeCommentMenuId, setActiveCommentMenuId] = useState<string | null>(null);
+  const [commentEditDraft, setCommentEditDraft] = useState('');
+  const [savingCommentEdit, setSavingCommentEdit] = useState(false);
+  const [commentEditError, setCommentEditError] = useState('');
 
   const share = async () => {
     try {
@@ -358,6 +372,65 @@ function ReelCard({
     } finally {
       setSendingComment(false);
     }
+  };
+
+  const startEditingComment = (comment: ReelComment) => {
+    setActiveCommentMenuId(null);
+    setEditingCommentId(comment.id);
+    setCommentEditDraft(comment.content);
+    setCommentEditError('');
+  };
+
+  const cancelEditingComment = () => {
+    if (savingCommentEdit) return;
+    setEditingCommentId(null);
+    setCommentEditDraft('');
+    setCommentEditError('');
+  };
+
+  const saveCommentEdit = async () => {
+    const content = commentEditDraft.trim();
+    if (!editingCommentId || !content || savingCommentEdit) return;
+    setSavingCommentEdit(true);
+    setCommentEditError('');
+    try {
+      await onEditComment(editingCommentId, content);
+      setEditingCommentId(null);
+      setCommentEditDraft('');
+    } catch (value) {
+      setCommentEditError(getApiError(value, 'Сэтгэгдлийг засаж чадсангүй.'));
+    } finally {
+      setSavingCommentEdit(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    setActiveCommentMenuId(null);
+    const remove = async () => {
+      setCommentEditError('');
+      try {
+        await onDeleteComment(commentId);
+      } catch (value) {
+        setCommentEditError(getApiError(value, 'Сэтгэгдлийг устгаж чадсангүй.'));
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Сэтгэгдлээ устгах уу?')) await remove();
+      return;
+    }
+    Alert.alert('Сэтгэгдэл устгах', 'Сэтгэгдлээ устгах уу?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
+    ]);
+  };
+
+  const closeComments = () => {
+    setCommentsOpen(false);
+    setActiveCommentMenuId(null);
+    setEditingCommentId(null);
+    setCommentEditDraft('');
+    setCommentEditError('');
   };
 
   return (
@@ -412,7 +485,7 @@ function ReelCard({
           </Pressable>
           <Pressable onPress={() => void share()} className="items-center gap-1 outline-none">
             <View className="h-9 w-9 items-center justify-center rounded-avatar bg-black/70">
-              <Icon name="arrow-redo-outline" size={21} color="#FFFFFF" />
+              <Icon name="share-social-outline" size={21} color="#FFFFFF" />
             </View>
             <Text className="text-[10px] font-bold text-white">Хуваалцах</Text>
           </Pressable>
@@ -429,7 +502,7 @@ function ReelCard({
         </View>
       </View>
 
-      <BottomSheet visible={commentsOpen} onClose={() => setCommentsOpen(false)}>
+      <BottomSheet visible={commentsOpen} onClose={closeComments}>
         <View
           className="w-full max-w-[620px] self-center"
           style={{ height: Math.min(Math.max(windowHeight - 100, 480), 760) }}
@@ -439,41 +512,131 @@ function ReelCard({
             <Text className="text-lg font-extrabold text-text-primary">
               Сэтгэгдэл ({reel.commentCount})
             </Text>
-            <Pressable onPress={() => setCommentsOpen(false)} className="p-s outline-none">
-              <Icon name="close" size={24} color="#FFFFFF" />
+            <Pressable onPress={closeComments} className="p-s outline-none">
+              <Icon name="close" size={24} color={colors.text} />
             </Pressable>
           </View>
           <ScrollView className="min-h-0 flex-1" showsVerticalScrollIndicator={false}>
             {reel.comments.map((comment: ReelComment) => (
-              <View key={comment.id} className="mb-m flex-row items-start gap-s">
+              <View
+                key={comment.id}
+                className="relative mb-m flex-row items-start gap-s"
+                style={{ zIndex: activeCommentMenuId === comment.id ? 30 : 0 }}
+              >
                 <View className="h-8 w-8 items-center justify-center rounded-avatar border border-border bg-background-app">
                   <Text className="text-[10px] font-extrabold text-brand-primary">
                     {initials(comment.author.displayName, comment.author.email)}
                   </Text>
                 </View>
                 <View className="min-w-0 flex-1">
-                  <Text className="text-xs font-extrabold text-text-primary">
-                    {comment.author.displayName || comment.author.email.split('@')[0]}
-                  </Text>
-                  <Text className="mt-1 text-sm leading-5 text-text-secondary">
-                    {comment.content}
-                  </Text>
+                  <View className="flex-row items-center justify-between gap-s">
+                    <Text className="min-w-0 flex-1 text-xs font-extrabold text-text-primary">
+                      {comment.author.displayName || comment.author.email.split('@')[0]}
+                    </Text>
+                    {comment.author.id === user?.id && editingCommentId !== comment.id && (
+                      <Pressable
+                        accessibilityLabel="Сэтгэгдлийн үйлдлүүд"
+                        onPress={() =>
+                          setActiveCommentMenuId((current) =>
+                            current === comment.id ? null : comment.id,
+                          )
+                        }
+                        hitSlop={8}
+                        className="h-7 w-8 items-center justify-center outline-none"
+                      >
+                        <Icon name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
+                      </Pressable>
+                    )}
+                  </View>
+                  {activeCommentMenuId === comment.id && (
+                    <View
+                      className="absolute right-0 top-8 z-30 min-w-[132px] overflow-hidden rounded-btn border border-border bg-background-paper shadow-lg"
+                      style={{ elevation: 10 }}
+                    >
+                      <Pressable
+                        onPress={() => startEditingComment(comment)}
+                        className="min-h-[42px] flex-row items-center gap-s border-b border-border px-s outline-none"
+                      >
+                        <Icon name="create-outline" size={17} color={colors.text} />
+                        <Text className="text-xs font-extrabold text-text-primary">Засах</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => void deleteComment(comment.id)}
+                        className="min-h-[42px] flex-row items-center gap-s px-s outline-none"
+                      >
+                        <Icon name="trash-outline" size={17} color={colors.danger} />
+                        <Text className="text-xs font-extrabold text-danger">Устгах</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                  {editingCommentId === comment.id ? (
+                    <View className="mt-xs">
+                      <TextInput
+                        autoFocus
+                        multiline
+                        maxLength={1000}
+                        value={commentEditDraft}
+                        onChangeText={setCommentEditDraft}
+                        cursorColor={colors.primary}
+                        selectionColor={colors.primary}
+                        style={{
+                          color: colors.text,
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                        }}
+                        className="min-h-[72px] rounded-btn border border-border bg-background-app p-s text-sm leading-5 text-text-primary outline-none"
+                      />
+                      <View className="mt-s flex-row items-center justify-end gap-l">
+                        <Pressable
+                          disabled={savingCommentEdit}
+                          onPress={cancelEditingComment}
+                          hitSlop={8}
+                          className="outline-none"
+                        >
+                          <Text className="text-xs font-bold text-text-muted">Цуцлах</Text>
+                        </Pressable>
+                        <Pressable
+                          disabled={!commentEditDraft.trim() || savingCommentEdit}
+                          onPress={() => void saveCommentEdit()}
+                          hitSlop={8}
+                          className="outline-none disabled:opacity-50"
+                        >
+                          <Text className="text-xs font-extrabold text-brand-primary">
+                            {savingCommentEdit ? 'Хадгалж байна...' : 'Хадгалах'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text className="mt-1 text-sm leading-5 text-text-secondary">
+                      {comment.content}
+                    </Text>
+                  )}
                 </View>
               </View>
             ))}
+            {!!commentEditError && (
+              <Text className="pb-s text-center text-xs text-danger">{commentEditError}</Text>
+            )}
             {!reel.comments.length && (
               <Text className="pt-xl text-center text-sm text-text-muted">
                 Одоогоор сэтгэгдэл алга.
               </Text>
             )}
           </ScrollView>
-          <View className="mt-s flex-row items-center rounded-card bg-background-app px-m">
+          <View
+            className="mt-s flex-row items-center rounded-card bg-background-app px-m"
+            style={{ backgroundColor: colors.background }}
+          >
             <TextInput
               value={commentDraft}
               onChangeText={setCommentDraft}
               onSubmitEditing={() => void submitComment()}
               placeholder="Сэтгэгдэл бичих..."
-              placeholderTextColor="#A7AEB0"
+              placeholderTextColor={colors.muted}
+              cursorColor={colors.primary}
+              selectionColor={colors.primary}
+              style={{ color: colors.text }}
               returnKeyType="send"
               className="h-12 flex-1 text-sm text-text-primary outline-none"
             />
@@ -490,7 +653,7 @@ function ReelCard({
 }
 
 export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
-  const { colors, iconAccent } = useColorMode();
+  const { iconAccent } = useColorMode();
   const { height } = useWindowDimensions();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -572,21 +735,51 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
     );
   };
 
+  const editComment = async (reel: Reel, commentId: string, content: string) => {
+    const { data } = await api.patch<{ comment: ReelComment }>(
+      `/media/reels/${reel.id}/comments/${commentId}`,
+      { content },
+    );
+    setReels((current) =>
+      current.map((item) =>
+        item.id === reel.id
+          ? {
+              ...item,
+              comments: item.comments.map((comment) =>
+                comment.id === commentId ? data.comment : comment,
+              ),
+            }
+          : item,
+      ),
+    );
+  };
+
+  const deleteComment = async (reel: Reel, commentId: string) => {
+    await api.delete(`/media/reels/${reel.id}/comments/${commentId}`);
+    setReels((current) =>
+      current.map((item) =>
+        item.id === reel.id
+          ? {
+              ...item,
+              comments: item.comments.filter((comment) => comment.id !== commentId),
+              commentCount: Math.max(0, item.commentCount - 1),
+            }
+          : item,
+      ),
+    );
+  };
+
   return (
     <SafeAreaView className="min-h-0 flex-1 overflow-hidden bg-background-app">
       <View className="h-[76px] flex-row items-center justify-between border-b border-border px-l">
-        <NavigationBackButton />
-        <Text className="text-xl font-extrabold text-text-primary">
+        <View className="w-[42px]">
+          <NavigationBackButton />
+        </View>
+        <Text className="flex-1 text-center text-xl font-extrabold text-text-primary">
           {mine ? 'Миний Reel' : 'Reels'}
         </Text>
-        <View className="flex-row items-center gap-s">
+        <View className="w-[42px]">
           <NotificationBell />
-          <Pressable
-            onPress={() => router.push({ pathname: '/posts/create', params: { type: 'reel' } })}
-            className="h-11 w-11 items-center justify-center rounded-avatar bg-brand-primary"
-          >
-            <Icon name="add" size={24} color={colors.ink} />
-          </Pressable>
         </View>
       </View>
 
@@ -618,6 +811,8 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
                 reel={reel}
                 onToggleLike={() => void toggleLike(reel)}
                 onAddComment={(content) => addComment(reel, content)}
+                onEditComment={(commentId, content) => editComment(reel, commentId, content)}
+                onDeleteComment={(commentId) => deleteComment(reel, commentId)}
                 saved={savedReelIds.has(reel.id)}
                 onToggleSave={() => toggleSaveReel(reel.id)}
                 videoHeight={reelVideoHeight}

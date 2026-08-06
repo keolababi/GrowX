@@ -84,15 +84,18 @@ export default function NotificationsScreen() {
               styles.readAllButton,
               { backgroundColor: colors.primary },
               !hasUnread && styles.readAllDisabled,
-              pressed && hasUnread && styles.readAllPressed,
+              pressed &&
+                hasUnread && [styles.readAllPressed, { backgroundColor: colors.primaryPressed }],
             ]}
           >
-            <Icon
-              name="checkmark-done"
-              size={16}
-              color={hasUnread ? design.colors.ink : design.colors.muted}
-            />
-            <Text style={[styles.readAll, !hasUnread && styles.readAllDisabled]}>
+            <Icon name="checkmark-done" size={16} color={hasUnread ? colors.ink : colors.muted} />
+            <Text
+              style={[
+                styles.readAll,
+                { color: hasUnread ? colors.ink : colors.muted },
+                !hasUnread && styles.readAllDisabled,
+              ]}
+            >
               Уншсан болгох
             </Text>
           </Pressable>
@@ -103,7 +106,7 @@ export default function NotificationsScreen() {
         <View style={styles.filterInner}>
           <View style={[styles.summaryRow, { backgroundColor: colors.surface }]}>
             <View>
-              <Text style={styles.summaryEyebrow}>ТАНЫ МЭДЭГДЭЛ</Text>
+              <Text style={[styles.summaryEyebrow, { color: colors.primary }]}>ТАНЫ МЭДЭГДЭЛ</Text>
               <Text style={[styles.summaryTitle, { color: colors.text }]}>
                 {unreadCount > 0 ? `${unreadCount} шинэ мэдэгдэл` : 'Бүх мэдэгдлээ уншсан'}
               </Text>
@@ -117,7 +120,7 @@ export default function NotificationsScreen() {
               <Icon
                 name={unreadCount > 0 ? 'notifications' : 'checkmark-circle'}
                 size={22}
-                color={design.colors.primary}
+                color={colors.primary}
               />
             </View>
           </View>
@@ -128,7 +131,7 @@ export default function NotificationsScreen() {
         <LoadingState label="Мэдэгдлүүдийг уншиж байна..." />
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
           {!notifications.length && !error && (
             <EmptyState
               icon="notifications-outline"
@@ -149,7 +152,7 @@ export default function NotificationsScreen() {
                     backgroundColor: notification.readAt ? colors.surface : colors.surfaceSoft,
                     borderColor: notification.readAt ? 'transparent' : colors.borderStrong,
                   },
-                  pressed && styles.itemPressed,
+                  pressed && [styles.itemPressed, { backgroundColor: colors.surfaceRaised }],
                 ]}
               >
                 {notification.actor?.avatarUrl ? (
@@ -171,7 +174,7 @@ export default function NotificationsScreen() {
                 )}
                 <View style={styles.itemCopy}>
                   <View style={styles.metaRow}>
-                    <Text style={styles.typeLabel}>
+                    <Text style={[styles.typeLabel, { color: colors.primary }]}>
                       {notification.type === 'LIKE'
                         ? 'LIKE'
                         : notification.type === 'COMMENT'
@@ -190,7 +193,9 @@ export default function NotificationsScreen() {
                     {notification.message}
                   </Text>
                 </View>
-                {!notification.readAt && <View style={styles.unreadDot} />}
+                {!notification.readAt && (
+                  <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+                )}
               </Pressable>
             );
           })}

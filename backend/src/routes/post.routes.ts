@@ -14,5 +14,6 @@ postRouter.patch('/:postId', asyncHandler(postController.update));
 postRouter.get('/:postId/comments', asyncHandler(postController.listComments));
 postRouter.post('/:postId/like', asyncHandler(postController.toggleLike));
 postRouter.post('/:postId/comments', asyncHandler(postController.comment));
+postRouter.patch('/:postId/comments/:commentId', asyncHandler(postController.updateComment));
 postRouter.delete('/:postId/comments/:commentId', asyncHandler(postController.removeComment));
 postRouter.delete('/:postId', asyncHandler(postController.remove));

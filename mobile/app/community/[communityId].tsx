@@ -20,6 +20,7 @@ import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import { useColorMode, type AppModeColors } from '@/providers/ColorModeProvider';
+import { Icon } from '@/components/ui/Icon';
 
 type GroupTab = 'discussions' | 'articles' | 'members';
 
@@ -202,18 +203,6 @@ export default function CommunityDetailScreen() {
     ]);
   };
 
-  const openComposer = () => {
-    if (!community?.joinedByMe || tab === 'members') return;
-    router.push({
-      pathname: '/posts/create',
-      params: {
-        type: 'post',
-        communityId: community.id,
-        communityKind: tab,
-      },
-    });
-  };
-
   const toggleLike = async (post: SocialPost) => {
     setPosts((items) =>
       items.map((item) =>
@@ -253,8 +242,12 @@ export default function CommunityDetailScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.back}>‹</Text>
+        <Pressable
+          accessibilityLabel="Буцах"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Icon name="chevron-back" size={27} color={colors.text} />
         </Pressable>
         <Text numberOfLines={1} style={styles.headerTitle}>
           {community?.name || 'Бүлэг'}
@@ -313,7 +306,7 @@ export default function CommunityDetailScreen() {
               ]}
             >
               {membershipBusy ? (
-                <ActivityIndicator color={community.joinedByMe ? iconAccent : '#142000'} />
+                <ActivityIndicator color={community.joinedByMe ? iconAccent : colors.ink} />
               ) : (
                 <Text
                   style={[
@@ -374,8 +367,18 @@ export default function CommunityDetailScreen() {
                           addMemberOpen && styles.addMemberButtonOpen,
                         ]}
                       >
-                        <Text style={styles.addMemberButtonText}>
-                          {addMemberOpen ? 'Хаах' : '＋ Нэмэх'}
+                        <Icon
+                          name={addMemberOpen ? 'close' : 'person-add-outline'}
+                          size={15}
+                          color={addMemberOpen ? colors.textSecondary : colors.ink}
+                        />
+                        <Text
+                          style={[
+                            styles.addMemberButtonText,
+                            addMemberOpen && { color: colors.textSecondary },
+                          ]}
+                        >
+                          {addMemberOpen ? 'Хаах' : 'Нэмэх'}
                         </Text>
                       </Pressable>
                     </View>
@@ -388,6 +391,8 @@ export default function CommunityDetailScreen() {
                           onChangeText={setCandidateQuery}
                           placeholder="Нэр эсвэл и-мэйлээр хайх"
                           placeholderTextColor={colors.muted}
+                          cursorColor={colors.primary}
+                          selectionColor={colors.primary}
                           style={styles.candidateSearch}
                         />
                         {candidates.map((candidate) => {
@@ -475,13 +480,13 @@ export default function CommunityDetailScreen() {
                           style={styles.removeMemberButton}
                         >
                           {adminBusy === member.id ? (
-                            <ActivityIndicator color="#FF817B" size="small" />
+                            <ActivityIndicator color={colors.danger} size="small" />
                           ) : (
                             <Text style={styles.removeMemberText}>Хасах</Text>
                           )}
                         </Pressable>
                       ) : (
-                        <Text style={styles.chevron}>›</Text>
+                        <Icon name="chevron-forward" size={21} color={colors.muted} />
                       )}
                     </Pressable>
                   );
@@ -498,7 +503,7 @@ export default function CommunityDetailScreen() {
                       style={styles.deleteGroupButton}
                     >
                       {deletingGroup ? (
-                        <ActivityIndicator color="#FF817B" />
+                        <ActivityIndicator color={colors.danger} />
                       ) : (
                         <Text style={styles.deleteGroupText}>Бүлгийг устгах</Text>
                       )}
@@ -536,15 +541,17 @@ export default function CommunityDetailScreen() {
                     )}
                     <View style={styles.actions}>
                       <Pressable onPress={() => void toggleLike(post)} style={styles.action}>
-                        <Text style={[styles.actionIcon, post.likedByMe && styles.liked]}>
-                          {post.likedByMe ? '♥' : '♡'}
-                        </Text>
+                        <Icon
+                          name={post.likedByMe ? 'heart' : 'heart-outline'}
+                          size={23}
+                          color={post.likedByMe ? colors.primary : colors.textSecondary}
+                        />
                         <Text style={[styles.actionText, post.likedByMe && styles.liked]}>
                           {post.likeCount}
                         </Text>
                       </Pressable>
                       <Pressable onPress={() => router.push('/posts')} style={styles.action}>
-                        <Text style={styles.commentIcon}>○</Text>
+                        <Icon name="chatbubble-outline" size={22} color={colors.textSecondary} />
                         <Text style={styles.actionText}>{post.commentCount}</Text>
                       </Pressable>
                     </View>
@@ -553,7 +560,7 @@ export default function CommunityDetailScreen() {
                 {!visiblePosts.length && (
                   <Empty
                     title={tab === 'articles' ? 'Нийтлэл алга' : 'Хэлэлцүүлэг алга'}
-                    copy="Доорх ＋ товчоор анхны контентоо оруулаарай."
+                    copy="Шинэ контент оруулахын тулд Нүүр хуудасны нэмэх товчийг ашиглаарай."
                   />
                 )}
               </View>
@@ -561,12 +568,6 @@ export default function CommunityDetailScreen() {
           </>
         )}
       </ScrollView>
-
-      {community?.joinedByMe && tab !== 'members' && (
-        <Pressable onPress={openComposer} style={styles.floatingAdd}>
-          <Text style={styles.floatingAddText}>＋</Text>
-        </Pressable>
-      )}
     </SafeAreaView>
   );
 }
@@ -595,7 +596,6 @@ const createStyles = (colors: AppModeColors) =>
       borderBottomColor: colors.border,
     },
     backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-    back: { color: colors.text, fontSize: 38, lineHeight: 40 },
     headerTitle: {
       flex: 1,
       color: colors.text,
@@ -606,7 +606,7 @@ const createStyles = (colors: AppModeColors) =>
     headerSpacer: { width: 46 },
     scroll: { flex: 1 },
     content: { width: '100%', maxWidth: 650, alignSelf: 'center', padding: 20, paddingBottom: 110 },
-    error: { color: '#FF817B', marginBottom: 12 },
+    error: { color: colors.danger, marginBottom: 12 },
     cover: {
       height: 150,
       overflow: 'hidden',
@@ -688,10 +688,8 @@ const createStyles = (colors: AppModeColors) =>
     time: { color: colors.muted, fontSize: 10, marginTop: 3 },
     postContent: { color: colors.text, fontSize: 15, lineHeight: 23, marginTop: 14 },
     postImage: { width: '100%', aspectRatio: 1.55, borderRadius: 14, marginTop: 13 },
-    actions: { flexDirection: 'row', gap: 24, marginTop: 13 },
+    actions: { flexDirection: 'row', gap: 20, marginTop: 13 },
     action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    actionIcon: { color: colors.textSecondary, fontSize: 23 },
-    commentIcon: { color: colors.textSecondary, fontSize: 23 },
     actionText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
     liked: { color: colors.primary },
     memberList: { paddingTop: 5 },
@@ -712,8 +710,10 @@ const createStyles = (colors: AppModeColors) =>
       paddingHorizontal: 13,
       borderRadius: 18,
       backgroundColor: colors.primary,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 5,
     },
     addMemberButtonOpen: {
       borderWidth: 1,
@@ -801,39 +801,38 @@ const createStyles = (colors: AppModeColors) =>
       backgroundColor: colors.surfaceSoft,
     },
     memberBio: { color: colors.muted, fontSize: 11, marginTop: 4 },
-    chevron: { color: colors.muted, fontSize: 29 },
     removeMemberButton: {
       minWidth: 58,
       height: 32,
       paddingHorizontal: 10,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: '#713D3A',
-      backgroundColor: '#271513',
+      borderColor: colors.danger,
+      backgroundColor: colors.surfaceRaised,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    removeMemberText: { color: '#FF817B', fontSize: 10, fontWeight: '900' },
+    removeMemberText: { color: colors.danger, fontSize: 10, fontWeight: '900' },
     dangerZone: {
       marginTop: 24,
       padding: 16,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: '#5A302E',
-      backgroundColor: '#1D1110',
+      borderColor: colors.danger,
+      backgroundColor: colors.surface,
     },
-    dangerTitle: { color: '#FFAAA5', fontSize: 13, fontWeight: '900' },
-    dangerHint: { color: '#9F7774', fontSize: 10, lineHeight: 16, marginTop: 5 },
+    dangerTitle: { color: colors.danger, fontSize: 13, fontWeight: '900' },
+    dangerHint: { color: colors.muted, fontSize: 10, lineHeight: 16, marginTop: 5 },
     deleteGroupButton: {
       height: 42,
       marginTop: 14,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: '#A54D48',
+      borderColor: colors.danger,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    deleteGroupText: { color: '#FF817B', fontSize: 12, fontWeight: '900' },
+    deleteGroupText: { color: colors.danger, fontSize: 12, fontWeight: '900' },
     empty: { alignItems: 'center', paddingVertical: 55, paddingHorizontal: 25 },
     emptyTitle: { color: colors.text, fontSize: 17, fontWeight: '900' },
     emptyCopy: {
@@ -843,19 +842,4 @@ const createStyles = (colors: AppModeColors) =>
       textAlign: 'center',
       marginTop: 8,
     },
-    floatingAdd: {
-      position: 'absolute',
-      right: 24,
-      bottom: 24,
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: colors.primary,
-      shadowOpacity: 0.25,
-      shadowRadius: 12,
-    },
-    floatingAddText: { color: colors.ink, fontSize: 38, lineHeight: 40 },
   });

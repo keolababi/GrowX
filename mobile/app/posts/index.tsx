@@ -18,7 +18,6 @@ import {
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { GlobalSearchButton } from '@/components/GlobalSearchButton';
-import { IconButton } from '@/components/ui/IconButton';
 import { PostCard, type PostCardAuthor } from '@/components/ui/PostCard';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { api } from '@/services/api';
@@ -60,7 +59,7 @@ function AuthorAvatar({ author, size = 46 }: { author: PostCardAuthor; size?: nu
 }
 
 export default function PostsScreen() {
-  const { colors, iconAccent: accent, isDark } = useColorMode();
+  const { colors, iconAccent: accent } = useColorMode();
   const { user } = useUser();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -223,22 +222,6 @@ export default function PostsScreen() {
           <>
             <GlobalSearchButton prominent />
             <NotificationBell />
-            <IconButton
-              name="film-outline"
-              accessibilityLabel="Reels үзэх"
-              variant={isDark ? 'filled' : 'plain'}
-              color={colors.text}
-              size={25}
-              onPress={() => router.push('/reels')}
-            />
-            <IconButton
-              name="add"
-              accessibilityLabel="Шинэ post"
-              variant="primary"
-              color={colors.ink}
-              size={25}
-              onPress={() => router.push('/posts/create')}
-            />
           </>
         }
       />
@@ -317,7 +300,10 @@ export default function PostsScreen() {
               footer={
                 <View className="mt-m flex-row items-center gap-s">
                   {!!user && <AuthorAvatar author={user} size={34} />}
-                  <View className="min-w-0 flex-1 flex-row items-center rounded-avatar border border-border bg-background-paper px-m">
+                  <View
+                    className="min-w-0 flex-1 flex-row items-center rounded-avatar border border-border bg-background-paper px-m"
+                    style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+                  >
                     <TextInput
                       value={commentDrafts[post.id] ?? ''}
                       onChangeText={(value) =>
@@ -326,8 +312,11 @@ export default function PostsScreen() {
                       onSubmitEditing={() => void addComment(post.id)}
                       placeholder="Сэтгэгдэл бичих..."
                       placeholderTextColor={colors.muted}
+                      cursorColor={colors.primary}
+                      selectionColor={colors.primary}
                       returnKeyType="send"
                       className="h-11 flex-1 text-sm text-text-primary"
+                      style={{ color: colors.text, backgroundColor: colors.surface }}
                     />
                     <Pressable onPress={() => void addComment(post.id)} hitSlop={8}>
                       <Text className="text-sm font-bold text-brand-primary">Илгээх</Text>

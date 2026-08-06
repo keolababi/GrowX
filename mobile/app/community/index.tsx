@@ -17,7 +17,7 @@ import type { Community } from '@/types/community';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { AppPageHeader } from '@/components/AppPageHeader';
-import { GlobalSearchButton } from '@/components/GlobalSearchButton';
+import { Icon } from '@/components/ui/Icon';
 import { PostCard } from '@/components/ui/PostCard';
 import { Tabs } from '@/components/ui/Tabs';
 import type { SocialPost } from '@/types/post';
@@ -136,23 +136,22 @@ export default function CommunityScreen() {
         <AppPageHeader
           title="Community"
           maxWidth={900}
-          actions={
-            <>
-              <GlobalSearchButton />
-              <NotificationBell />
-            </>
-          }
+          back
+          backFallback="/medlege"
+          actions={<NotificationBell />}
         />
 
         <View
           style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
-          <Text style={[styles.searchSmall, { color: colors.muted }]}>⌕</Text>
+          <Icon name="search-outline" size={20} color={colors.muted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Бодож байгаа зүйл?"
             placeholderTextColor={colors.muted}
+            cursorColor={colors.primary}
+            selectionColor={colors.primary}
             style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
@@ -175,7 +174,7 @@ export default function CommunityScreen() {
             contentContainerStyle={styles.feed}
             showsVerticalScrollIndicator={false}
           >
-            {!!error && <Text style={styles.error}>{error}</Text>}
+            {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
 
             {tab === 'groups' ? (
               <>
@@ -186,7 +185,7 @@ export default function CommunityScreen() {
                     style={({ pressed }) => [
                       styles.groupCard,
                       { backgroundColor: colors.surface, borderColor: colors.border },
-                      pressed && styles.groupCardPressed,
+                      pressed && { backgroundColor: colors.surfaceRaised },
                     ]}
                   >
                     {community.coverUrl ? (
@@ -314,7 +313,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  searchSmall: { color: '#8C9994', fontSize: 29, transform: [{ rotate: '-20deg' }] },
   searchInput: { flex: 1, height: '100%', color: '#EFF3F1', fontSize: 14, marginLeft: 10 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
@@ -328,7 +326,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  groupCardPressed: { backgroundColor: '#071916' },
   groupMark: {
     width: 54,
     height: 54,

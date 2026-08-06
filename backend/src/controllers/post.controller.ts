@@ -58,6 +58,14 @@ export async function comment(req: Request, res: Response): Promise<void> {
   res.status(201).json(await postService.addComment(req.auth!.userId, postId, content));
 }
 
+export async function updateComment(req: Request, res: Response): Promise<void> {
+  const { postId, commentId } = commentIdSchema.parse(req.params);
+  const { content } = commentSchema.parse(req.body);
+  res
+    .status(200)
+    .json(await postService.updateComment(req.auth!.userId, postId, commentId, content));
+}
+
 export async function removeComment(req: Request, res: Response): Promise<void> {
   const { postId, commentId } = commentIdSchema.parse(req.params);
   await postService.deleteComment(req.auth!.userId, postId, commentId);

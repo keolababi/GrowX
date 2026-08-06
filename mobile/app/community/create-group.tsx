@@ -19,6 +19,7 @@ import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import type { Community } from '@/types/community';
 import { getApiError } from '@/utils/auth';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { Icon } from '@/components/ui/Icon';
 
 const lime = '#9AF000';
 
@@ -85,8 +86,13 @@ export default function CreateGroupScreen() {
         style={styles.keyboard}
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Pressable disabled={submitting} onPress={() => router.back()} style={styles.backButton}>
-            <Text style={[styles.back, { color: colors.text }]}>‹</Text>
+          <Pressable
+            accessibilityLabel="Буцах"
+            disabled={submitting}
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Icon name="chevron-back" size={27} color={colors.text} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Бүлэг үүсгэх</Text>
           <View style={styles.headerSpacer} />
@@ -131,7 +137,7 @@ export default function CreateGroupScreen() {
           </Pressable>
           {cover && !submitting && (
             <Pressable onPress={() => setCover(null)} style={styles.removeCover}>
-              <Text style={styles.removeCoverText}>Зураг хасах</Text>
+              <Text style={[styles.removeCoverText, { color: colors.danger }]}>Зураг хасах</Text>
             </Pressable>
           )}
           <Text style={[styles.title, { color: colors.text }]}>Шинэ community бүлэг</Text>
@@ -150,6 +156,8 @@ export default function CreateGroupScreen() {
               onChangeText={setName}
               placeholder="Жишээ: Startup founders"
               placeholderTextColor={colors.muted}
+              cursorColor={colors.primary}
+              selectionColor={colors.primary}
               style={[
                 styles.input,
                 {
@@ -171,6 +179,8 @@ export default function CreateGroupScreen() {
               onChangeText={setDescription}
               placeholder="Бүлгийн зорилго, хэлэлцэх сэдвийг товч тайлбарлана уу"
               placeholderTextColor={colors.muted}
+              cursorColor={colors.primary}
+              selectionColor={colors.primary}
               style={[
                 styles.input,
                 styles.descriptionInput,
@@ -185,7 +195,7 @@ export default function CreateGroupScreen() {
               {description.length}/1000
             </Text>
 
-            {!!error && <Text style={styles.error}>{error}</Text>}
+            {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
             {submitting && cover && (
               <View style={styles.progress}>
                 <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSoft }]}>
@@ -236,7 +246,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#233D34',
   },
   backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-  back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   headerTitle: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
   scroll: { flex: 1 },

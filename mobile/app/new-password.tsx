@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
 import { BackButton, Field, PrimaryButton } from '@/components/AuthUI';
+import { Icon } from '@/components/ui/Icon';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 
@@ -35,7 +36,7 @@ export default function NewPassword() {
       />
       <Field
         label="Шинэ нууц үг"
-        icon="♙"
+        icon="lock-closed-outline"
         placeholder="••••••••••"
         secret
         value={password}
@@ -44,7 +45,7 @@ export default function NewPassword() {
       <Text style={styles.strong}>Хүчтэй ━━━ ━━━ ━━━ ━━━</Text>
       <Field
         label="Нууц үгээ давтах"
-        icon="♙"
+        icon="lock-closed-outline"
         placeholder="••••••••••"
         secret
         value={confirmPassword}
@@ -61,10 +62,10 @@ export default function NewPassword() {
           'Том жижиг үсэг орсон байх',
           'Тоо болон тэмдэгт орсон байх',
         ].map((x) => (
-          <Text key={x} style={styles.rule}>
-            <Text style={styles.check}>✓ </Text>
-            {x}
-          </Text>
+          <View key={x} style={styles.rule}>
+            <Icon name="checkmark-circle-outline" size={17} color={colors.lime} />
+            <Text style={styles.ruleText}>{x}</Text>
+          </View>
         ))}
       </View>
     </Screen>
@@ -73,6 +74,6 @@ export default function NewPassword() {
 const styles = StyleSheet.create({
   strong: { color: colors.lime, marginTop: -8, marginBottom: 18, fontSize: 12 },
   rules: { marginTop: 20, gap: 10 },
-  rule: { color: '#E1E5E5', fontSize: 13 },
-  check: { color: colors.lime, fontWeight: '900', fontSize: 16 },
+  rule: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  ruleText: { color: '#E1E5E5', fontSize: 13 },
 });

@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSegments } from 'expo-router';
 import { api } from '@/services/api';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 export function MessageUnreadBadge() {
+  const { colors } = useColorMode();
   const segments = useSegments();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -25,8 +27,13 @@ export function MessageUnreadBadge() {
   if (!unreadCount) return null;
 
   return (
-    <View pointerEvents="none" style={styles.badge}>
-      <Text style={styles.text}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+    <View
+      pointerEvents="none"
+      style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.background }]}
+    >
+      <Text style={[styles.text, { color: colors.ink }]}>
+        {unreadCount > 99 ? '99+' : unreadCount}
+      </Text>
     </View>
   );
 }
