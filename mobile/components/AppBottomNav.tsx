@@ -20,6 +20,7 @@ export function AppBottomNav() {
   const params = useGlobalSearchParams<{ communityId?: string }>();
   const active = getActiveSection(segments[0]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const { colors, isDark } = useColorMode();
   const inCommunity = segments[0] === 'community' && !!params.communityId;
 
   const openCreate = () => {
@@ -61,50 +62,61 @@ export function AppBottomNav() {
   };
 
   return (
-    <SafeAreaView
-      className="shrink-0 border-t border-border bg-background-app"
-      style={{ zIndex: 20 }}
-    >
-      <View className="h-[78px] w-full max-w-[680px] self-center flex-row items-center justify-around px-xs pb-1">
-        <NavItem
-          active={active === 'home'}
-          icon={active === 'home' ? 'home' : 'home-outline'}
-          label="Нүүр"
-          onPress={() => router.replace('/posts')}
-        />
-        <NavItem
-          active={active === 'knowledge'}
-          icon={active === 'knowledge' ? 'book' : 'book-outline'}
-          label="Мэдлэг"
-          onPress={() => router.replace('/medlege')}
-        />
-        <Pressable
-          accessibilityLabel="Шинэ контент"
-          onPress={openCreate}
-          className="-mt-6 h-[58px] w-[58px] items-center justify-center rounded-avatar border-4 border-background-app bg-brand-primary active:opacity-80"
-        >
-          <Icon name="add" size={30} color="#020B0D" />
-        </Pressable>
-        <NavItem
-          active={active === 'messages'}
-          icon={active === 'messages' ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'}
-          label="Мессеж"
-          showUnread
-          onPress={() => router.replace('/messages')}
-        />
-        <NavItem
-          active={active === 'profile'}
-          icon={active === 'profile' ? 'person' : 'person-outline'}
-          label="Профайл"
-          onPress={() => router.replace('/profile')}
-        />
-      </View>
+    <>
+      <SafeAreaView
+        className={`shrink-0 ${isDark ? 'bg-background-app' : 'bg-background-paper'}`}
+        style={{ zIndex: 20, borderTopWidth: 1, borderTopColor: colors.border }}
+      >
+        <View className="h-[82px] w-full max-w-[680px] self-center flex-row items-center justify-around px-xs pb-1">
+          <NavItem
+            active={active === 'home'}
+            icon={active === 'home' ? 'home' : 'home-outline'}
+            label="Нүүр"
+            onPress={() => router.replace('/posts')}
+          />
+          <NavItem
+            active={active === 'knowledge'}
+            icon={active === 'knowledge' ? 'school' : 'school-outline'}
+            label="Мэдлэг"
+            onPress={() => router.replace('/medlege')}
+          />
+          <View
+            className={`-mt-7 h-[72px] w-[72px] items-center justify-center rounded-avatar ${isDark ? 'bg-background-app' : 'bg-background-paper'}`}
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              boxShadow: '0 5px 14px rgba(0, 0, 0, 0.16)',
+            }}
+          >
+            <Pressable
+              accessibilityLabel="Шинэ контент"
+              onPress={openCreate}
+              className="h-[60px] w-[60px] items-center justify-center rounded-avatar bg-brand-primary active:opacity-80"
+            >
+              <Icon name="add" size={30} color={colors.ink} />
+            </Pressable>
+          </View>
+          <NavItem
+            active={active === 'messages'}
+            icon={active === 'messages' ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'}
+            label="Мессеж"
+            showUnread
+            onPress={() => router.replace('/messages')}
+          />
+          <NavItem
+            active={active === 'profile'}
+            icon={active === 'profile' ? 'person' : 'person-outline'}
+            label="Профайл"
+            onPress={() => router.replace('/profile')}
+          />
+        </View>
+      </SafeAreaView>
 
       <BottomSheet visible={pickerOpen} onClose={() => setPickerOpen(false)}>
         <Text className="mb-m text-center text-lg font-extrabold text-text-primary">
           Юу үүсгэхийг хүсэж байна?
         </Text>
-        <View className="flex-row flex-wrap gap-s">
+        <View className="flex-row flex-wrap justify-center gap-s">
           <CreateOption icon="create-outline" label="Пост" onPress={createPost} />
           <CreateOption icon="film-outline" label="Reel" onPress={createReel} />
           <CreateOption icon="mic-outline" label="Podcast" onPress={createPodcast} />
@@ -117,7 +129,7 @@ export function AppBottomNav() {
           )}
         </View>
       </BottomSheet>
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -136,7 +148,7 @@ function CreateOption({
   return (
     <Pressable
       onPress={onPress}
-      className="min-w-[96px] flex-1 items-center gap-s rounded-card border border-border bg-background-paper px-s py-m active:opacity-70"
+      className="min-h-[112px] min-w-[96px] max-w-[164px] flex-1 basis-[30%] items-center justify-center gap-s rounded-card border border-border bg-background-paper px-s py-m active:opacity-70"
     >
       <View className="h-11 w-11 items-center justify-center rounded-avatar bg-background-paper">
         <Icon name={icon} size={22} color={iconAccent} />
@@ -160,7 +172,7 @@ function NavItem({
   showUnread?: boolean;
   onPress: () => void;
 }) {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   return (
     <Pressable
       accessibilityRole="button"
@@ -168,7 +180,7 @@ function NavItem({
       onPress={onPress}
       className="w-[69px] items-center gap-1 active:opacity-60"
     >
-      <Icon name={icon} size={26} color={active ? iconAccent : '#D8DFDC'} />
+      <Icon name={icon} size={27} color={active ? iconAccent : colors.textSecondary} />
       {showUnread && <MessageUnreadBadge />}
       <Text
         className={`text-xs font-semibold ${active ? 'text-brand-primary' : 'text-text-secondary'}`}

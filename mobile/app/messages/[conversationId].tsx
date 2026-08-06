@@ -46,7 +46,7 @@ function canModifyMessage(message: ChatMessage) {
 }
 
 export default function ConversationScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useUser();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -358,18 +358,23 @@ export default function ConversationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboard}
       >
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: colors.background, borderBottomColor: colors.border },
+          ]}
+        >
           <Pressable
             accessibilityLabel="Мессежийн жагсаалт руу буцах"
             onPress={() => router.replace('/messages')}
             style={styles.backButton}
           >
-            <Icon name="chevron-back" size={27} color="#F2F6F4" />
+            <Icon name="chevron-back" size={27} color={colors.text} />
           </Pressable>
           <Pressable
             disabled={!otherUser}
@@ -379,14 +384,14 @@ export default function ConversationScreen() {
             {otherUser?.avatarUrl ? (
               <Image source={{ uri: otherUser.avatarUrl }} style={styles.headerAvatar} />
             ) : (
-              <View style={styles.headerAvatar}>
-                <Text style={styles.headerAvatarText}>
+              <View style={[styles.headerAvatar, { backgroundColor: colors.surfaceSoft }]}>
+                <Text style={[styles.headerAvatarText, { color: colors.primary }]}>
                   {displayName(otherUser).charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
             <View style={styles.headerCopy}>
-              <Text numberOfLines={1} style={styles.name}>
+              <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
                 {displayName(otherUser)}
               </Text>
             </View>
@@ -398,7 +403,7 @@ export default function ConversationScreen() {
         ) : (
           <ScrollView
             ref={scrollRef}
-            style={styles.scroll}
+            style={[styles.scroll, { backgroundColor: colors.background }]}
             contentContainerStyle={styles.messages}
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
@@ -409,8 +414,10 @@ export default function ConversationScreen() {
                 <View style={styles.emptyIcon}>
                   <Icon name="chatbubble-ellipses-outline" size={29} color={iconAccent} />
                 </View>
-                <Text style={styles.emptyTitle}>Шинэ яриа</Text>
-                <Text style={styles.emptyCopy}>Эхний мессежээ илгээгээрэй.</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Шинэ яриа</Text>
+                <Text style={[styles.emptyCopy, { color: colors.muted }]}>
+                  Эхний мессежээ илгээгээрэй.
+                </Text>
               </View>
             )}
             {messages.map((message) => {
@@ -437,14 +444,17 @@ export default function ConversationScreen() {
                           }
                           style={({ pressed }) => [
                             styles.moreButton,
-                            selected && styles.moreButtonActive,
+                            selected && [
+                              styles.moreButtonActive,
+                              { backgroundColor: colors.surfaceRaised },
+                            ],
                             pressed && styles.moreButtonPressed,
                           ]}
                         >
                           <Icon
                             name="ellipsis-horizontal"
                             size={18}
-                            color={selected ? iconAccent : '#8D9B95'}
+                            color={selected ? iconAccent : colors.muted}
                           />
                         </Pressable>
                       </View>
@@ -453,9 +463,17 @@ export default function ConversationScreen() {
                       disabled={!actionAvailable || Boolean(unsendingId)}
                       delayLongPress={350}
                       onLongPress={(event) => actionAvailable && openMessageMenu(message, event)}
-                      style={[styles.bubble, mine ? styles.mineBubble : styles.theirBubble]}
+                      style={[
+                        styles.bubble,
+                        mine
+                          ? [styles.mineBubble, { backgroundColor: colors.primary }]
+                          : styles.theirBubble,
+                        !mine && { backgroundColor: colors.surfaceRaised },
+                      ]}
                     >
-                      <Text style={[styles.messageText, mine && styles.mineText]}>
+                      <Text
+                        style={[styles.messageText, { color: mine ? colors.ink : colors.text }]}
+                      >
                         {message.content}
                       </Text>
                       <Text style={[styles.messageTime, mine && styles.mineTime]}>
@@ -482,12 +500,19 @@ export default function ConversationScreen() {
         )}
 
         {!!error && <Text style={styles.error}>{error}</Text>}
-        <View style={styles.composerShell}>
+        <View
+          style={[
+            styles.composerShell,
+            { backgroundColor: colors.background, borderTopColor: colors.border },
+          ]}
+        >
           {editingMessage && (
             <View style={styles.editingHeader}>
               <View style={styles.editingCopy}>
-                <Text style={styles.editingLabel}>Мессеж засаж байна</Text>
-                <Text numberOfLines={1} style={styles.editingPreview}>
+                <Text style={[styles.editingLabel, { color: colors.primary }]}>
+                  Мессеж засаж байна
+                </Text>
+                <Text numberOfLines={1} style={[styles.editingPreview, { color: colors.muted }]}>
                   {editingMessage.content}
                 </Text>
               </View>
@@ -497,22 +522,28 @@ export default function ConversationScreen() {
                 onPress={cancelEdit}
                 style={styles.cancelEditingButton}
               >
-                <Icon name="close" size={20} color="#E8EEEB" />
+                <Icon name="close" size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
           )}
-          <View style={styles.composer}>
+          <View
+            style={[
+              styles.composer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             <TextInput
               ref={inputRef}
               value={editingMessage ? editDraft : draft}
               onChangeText={editingMessage ? setEditDraft : setDraft}
               placeholder="Мессеж бичих..."
-              placeholderTextColor="#718079"
+              placeholderTextColor={colors.muted}
               multiline
               maxLength={4000}
               scrollEnabled
               style={[
                 styles.input,
+                { color: colors.text },
                 Platform.OS === 'web' &&
                   ({
                     outlineStyle: 'none',
@@ -526,14 +557,15 @@ export default function ConversationScreen() {
               onPress={() => void (editingMessage ? saveEdit() : send())}
               style={[
                 styles.sendButton,
+                { backgroundColor: colors.primary },
                 (editingMessage ? !editDraft.trim() || savingEdit : !draft.trim() || sending) &&
                   styles.sendDisabled,
               ]}
             >
               {savingEdit ? (
-                <ActivityIndicator color="#142000" size="small" />
+                <ActivityIndicator color={colors.ink} size="small" />
               ) : (
-                <Icon name="arrow-up" size={22} color="#142000" />
+                <Icon name="arrow-up" size={22} color={colors.ink} />
               )}
             </Pressable>
           </View>
@@ -552,9 +584,21 @@ export default function ConversationScreen() {
               style={styles.menuBackdrop}
             />
             {selectedMessage && (
-              <View style={[styles.messagePopover, { left: menuAnchor.x, top: menuAnchor.y }]}>
-                <Text style={styles.popoverTime}>{messageTime(selectedMessage.createdAt)}</Text>
-                <View style={styles.popoverDivider} />
+              <View
+                style={[
+                  styles.messagePopover,
+                  {
+                    left: menuAnchor.x,
+                    top: menuAnchor.y,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.popoverTime, { color: colors.muted }]}>
+                  {messageTime(selectedMessage.createdAt)}
+                </Text>
+                <View style={[styles.popoverDivider, { backgroundColor: colors.border }]} />
                 <Pressable
                   onPress={() => beginEdit(selectedMessage)}
                   style={({ pressed }) => [
@@ -563,7 +607,7 @@ export default function ConversationScreen() {
                   ]}
                 >
                   <Icon name="create-outline" size={17} color={iconAccent} />
-                  <Text style={styles.popoverItemText}>Засах</Text>
+                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Засах</Text>
                 </Pressable>
                 <Pressable
                   disabled={Boolean(unsendingId)}

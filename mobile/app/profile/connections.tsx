@@ -20,7 +20,7 @@ type Tab = 'followers' | 'following';
 const lime = '#9AF000';
 
 export default function ConnectionsScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const params = useLocalSearchParams<{ userId?: string; tab?: string }>();
   const { user } = useUser();
   const userId = params.userId || user?.id;
@@ -67,26 +67,50 @@ export default function ConnectionsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.back}>‹</Text>
+          <Text style={[styles.back, { color: colors.text }]}>‹</Text>
         </Pressable>
-        <Text style={styles.title}>Холбоосууд</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Холбоосууд</Text>
         <View style={styles.headerSpacer} />
       </View>
       <View style={styles.tabs}>
         <Pressable
           onPress={() => setTab('followers')}
-          style={[styles.tab, tab === 'followers' && styles.activeTab]}
+          style={[
+            styles.tab,
+            { backgroundColor: colors.surfaceRaised },
+            tab === 'followers' && [styles.activeTab, { backgroundColor: colors.primary }],
+          ]}
         >
-          <Text style={[styles.tabText, tab === 'followers' && styles.activeTabText]}>Дагагч</Text>
+          <Text
+            style={[
+              styles.tabText,
+              { color: colors.textSecondary },
+              tab === 'followers' && [styles.activeTabText, { color: colors.ink }],
+            ]}
+          >
+            Дагагч
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => setTab('following')}
-          style={[styles.tab, tab === 'following' && styles.activeTab]}
+          style={[
+            styles.tab,
+            { backgroundColor: colors.surfaceRaised },
+            tab === 'following' && [styles.activeTab, { backgroundColor: colors.primary }],
+          ]}
         >
-          <Text style={[styles.tabText, tab === 'following' && styles.activeTabText]}>Дагадаг</Text>
+          <Text
+            style={[
+              styles.tabText,
+              { color: colors.textSecondary },
+              tab === 'following' && [styles.activeTabText, { color: colors.ink }],
+            ]}
+          >
+            Дагадаг
+          </Text>
         </Pressable>
       </View>
 
@@ -101,18 +125,20 @@ export default function ConnectionsScreen() {
               <Pressable
                 key={item.id}
                 onPress={() => router.push(`/users/${item.id}` as Href)}
-                style={styles.row}
+                style={[styles.row, { borderBottomColor: colors.border }]}
               >
                 {item.avatarUrl ? (
                   <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
                 ) : (
-                  <View style={styles.avatarFallback}>
-                    <Text style={styles.avatarText}>{name.charAt(0).toUpperCase()}</Text>
+                  <View style={[styles.avatarFallback, { backgroundColor: colors.surfaceSoft }]}>
+                    <Text style={[styles.avatarText, { color: colors.primary }]}>
+                      {name.charAt(0).toUpperCase()}
+                    </Text>
                   </View>
                 )}
                 <View style={styles.copy}>
-                  <Text style={styles.name}>{name}</Text>
-                  <Text numberOfLines={1} style={styles.bio}>
+                  <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
+                  <Text numberOfLines={1} style={[styles.bio, { color: colors.muted }]}>
                     {item.bio || item.company || item.email}
                   </Text>
                 </View>
@@ -122,10 +148,24 @@ export default function ConnectionsScreen() {
                       event.stopPropagation();
                       void toggleFollow(item);
                     }}
-                    style={[styles.followButton, item.isFollowing && styles.followingButton]}
+                    style={[
+                      styles.followButton,
+                      item.isFollowing
+                        ? [
+                            styles.followingButton,
+                            {
+                              backgroundColor: colors.surfaceRaised,
+                              borderColor: colors.borderStrong,
+                            },
+                          ]
+                        : { backgroundColor: colors.primary },
+                    ]}
                   >
                     <Text
-                      style={[styles.followText, item.isFollowing && styles.followingButtonText]}
+                      style={[
+                        styles.followText,
+                        { color: item.isFollowing ? colors.textSecondary : colors.ink },
+                      ]}
                     >
                       {item.isFollowing ? 'Дагаж буй' : 'Дагах'}
                     </Text>
@@ -135,7 +175,7 @@ export default function ConnectionsScreen() {
             );
           })}
           {!users.length && !error && (
-            <Text style={styles.empty}>
+            <Text style={[styles.empty, { color: colors.muted }]}>
               {tab === 'followers' ? 'Одоогоор дагагч алга.' : 'Одоогоор хүн дагаагүй байна.'}
             </Text>
           )}

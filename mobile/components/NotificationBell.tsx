@@ -3,8 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useSegments } from 'expo-router';
 import { api } from '@/services/api';
 import { design } from '@/constants/design';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 export function NotificationBell() {
+  const { colors, isDark } = useColorMode();
   const segments = useSegments();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -28,12 +30,16 @@ export function NotificationBell() {
       accessibilityRole="button"
       accessibilityLabel={`Мэдэгдэл${unreadCount ? `, ${unreadCount} уншаагүй` : ''}`}
       onPress={() => router.push('/notifications')}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: isDark ? colors.surfaceRaised : 'transparent' },
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.bell} accessibilityElementsHidden>
-        <View style={styles.bellDome} />
-        <View style={styles.bellRim} />
-        <View style={styles.bellClapper} />
+        <View style={[styles.bellDome, { borderColor: colors.text }]} />
+        <View style={[styles.bellRim, { borderColor: colors.text }]} />
+        <View style={[styles.bellClapper, { backgroundColor: colors.text }]} />
       </View>
       {unreadCount > 0 && (
         <View style={styles.badge}>

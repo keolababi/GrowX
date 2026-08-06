@@ -18,10 +18,12 @@ import { api } from '@/services/api';
 import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import type { Community } from '@/types/community';
 import { getApiError } from '@/utils/auth';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 
 export default function CreateGroupScreen() {
+  const { colors } = useColorMode();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [cover, setCover] = useState<LocalUploadAsset | null>(null);
@@ -77,16 +79,16 @@ export default function CreateGroupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboard}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable disabled={submitting} onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.back}>‹</Text>
+            <Text style={[styles.back, { color: colors.text }]}>‹</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Бүлэг үүсгэх</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Бүлэг үүсгэх</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -99,15 +101,23 @@ export default function CreateGroupScreen() {
           <Pressable
             disabled={submitting}
             onPress={() => void pickCover()}
-            style={styles.coverPicker}
+            style={[
+              styles.coverPicker,
+              { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+            ]}
           >
             {cover ? (
               <Image resizeMode="cover" source={{ uri: cover.uri }} style={styles.coverPreview} />
             ) : (
               <>
-                <View style={styles.coverGlow} />
-                <View style={styles.groupMark}>
-                  <Text style={styles.groupMarkText}>
+                <View style={[styles.coverGlow, { backgroundColor: colors.surfaceRaised }]} />
+                <View
+                  style={[
+                    styles.groupMark,
+                    { backgroundColor: colors.surface, borderColor: colors.primary },
+                  ]}
+                >
+                  <Text style={[styles.groupMarkText, { color: colors.primary }]}>
                     {(name.trim() || 'GX').slice(0, 2).toUpperCase()}
                   </Text>
                 </View>
@@ -124,26 +134,35 @@ export default function CreateGroupScreen() {
               <Text style={styles.removeCoverText}>Зураг хасах</Text>
             </Pressable>
           )}
-          <Text style={styles.title}>Шинэ community бүлэг</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>Шинэ community бүлэг</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>
             Нэг зорилго, сонирхолтой хүмүүсийг цуглуулж мэдлэг туршлагаа хуваалцаарай.
           </Text>
 
-          <View style={styles.form}>
-            <Text style={styles.label}>Бүлгийн нэр</Text>
+          <View
+            style={[styles.form, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Бүлгийн нэр</Text>
             <TextInput
               autoFocus
               maxLength={100}
               value={name}
               onChangeText={setName}
               placeholder="Жишээ: Startup founders"
-              placeholderTextColor="#65736D"
-              style={styles.input}
+              placeholderTextColor={colors.muted}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.border,
+                  color: colors.text,
+                },
+              ]}
             />
 
             <View style={styles.labelRow}>
-              <Text style={styles.label}>Тайлбар</Text>
-              <Text style={styles.optional}>Заавал биш</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Тайлбар</Text>
+              <Text style={[styles.optional, { color: colors.muted }]}>Заавал биш</Text>
             </View>
             <TextInput
               multiline
@@ -151,18 +170,33 @@ export default function CreateGroupScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder="Бүлгийн зорилго, хэлэлцэх сэдвийг товч тайлбарлана уу"
-              placeholderTextColor="#65736D"
-              style={[styles.input, styles.descriptionInput]}
+              placeholderTextColor={colors.muted}
+              style={[
+                styles.input,
+                styles.descriptionInput,
+                {
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.border,
+                  color: colors.text,
+                },
+              ]}
             />
-            <Text style={styles.characterCount}>{description.length}/1000</Text>
+            <Text style={[styles.characterCount, { color: colors.muted }]}>
+              {description.length}/1000
+            </Text>
 
             {!!error && <Text style={styles.error}>{error}</Text>}
             {submitting && cover && (
               <View style={styles.progress}>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
+                <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSoft }]}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${uploadProgress}%`, backgroundColor: colors.primary },
+                    ]}
+                  />
                 </View>
-                <Text style={styles.progressText}>
+                <Text style={[styles.progressText, { color: colors.muted }]}>
                   Cover зураг хуулж байна · {Math.round(uploadProgress)}%
                 </Text>
               </View>
@@ -173,13 +207,14 @@ export default function CreateGroupScreen() {
               onPress={() => void createGroup()}
               style={[
                 styles.submitButton,
+                { backgroundColor: colors.primary },
                 (name.trim().length < 2 || submitting) && styles.submitDisabled,
               ]}
             >
               {submitting ? (
-                <ActivityIndicator color="#142000" />
+                <ActivityIndicator color={colors.ink} />
               ) : (
-                <Text style={styles.submitText}>Бүлэг үүсгэх</Text>
+                <Text style={[styles.submitText, { color: colors.ink }]}>Бүлэг үүсгэх</Text>
               )}
             </Pressable>
           </View>

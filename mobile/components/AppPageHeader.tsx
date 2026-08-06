@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { design } from '@/constants/design';
+import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from './ui/Icon';
 
 type Props = {
@@ -9,12 +10,31 @@ type Props = {
   back?: boolean;
   actions?: ReactNode;
   maxWidth?: number;
+  prominent?: boolean;
 };
 
-export function AppPageHeader({ title, back = false, actions, maxWidth }: Props) {
+export function AppPageHeader({
+  title,
+  back = false,
+  actions,
+  maxWidth,
+  prominent = false,
+}: Props) {
+  const { colors } = useColorMode();
   return (
-    <View style={styles.frame}>
-      <View style={[styles.inner, maxWidth ? { maxWidth } : undefined]}>
+    <View
+      style={[
+        styles.frame,
+        { backgroundColor: colors.background, borderBottomColor: colors.border },
+      ]}
+    >
+      <View
+        style={[
+          styles.inner,
+          prominent && styles.innerProminent,
+          maxWidth ? { maxWidth } : undefined,
+        ]}
+      >
         <View style={styles.leading}>
           {back && (
             <Pressable
@@ -24,15 +44,20 @@ export function AppPageHeader({ title, back = false, actions, maxWidth }: Props)
               onPress={() => router.back()}
               style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
             >
-              <Icon name="chevron-back" size={24} color={design.colors.text} />
+              <Icon name="chevron-back" size={24} color={colors.text} />
             </Pressable>
           )}
-          <Text numberOfLines={1} style={styles.title}>
+          <Text
+            numberOfLines={1}
+            style={[styles.title, prominent && styles.titleProminent, { color: colors.text }]}
+          >
             {title || 'Grow'}
-            {!title && <Text style={styles.accent}>X</Text>}
+            {!title && <Text style={[styles.accent, { color: colors.primary }]}>X</Text>}
           </Text>
         </View>
-        {!!actions && <View style={styles.actions}>{actions}</View>}
+        {!!actions && (
+          <View style={[styles.actions, prominent && styles.actionsProminent]}>{actions}</View>
+        )}
       </View>
     </View>
   );
@@ -56,6 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  innerProminent: { height: 78 },
   leading: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: {
     flexShrink: 1,
@@ -65,8 +91,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -0.8,
   },
+  titleProminent: { fontSize: 32, lineHeight: 38, letterSpacing: -1.4 },
   accent: { color: design.colors.primary },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  actionsProminent: { gap: 6 },
   iconButton: {
     width: 42,
     height: 42,

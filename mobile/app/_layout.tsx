@@ -41,7 +41,7 @@ export default function RootLayout() {
 }
 
 function AppNavigator() {
-  const { isDark } = useColorMode();
+  const { colors } = useColorMode();
   const { token, loading } = useUser();
   const segments = useSegments();
   const first = segments[0];
@@ -56,13 +56,13 @@ function AppNavigator() {
   }, [first, isPublic, loading, token]);
 
   return (
-    <View style={[styles.shell, { backgroundColor: isDark ? '#020B0D' : '#F7F9F8' }]}>
+    <View style={[styles.shell, { backgroundColor: colors.background }]}>
       <View style={styles.stack}>
         <Stack
           screenOptions={{
             headerShown: false,
             animation: 'fade',
-            contentStyle: { backgroundColor: isDark ? '#020B0D' : '#F7F9F8' },
+            contentStyle: { backgroundColor: colors.background },
           }}
         >
           <Stack.Screen name="feedback/index" />

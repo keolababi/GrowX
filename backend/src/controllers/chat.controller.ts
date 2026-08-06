@@ -5,7 +5,10 @@ import * as chatService from '../services/chat.service.js';
 const conversationIdSchema = z.object({ conversationId: z.string().min(1) });
 const messageIdSchema = conversationIdSchema.extend({ messageId: z.string().min(1) });
 const createSchema = z.object({ recipientId: z.string().min(1) });
-const messageSchema = z.object({ content: z.string().trim().min(1).max(4000) });
+const messageSchema = z.object({
+  content: z.string().trim().min(1).max(4000),
+  clientMessageId: z.string().min(8).max(120).optional(),
+});
 
 export async function searchUsers(req: Request, res: Response): Promise<void> {
   const query = z.string().max(100).catch('').parse(req.query.q);
@@ -34,8 +37,12 @@ export async function messages(req: Request, res: Response): Promise<void> {
 
 export async function send(req: Request, res: Response): Promise<void> {
   const { conversationId } = conversationIdSchema.parse(req.params);
-  const { content } = messageSchema.parse(req.body);
-  res.status(201).json(await chatService.sendMessage(req.auth!.userId, conversationId, content));
+  const { content, clientMessageId } = messageSchema.parse(req.body);
+  res
+    .status(201)
+    .json(
+      await chatService.sendMessage(req.auth!.userId, conversationId, content, clientMessageId),
+    );
 }
 
 export async function unsend(req: Request, res: Response): Promise<void> {

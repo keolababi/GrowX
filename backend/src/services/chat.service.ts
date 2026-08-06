@@ -193,11 +193,28 @@ export async function listMessages(userId: string, conversationId: string) {
   };
 }
 
-export async function sendMessage(userId: string, conversationId: string, content: string) {
+export async function sendMessage(
+  userId: string,
+  conversationId: string,
+  content: string,
+  clientMessageId?: string,
+) {
   await requireMember(userId, conversationId);
+  if (clientMessageId) {
+    const existing = await prisma.message.findUnique({
+      where: { clientMessageId },
+      include: { sender: { select: userSelect } },
+    });
+    if (existing) {
+      if (existing.senderId !== userId || existing.conversationId !== conversationId) {
+        throw new HttpError(409, 'Message identifier already exists.');
+      }
+      return { message: { ...existing, sender: serializeUser(existing.sender) } };
+    }
+  }
   const message = await prisma.$transaction(async (tx) => {
     const created = await tx.message.create({
-      data: { conversationId, senderId: userId, content },
+      data: { conversationId, senderId: userId, content, clientMessageId },
       include: { sender: { select: userSelect } },
     });
     await tx.conversation.update({

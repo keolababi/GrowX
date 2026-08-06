@@ -31,7 +31,7 @@ const tabOrder: Tab[] = ['groups', 'discussions', 'articles'];
 const tabLabels = ['Бүлгүүд', 'Хэлэлцүүлэг', 'Нийтлэл'];
 
 export default function CommunityScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { user } = useUser();
   const [tab, setTab] = useState<Tab>('groups');
   const [query, setQuery] = useState('');
@@ -131,7 +131,7 @@ export default function CommunityScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.page}>
         <AppPageHeader
           title="Community"
@@ -144,14 +144,16 @@ export default function CommunityScreen() {
           }
         />
 
-        <View style={styles.search}>
-          <Text style={styles.searchSmall}>⌕</Text>
+        <View
+          style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
+          <Text style={[styles.searchSmall, { color: colors.muted }]}>⌕</Text>
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Бодож байгаа зүйл?"
-            placeholderTextColor="#697771"
-            style={styles.searchInput}
+            placeholderTextColor={colors.muted}
+            style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
 
@@ -181,7 +183,11 @@ export default function CommunityScreen() {
                   <Pressable
                     key={community.id}
                     onPress={() => router.push(`/community/${community.id}` as Href)}
-                    style={({ pressed }) => [styles.groupCard, pressed && styles.groupCardPressed]}
+                    style={({ pressed }) => [
+                      styles.groupCard,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      pressed && styles.groupCardPressed,
+                    ]}
                   >
                     {community.coverUrl ? (
                       <Image
@@ -190,18 +196,23 @@ export default function CommunityScreen() {
                         style={styles.groupCover}
                       />
                     ) : (
-                      <View style={styles.groupMark}>
-                        <Text style={styles.groupMarkText}>
+                      <View style={[styles.groupMark, { backgroundColor: colors.surfaceSoft }]}>
+                        <Text style={[styles.groupMarkText, { color: colors.primary }]}>
                           {community.name.slice(0, 2).toUpperCase()}
                         </Text>
                       </View>
                     )}
                     <View style={styles.groupCopy}>
-                      <Text style={styles.groupName}>{community.name}</Text>
-                      <Text numberOfLines={2} style={styles.groupDescription}>
+                      <Text style={[styles.groupName, { color: colors.text }]}>
+                        {community.name}
+                      </Text>
+                      <Text
+                        numberOfLines={2}
+                        style={[styles.groupDescription, { color: colors.muted }]}
+                      >
                         {community.description || 'Бизнесийн мэдлэг, туршлагаа хуваалцах бүлэг'}
                       </Text>
-                      <Text style={styles.groupStats}>
+                      <Text style={[styles.groupStats, { color: colors.muted }]}>
                         {community.memberCount} гишүүн · {community.postCount} post
                       </Text>
                     </View>
@@ -210,11 +221,17 @@ export default function CommunityScreen() {
                         event.stopPropagation();
                         void toggleMembership(community);
                       }}
-                      style={[styles.joinButton, community.joinedByMe && styles.joinedButton]}
+                      style={[
+                        styles.joinButton,
+                        community.joinedByMe
+                          ? [styles.joinedButton, { borderColor: colors.primary }]
+                          : { backgroundColor: colors.primary },
+                      ]}
                     >
                       <Text
                         style={[
                           styles.joinButtonText,
+                          { color: community.joinedByMe ? colors.primary : colors.ink },
                           community.joinedByMe && styles.joinedButtonText,
                         ]}
                       >
@@ -273,10 +290,11 @@ export default function CommunityScreen() {
 }
 
 function EmptyState({ title, copy }: { title: string; copy: string }) {
+  const { colors } = useColorMode();
   return (
-    <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.emptyCopy}>{copy}</Text>
+    <View style={[styles.empty, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.emptyCopy, { color: colors.muted }]}>{copy}</Text>
     </View>
   );
 }

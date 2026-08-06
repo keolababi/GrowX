@@ -23,7 +23,7 @@ const stars = [1, 2, 3, 4, 5];
 const scaleValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export default function FeedbackFormScreen() {
-  const { iconAccent: lime } = useColorMode();
+  const { colors, iconAccent: lime } = useColorMode();
   const { formId } = useLocalSearchParams<{ formId: string }>();
   const [form, setForm] = useState<FeedbackFormDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -130,7 +130,7 @@ export default function FeedbackFormScreen() {
         actions={
           <View className="flex-row items-center gap-s">
             <Pressable onPress={() => void share()} hitSlop={8}>
-              <Icon name="arrow-redo-outline" size={22} color="#FFFFFF" />
+              <Icon name="arrow-redo-outline" size={22} color={colors.text} />
             </Pressable>
             {form?.isOwner && (
               <Pressable onPress={confirmDelete} hitSlop={8}>
@@ -168,7 +168,7 @@ export default function FeedbackFormScreen() {
               onPress={() => router.push(`/feedback/${form.id}/responses`)}
               className="mt-l h-12 flex-row items-center justify-center gap-s rounded-btn bg-brand-primary"
             >
-              <Icon name="stats-chart-outline" size={18} color="#020B0D" />
+              <Icon name="stats-chart-outline" size={18} color={colors.ink} />
               <Text className="text-sm font-bold text-background-app">Хариултууд харах</Text>
             </Pressable>
           ) : form.respondedByMe ? (
@@ -196,7 +196,7 @@ export default function FeedbackFormScreen() {
                       value={answers[question.id]?.textValue ?? ''}
                       onChangeText={(value) => setText(question.id, value)}
                       placeholder="Хариулт бичих..."
-                      placeholderTextColor="#A7AEB0"
+                      placeholderTextColor={colors.muted}
                       className="mt-s h-11 rounded-btn border border-border bg-background-app px-s text-sm text-text-primary"
                     />
                   )}
@@ -206,7 +206,7 @@ export default function FeedbackFormScreen() {
                       value={answers[question.id]?.textValue ?? ''}
                       onChangeText={(value) => setText(question.id, value)}
                       placeholder="Дэлгэрэнгүй хариулт..."
-                      placeholderTextColor="#A7AEB0"
+                      placeholderTextColor={colors.muted}
                       multiline
                       className="mt-s min-h-20 rounded-btn border border-border bg-background-app p-s text-sm text-text-primary"
                     />
@@ -236,7 +236,7 @@ export default function FeedbackFormScreen() {
                                     : 'radio-button-off-outline'
                               }
                               size={20}
-                              color={selected ? lime : '#A7AEB0'}
+                              color={selected ? lime : colors.muted}
                             />
                             <Text className="text-sm text-text-primary">{option}</Text>
                           </Pressable>

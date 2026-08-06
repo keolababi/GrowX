@@ -24,7 +24,7 @@ import { useColorMode } from '@/providers/ColorModeProvider';
 const lime = '#9AF000';
 
 export default function PostCommentsScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { user } = useUser();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
@@ -101,25 +101,25 @@ export default function PostCommentsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboard}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/posts'))}
             style={styles.backButton}
           >
-            <Text style={styles.back}>‹</Text>
+            <Text style={[styles.back, { color: colors.text }]}>‹</Text>
           </Pressable>
-          <Text style={styles.heading}>Сэтгэгдэл</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Сэтгэгдэл</Text>
           {post && post.authorId === user?.id ? (
             <Pressable
               onPress={() => router.push(`/posts/${post.id}/edit`)}
               style={styles.editButton}
             >
-              <Text style={styles.editText}>Засах</Text>
+              <Text style={[styles.editText, { color: colors.primary }]}>Засах</Text>
             </Pressable>
           ) : (
             <View style={styles.headerSpacer} />
@@ -137,42 +137,50 @@ export default function PostCommentsScreen() {
             showsVerticalScrollIndicator={false}
           >
             {!!post && (
-              <View style={styles.post}>
+              <View style={[styles.post, { borderBottomColor: colors.border }]}>
                 <View style={styles.postAuthor}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
+                  <View style={[styles.avatar, { backgroundColor: colors.surfaceSoft }]}>
+                    <Text style={[styles.avatarText, { color: colors.primary }]}>
                       {(post.author.displayName || post.author.email).slice(0, 2).toUpperCase()}
                     </Text>
                   </View>
                   <View>
-                    <Text style={styles.postAuthorName}>
+                    <Text style={[styles.postAuthorName, { color: colors.text }]}>
                       {post.author.displayName || post.author.email.split('@')[0]}
                     </Text>
-                    <Text style={styles.time}>{relativeTime(post.createdAt)}</Text>
+                    <Text style={[styles.time, { color: colors.muted }]}>
+                      {relativeTime(post.createdAt)}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.postText}>{post.content}</Text>
+                <Text style={[styles.postText, { color: colors.text }]}>{post.content}</Text>
                 {!!post.imageUrl && (
                   <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
                 )}
-                <Text style={styles.commentTotal}>{comments.length} сэтгэгдэл</Text>
+                <Text style={[styles.commentTotal, { color: colors.muted }]}>
+                  {comments.length} сэтгэгдэл
+                </Text>
               </View>
             )}
 
             {comments.map((comment) => (
               <View key={comment.id} style={styles.comment}>
-                <View style={styles.commentAvatar}>
-                  <Text style={styles.commentAvatarText}>
+                <View style={[styles.commentAvatar, { backgroundColor: colors.surfaceSoft }]}>
+                  <Text style={[styles.commentAvatarText, { color: colors.primary }]}>
                     {(comment.author.displayName || comment.author.email).slice(0, 2).toUpperCase()}
                   </Text>
                 </View>
-                <View style={styles.commentBubble}>
-                  <Text style={styles.commentAuthor}>
+                <View style={[styles.commentBubble, { backgroundColor: colors.surfaceRaised }]}>
+                  <Text style={[styles.commentAuthor, { color: colors.text }]}>
                     {comment.author.displayName || comment.author.email.split('@')[0]}
                   </Text>
-                  <Text style={styles.commentText}>{comment.content}</Text>
+                  <Text style={[styles.commentText, { color: colors.textSecondary }]}>
+                    {comment.content}
+                  </Text>
                   <View style={styles.commentMeta}>
-                    <Text style={styles.commentTime}>{relativeTime(comment.createdAt)}</Text>
+                    <Text style={[styles.commentTime, { color: colors.muted }]}>
+                      {relativeTime(comment.createdAt)}
+                    </Text>
                     {comment.author.id === user?.id && (
                       <Pressable onPress={() => void deleteComment(comment.id)} hitSlop={10}>
                         <Text style={styles.deleteComment}>Устгах</Text>
@@ -185,26 +193,41 @@ export default function PostCommentsScreen() {
 
             {!comments.length && (
               <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>Одоогоор сэтгэгдэл алга</Text>
-                <Text style={styles.emptyCopy}>Хамгийн эхний сэтгэгдлийг бичээрэй.</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                  Одоогоор сэтгэгдэл алга
+                </Text>
+                <Text style={[styles.emptyCopy, { color: colors.muted }]}>
+                  Хамгийн эхний сэтгэгдлийг бичээрэй.
+                </Text>
               </View>
             )}
             {!!error && <Text style={styles.error}>{error}</Text>}
           </ScrollView>
         )}
 
-        <View style={styles.composer}>
+        <View
+          style={[
+            styles.composer,
+            { backgroundColor: colors.surface, borderTopColor: colors.border },
+          ]}
+        >
           <TextInput
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={() => void send()}
             placeholder="Сэтгэгдэл бичих..."
-            placeholderTextColor="#71807A"
+            placeholderTextColor={colors.muted}
             returnKeyType="send"
-            style={styles.input}
+            style={[styles.input, { color: colors.text, backgroundColor: colors.surfaceRaised }]}
           />
           <Pressable disabled={!draft.trim() || sending} onPress={() => void send()}>
-            <Text style={[styles.send, (!draft.trim() || sending) && styles.sendDisabled]}>
+            <Text
+              style={[
+                styles.send,
+                { color: colors.primary },
+                (!draft.trim() || sending) && [styles.sendDisabled, { color: colors.muted }],
+              ]}
+            >
               {sending ? '...' : 'Илгээх'}
             </Text>
           </Pressable>

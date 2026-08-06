@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 type Props = {
   visible: boolean;
@@ -8,14 +9,47 @@ type Props = {
   children: React.ReactNode;
 };
 
-export const BottomSheet: React.FC<Props> = ({ visible, onClose, children }) => (
-  <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-    <Pressable className="flex-1 bg-black/60" onPress={onClose} />
-    <SafeAreaView
-      edges={['bottom']}
-      className="rounded-t-sheet border-t border-border bg-background-paper"
+export const BottomSheet: React.FC<Props> = ({ visible, onClose, children }) => {
+  const { colors } = useColorMode();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      onRequestClose={onClose}
     >
-      <View className="p-m">{children}</View>
-    </SafeAreaView>
-  </Modal>
-);
+      <View className="flex-1 justify-end" style={styles.root}>
+        <Pressable
+          accessibilityLabel="Хаах"
+          className="bg-black/60"
+          style={[StyleSheet.absoluteFill, styles.backdrop]}
+          onPress={onClose}
+        />
+        <SafeAreaView
+          edges={['bottom']}
+          className="w-full rounded-t-sheet border-t border-border bg-background-paper"
+          style={[styles.sheet, { backgroundColor: colors.surface, borderTopColor: colors.border }]}
+        >
+          <View className="w-full max-w-[560px] self-center px-m pb-m pt-l">{children}</View>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  root: {
+    zIndex: 1000,
+  },
+  backdrop: {
+    zIndex: 0,
+  },
+  sheet: {
+    position: 'relative',
+    zIndex: 1,
+    elevation: 24,
+  },
+});

@@ -11,6 +11,7 @@ const conversationSchema = z.object({
 
 const messageSchema = conversationSchema.extend({
   content: z.string().trim().min(1).max(4000),
+  clientMessageId: z.string().min(8).max(120).optional(),
 });
 
 type AccessTokenPayload = {
@@ -83,8 +84,13 @@ export function registerChatSocket(io: Server): void {
 
     socket.on('message:send', async (payload, callback) => {
       try {
-        const { conversationId, content } = messageSchema.parse(payload);
-        const { message } = await chatService.sendMessage(userId, conversationId, content);
+        const { conversationId, content, clientMessageId } = messageSchema.parse(payload);
+        const { message } = await chatService.sendMessage(
+          userId,
+          conversationId,
+          content,
+          clientMessageId,
+        );
 
         io.to(`conversation:${conversationId}`).emit('message:new', message);
         const members = await prisma.conversationMember.findMany({

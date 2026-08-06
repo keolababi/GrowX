@@ -68,27 +68,27 @@ function MentorRow({
   onRequestCollaboration: () => void;
   isSelf: boolean;
 }) {
-  const { iconAccent: lime } = useColorMode();
+  const { colors, iconAccent: lime } = useColorMode();
   return (
     <Pressable
       onPress={() => router.push(`/users/${user.id}` as Href)}
-      className="mb-s overflow-hidden rounded-[20px] border border-[#254238] bg-[#081915] p-m active:opacity-80"
+      className="mb-s overflow-hidden rounded-[20px] border border-border bg-background-paper p-m active:opacity-80"
     >
       <View className="flex-row items-center">
         <View className="relative">
           {user.avatarUrl ? (
             <Image
               source={{ uri: user.avatarUrl }}
-              className="h-14 w-14 rounded-avatar border border-[#345448]"
+              className="h-14 w-14 rounded-avatar border border-border"
             />
           ) : (
-            <View className="h-14 w-14 items-center justify-center rounded-avatar border border-[#345448] bg-[#102921]">
+            <View className="h-14 w-14 items-center justify-center rounded-avatar border border-border bg-background-soft">
               <Text className="text-base font-black text-brand-primary">
                 {initials(user.displayName, user.email)}
               </Text>
             </View>
           )}
-          <View className="absolute bottom-0 right-0 h-4 w-4 rounded-avatar border-[3px] border-[#081915] bg-brand-primary" />
+          <View className="absolute bottom-0 right-0 h-4 w-4 rounded-avatar border-[3px] border-background-paper bg-brand-primary" />
         </View>
         <View className="ml-m min-w-0 flex-1">
           <Text numberOfLines={1} className="text-base font-black text-text-primary">
@@ -113,12 +113,12 @@ function MentorRow({
       </View>
 
       {isSelf ? (
-        <View className="mt-m h-10 flex-row items-center justify-center gap-s rounded-avatar border border-brand-primary/40 bg-[#10271F]">
+        <View className="mt-m h-10 flex-row items-center justify-center gap-s rounded-avatar border border-brand-primary/40 bg-background-soft">
           <Icon name="checkmark-circle" size={16} color={lime} />
           <Text className="text-xs font-bold text-brand-primary">Таны ментор профайл</Text>
         </View>
       ) : (
-        <View className="mt-m flex-row gap-s border-t border-[#1E382F] pt-m">
+        <View className="mt-m flex-row gap-s border-t border-border pt-m">
           <Pressable
             onPress={(event) => {
               event.stopPropagation();
@@ -131,7 +131,7 @@ function MentorRow({
             <Icon
               name={isFollowing ? 'checkmark' : 'person-add-outline'}
               size={15}
-              color={isFollowing ? '#A7AEB0' : '#020B0D'}
+              color={isFollowing ? colors.muted : colors.ink}
             />
             <Text
               className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
@@ -144,9 +144,9 @@ function MentorRow({
               event.stopPropagation();
               onMessage();
             }}
-            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border border-[#30483F] bg-[#0D211B]"
+            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border border-border bg-background-raised"
           >
-            <Icon name="chatbubble-outline" size={15} color="#D8DFDC" />
+            <Icon name="chatbubble-outline" size={15} color={colors.textSecondary} />
             <Text className="text-xs font-bold text-text-secondary">Мессеж</Text>
           </Pressable>
           <Pressable
@@ -154,9 +154,9 @@ function MentorRow({
               event.stopPropagation();
               onRequestCollaboration();
             }}
-            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border border-[#30483F] bg-[#0D211B]"
+            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-avatar border border-border bg-background-raised"
           >
-            <Icon name="people-outline" size={15} color="#D8DFDC" />
+            <Icon name="people-outline" size={15} color={colors.textSecondary} />
             <Text className="text-xs font-bold text-text-secondary">Хамтрах</Text>
           </Pressable>
         </View>
@@ -182,8 +182,8 @@ function EmptyState({
 }) {
   const { iconAccent: lime } = useColorMode();
   return (
-    <View className="mt-l items-center rounded-[20px] border border-dashed border-[#315143] bg-[#071915] px-l py-xl">
-      <View className="h-14 w-14 items-center justify-center rounded-avatar bg-[#123025]">
+    <View className="mt-l items-center rounded-[20px] border border-dashed border-border bg-background-paper px-l py-xl">
+      <View className="h-14 w-14 items-center justify-center rounded-avatar bg-background-soft">
         <Icon name={icon === 'search' ? 'search-outline' : 'mail-outline'} size={25} color={lime} />
       </View>
       <Text className="mt-m text-base font-black text-text-primary">{title}</Text>
@@ -206,16 +206,16 @@ function RequestRow({
   return (
     <Pressable
       onPress={() => router.push(`/users/${request.user.id}` as Href)}
-      className="mb-s rounded-[20px] border border-[#254238] bg-[#081915] p-m active:opacity-80"
+      className="mb-s rounded-[20px] border border-border bg-background-paper p-m active:opacity-80"
     >
       <View className="flex-row items-center">
         {request.user.avatarUrl ? (
           <Image
             source={{ uri: request.user.avatarUrl }}
-            className="h-12 w-12 rounded-avatar border border-[#345448]"
+            className="h-12 w-12 rounded-avatar border border-border"
           />
         ) : (
-          <View className="h-12 w-12 items-center justify-center rounded-avatar border border-[#345448] bg-[#102921]">
+          <View className="h-12 w-12 items-center justify-center rounded-avatar border border-border bg-background-soft">
             <Text className="font-extrabold text-brand-primary">
               {initials(request.user.displayName, request.user.email)}
             </Text>
@@ -243,7 +243,7 @@ function RequestRow({
         )}
       </View>
       {showActions && request.status === 'PENDING' && (
-        <View className="mt-m flex-row gap-s border-t border-[#1E382F] pt-m">
+        <View className="mt-m flex-row gap-s border-t border-border pt-m">
           <Pressable
             onPress={(event) => {
               event.stopPropagation();
@@ -258,7 +258,7 @@ function RequestRow({
               event.stopPropagation();
               onRespond?.(false);
             }}
-            className="h-10 flex-1 items-center justify-center rounded-avatar border border-[#30483F] bg-[#0D211B]"
+            className="h-10 flex-1 items-center justify-center rounded-avatar border border-border bg-background-raised"
           >
             <Text className="text-xs font-bold text-text-secondary">Татгалзах</Text>
           </Pressable>
@@ -438,7 +438,7 @@ export default function MentorScreen() {
           }
         />
 
-        <View className="mx-l mb-m mt-m shrink-0 overflow-hidden rounded-[24px] border border-[#1E4938] bg-[#08271D] px-l py-m">
+        <View className="mx-l mb-m mt-m shrink-0 overflow-hidden rounded-[24px] border border-border bg-background-paper px-l py-m">
           <View className="flex-row items-center justify-between gap-m">
             <View className="min-w-0 flex-1">
               <Text className="text-[10px] font-black tracking-[2px] text-brand-primary">
@@ -447,20 +447,20 @@ export default function MentorScreen() {
               <Text className="mt-1 text-[25px] font-black leading-8 tracking-[-0.8px] text-text-primary">
                 Зөв хүнтэйгээ холбогд.
               </Text>
-              <Text className="mt-1 max-w-[520px] text-xs leading-5 text-[#8FA099]">
+              <Text className="mt-1 max-w-[520px] text-xs leading-5 text-text-muted">
                 Туршлагатай ментор, бизнес эрхлэгчидтэй холбогдож дараагийн алхмаа хурдан хий.
               </Text>
             </View>
-            <View className="h-14 w-14 shrink-0 items-center justify-center rounded-avatar border border-[#3C5B4E] bg-[#102F24]">
+            <View className="h-14 w-14 shrink-0 items-center justify-center rounded-avatar border border-border bg-background-soft">
               <Icon name="people" size={26} color={lime} />
             </View>
           </View>
-          <View className="mt-m flex-row gap-s border-t border-[#204436] pt-m">
+          <View className="mt-m flex-row gap-s border-t border-border pt-m">
             <View className="flex-1">
               <Text className="text-lg font-black text-text-primary">{visibleUsers.length}</Text>
               <Text className="text-[10px] font-bold text-text-muted">Нээлттэй профайл</Text>
             </View>
-            <View className="w-px bg-[#28493C]" />
+            <View className="w-px bg-border" />
             <View className="flex-1 pl-m">
               <Text className="text-lg font-black text-brand-primary">{pendingReceivedCount}</Text>
               <Text className="text-[10px] font-bold text-text-muted">Шинэ хүсэлт</Text>

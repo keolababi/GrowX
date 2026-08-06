@@ -39,23 +39,32 @@ function isUserActive(user: ChatUser | null) {
 }
 
 function UserAvatar({ user }: { user: ChatUser | null }) {
+  const { colors } = useColorMode();
   const active = isUserActive(user);
   return (
     <View style={styles.avatarWrap}>
       {user?.avatarUrl ? (
         <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
       ) : (
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{displayName(user).charAt(0).toUpperCase()}</Text>
+        <View style={[styles.avatar, { backgroundColor: colors.surfaceSoft }]}>
+          <Text style={[styles.avatarText, { color: colors.primary }]}>
+            {displayName(user).charAt(0).toUpperCase()}
+          </Text>
         </View>
       )}
-      <View style={[styles.avatarPresence, !active && styles.offlineDot]} />
+      <View
+        style={[
+          styles.avatarPresence,
+          { borderColor: colors.surface },
+          active ? { backgroundColor: colors.primary } : styles.offlineDot,
+        ]}
+      />
     </View>
   );
 }
 
 export default function MessagesScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [presenceUsers, setPresenceUsers] = useState<ChatUser[]>([]);
@@ -140,12 +149,20 @@ export default function MessagesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, Platform.OS === 'web' && webScreenStyle]}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: colors.background },
+        Platform.OS === 'web' && webScreenStyle,
+      ]}
+    >
       <View style={styles.page}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <View style={styles.titleGroup}>
-            <Text style={styles.eyebrow}>GROWX CONNECT</Text>
-            <Text style={styles.title}>{newChatOpen ? 'Шинэ чат' : 'Мессеж'}</Text>
+            <Text style={[styles.eyebrow, { color: colors.primary }]}>GROWX CONNECT</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              {newChatOpen ? 'Шинэ чат' : 'Мессеж'}
+            </Text>
           </View>
           <View style={styles.headerActions}>
             <NotificationBell />
@@ -156,28 +173,30 @@ export default function MessagesScreen() {
                 setQuery('');
                 setError('');
               }}
-              style={styles.newButton}
+              style={[styles.newButton, { backgroundColor: colors.primary }]}
             >
-              <Icon name={newChatOpen ? 'close' : 'create-outline'} size={22} color="#142000" />
+              <Icon name={newChatOpen ? 'close' : 'create-outline'} size={22} color={colors.ink} />
             </Pressable>
           </View>
         </View>
 
-        <View style={styles.search}>
-          <Icon name="search-outline" size={20} color="#A5B0AB" />
+        <View
+          style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
+          <Icon name="search-outline" size={20} color={colors.muted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             autoCapitalize="none"
             placeholder={newChatOpen ? 'Нэр эсвэл и-мэйлээр хайх' : 'Chat хайх'}
-            placeholderTextColor="#718079"
-            style={styles.searchInput}
+            placeholderTextColor={colors.muted}
+            style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
 
         {!newChatOpen && presenceUsers.length > 0 && (
-          <View style={styles.presenceSection}>
-            <Text style={styles.presenceHeading}>Хүмүүс</Text>
+          <View style={[styles.presenceSection, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.presenceHeading, { color: colors.text }]}>Хүмүүс</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -196,7 +215,7 @@ export default function MessagesScreen() {
                     ]}
                   >
                     <UserAvatar user={presenceUser} />
-                    <Text numberOfLines={1} style={styles.presenceName}>
+                    <Text numberOfLines={1} style={[styles.presenceName, { color: colors.text }]}>
                       {displayName(presenceUser)}
                     </Text>
                   </Pressable>
@@ -229,16 +248,19 @@ export default function MessagesScreen() {
                   <Pressable
                     key={user.id}
                     onPress={() => void startChat(user.id)}
-                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                    style={({ pressed }) => [
+                      styles.row,
+                      pressed && { backgroundColor: colors.surfaceRaised },
+                    ]}
                   >
                     <UserAvatar user={user} />
                     <View style={styles.rowCopy}>
                       <View style={styles.nameRow}>
-                        <Text numberOfLines={1} style={styles.name}>
+                        <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
                           {displayName(user)}
                         </Text>
                       </View>
-                      <Text style={styles.preview}>{user.email}</Text>
+                      <Text style={[styles.preview, { color: colors.muted }]}>{user.email}</Text>
                     </View>
                     <Icon name="chevron-forward" size={21} color="#89968F" />
                   </Pressable>
@@ -247,12 +269,15 @@ export default function MessagesScreen() {
                   <Pressable
                     key={conversation.id}
                     onPress={() => router.push(`/messages/${conversation.id}`)}
-                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                    style={({ pressed }) => [
+                      styles.row,
+                      pressed && { backgroundColor: colors.surfaceRaised },
+                    ]}
                   >
                     <UserAvatar user={conversation.otherUser} />
                     <View style={styles.rowCopy}>
                       <View style={styles.nameRow}>
-                        <Text numberOfLines={1} style={styles.name}>
+                        <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
                           {displayName(conversation.otherUser)}
                         </Text>
                       </View>
@@ -260,17 +285,20 @@ export default function MessagesScreen() {
                         numberOfLines={1}
                         style={[
                           styles.preview,
-                          conversation.unreadCount > 0 && styles.unreadPreview,
+                          { color: colors.muted },
+                          conversation.unreadCount > 0 && { color: colors.textSecondary },
                         ]}
                       >
                         {conversation.lastMessage?.content || 'Шинэ chat'}
                       </Text>
                     </View>
                     <View style={styles.rowMeta}>
-                      <Text style={styles.time}>{relativeTime(conversation.updatedAt)}</Text>
+                      <Text style={[styles.time, { color: colors.muted }]}>
+                        {relativeTime(conversation.updatedAt)}
+                      </Text>
                       {conversation.unreadCount > 0 && (
-                        <View style={styles.unreadBadge}>
-                          <Text style={styles.unreadText}>
+                        <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+                          <Text style={[styles.unreadText, { color: colors.ink }]}>
                             {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
                           </Text>
                         </View>
@@ -280,18 +308,23 @@ export default function MessagesScreen() {
                 ))}
 
             {((newChatOpen && !users.length) || (!newChatOpen && !filtered.length)) && (
-              <View style={styles.empty}>
-                <View style={styles.emptyIcon}>
+              <View
+                style={[
+                  styles.empty,
+                  { backgroundColor: colors.surface, borderColor: colors.borderStrong },
+                ]}
+              >
+                <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceSoft }]}>
                   <Icon
                     name={newChatOpen ? 'person-add-outline' : 'chatbubbles-outline'}
                     size={28}
                     color={iconAccent}
                   />
                 </View>
-                <Text style={styles.emptyTitle}>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>
                   {newChatOpen ? 'Хэрэглэгч олдсонгүй' : 'Одоогоор chat алга'}
                 </Text>
-                <Text style={styles.emptyCopy}>
+                <Text style={[styles.emptyCopy, { color: colors.muted }]}>
                   {newChatOpen
                     ? 'Өөр нэр эсвэл и-мэйл хайгаарай.'
                     : '＋ дарж шинэ chat эхлүүлээрэй.'}

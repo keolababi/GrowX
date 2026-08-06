@@ -20,7 +20,7 @@ import { useColorMode } from '@/providers/ColorModeProvider';
 const lime = '#9AF000';
 
 export default function EditPostScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
   const [content, setContent] = useState('');
@@ -60,20 +60,26 @@ export default function EditPostScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboard}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/posts'))}
           >
-            <Text style={styles.cancel}>Болих</Text>
+            <Text style={[styles.cancel, { color: colors.textSecondary }]}>Болих</Text>
           </Pressable>
-          <Text style={styles.heading}>Post засах</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Post засах</Text>
           <Pressable disabled={!content.trim() || saving} onPress={() => void save()}>
-            <Text style={[styles.save, (!content.trim() || saving) && styles.saveDisabled]}>
+            <Text
+              style={[
+                styles.save,
+                { color: colors.primary },
+                (!content.trim() || saving) && [styles.saveDisabled, { color: colors.muted }],
+              ]}
+            >
               {saving ? '...' : 'Хадгалах'}
             </Text>
           </Pressable>
@@ -92,12 +98,12 @@ export default function EditPostScreen() {
               value={content}
               onChangeText={setContent}
               placeholder="Post-ийн текст"
-              placeholderTextColor="#71807A"
-              style={styles.input}
+              placeholderTextColor={colors.muted}
+              style={[styles.input, { color: colors.text, backgroundColor: colors.surfaceRaised }]}
             />
             {!!post?.imageUrl && <Image source={{ uri: post.imageUrl }} style={styles.image} />}
-            <Text style={styles.hint}>Зураг хэвээр хадгалагдана.</Text>
-            <Text style={styles.counter}>{content.length}/5000</Text>
+            <Text style={[styles.hint, { color: colors.muted }]}>Зураг хэвээр хадгалагдана.</Text>
+            <Text style={[styles.counter, { color: colors.muted }]}>{content.length}/5000</Text>
             {!!error && <Text style={styles.error}>{error}</Text>}
           </View>
         )}

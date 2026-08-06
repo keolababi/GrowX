@@ -19,6 +19,7 @@ import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import { NotificationBell } from '@/components/NotificationBell';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 type CreateMode = 'post' | 'reel' | 'podcast';
 type SelectedMedia = LocalUploadAsset & { type: 'image' | 'video' };
@@ -31,6 +32,7 @@ const modes: Array<{ value: CreateMode; label: string }> = [
 ];
 
 export default function CreateContentScreen() {
+  const { colors } = useColorMode();
   const params = useLocalSearchParams<{
     type?: string;
     communityId?: string;
@@ -187,20 +189,26 @@ export default function CreateContentScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboard}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable accessibilityLabel="Хаах" onPress={() => router.back()} style={styles.close}>
-            <Text style={styles.closeText}>×</Text>
+            <Text style={[styles.closeText, { color: colors.text }]}>×</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>{composerTitle}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{composerTitle}</Text>
           <View style={styles.headerActions}>
             <NotificationBell />
             <Pressable disabled={!canPublish || submitting} onPress={() => void publish()}>
-              <Text style={[styles.share, (!canPublish || submitting) && styles.shareDisabled]}>
+              <Text
+                style={[
+                  styles.share,
+                  { color: colors.primary },
+                  (!canPublish || submitting) && [styles.shareDisabled, { color: colors.muted }],
+                ]}
+              >
                 {submitting
                   ? `${Math.round(uploadProgress)}%`
                   : params.communityKind === 'discussions'
@@ -212,16 +220,27 @@ export default function CreateContentScreen() {
         </View>
 
         {!isCommunityComposer && (
-          <View style={styles.tabs}>
+          <View style={[styles.tabs, { borderBottomColor: colors.border }]}>
             {modes.map((item) => {
               const active = mode === item.value;
               return (
                 <Pressable
                   key={item.value}
                   onPress={() => selectMode(item.value)}
-                  style={[styles.tab, active && styles.tabActive]}
+                  style={[
+                    styles.tab,
+                    active && [styles.tabActive, { borderBottomColor: colors.primary }],
+                  ]}
                 >
-                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{item.label}</Text>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      { color: colors.muted },
+                      active && [styles.tabTextActive, { color: colors.text }],
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -236,20 +255,35 @@ export default function CreateContentScreen() {
         >
           {mode === 'podcast' ? (
             <View style={styles.podcastEditor}>
-              <Pressable onPress={() => void pickPodcastCover()} style={styles.podcastCoverPicker}>
+              <Pressable
+                onPress={() => void pickPodcastCover()}
+                style={[
+                  styles.podcastCoverPicker,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
                 {podcastCover ? (
                   <Image source={{ uri: podcastCover.uri }} style={styles.podcastCover} />
                 ) : (
                   <>
-                    <View style={styles.podcastDisc}>
-                      <Text style={styles.podcastDiscIcon}>♫</Text>
+                    <View
+                      style={[
+                        styles.podcastDisc,
+                        { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+                      ]}
+                    >
+                      <Text style={[styles.podcastDiscIcon, { color: colors.primary }]}>♫</Text>
                     </View>
-                    <Text style={styles.pickerTitle}>Thumbnail сонгох</Text>
-                    <Text style={styles.pickerHint}>Podcast cover зураг</Text>
+                    <Text style={[styles.pickerTitle, { color: colors.text }]}>
+                      Thumbnail сонгох
+                    </Text>
+                    <Text style={[styles.pickerHint, { color: colors.muted }]}>
+                      Podcast cover зураг
+                    </Text>
                   </>
                 )}
-                <View style={styles.editBadge}>
-                  <Text style={styles.editBadgeText}>＋</Text>
+                <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={[styles.editBadgeText, { color: colors.ink }]}>＋</Text>
                 </View>
               </Pressable>
 
@@ -257,28 +291,39 @@ export default function CreateContentScreen() {
                 value={podcastTitle}
                 onChangeText={setPodcastTitle}
                 placeholder="Podcast-ийн гарчиг"
-                placeholderTextColor="#66736E"
-                style={styles.titleInput}
+                placeholderTextColor={colors.muted}
+                style={[
+                  styles.titleInput,
+                  { color: colors.text, backgroundColor: colors.surfaceRaised },
+                ]}
               />
               <TextInput
                 multiline
                 value={podcastDescription}
                 onChangeText={setPodcastDescription}
                 placeholder="Энэ дугаарын тухай тайлбар..."
-                placeholderTextColor="#66736E"
-                style={styles.descriptionInput}
+                placeholderTextColor={colors.muted}
+                style={[
+                  styles.descriptionInput,
+                  { color: colors.text, backgroundColor: colors.surfaceRaised },
+                ]}
               />
-              <Pressable onPress={() => void pickPodcastAudio()} style={styles.audioPicker}>
-                <View style={styles.audioIconWrap}>
-                  <Text style={styles.audioIcon}>♫</Text>
+              <Pressable
+                onPress={() => void pickPodcastAudio()}
+                style={[styles.audioPicker, { backgroundColor: colors.surfaceRaised }]}
+              >
+                <View style={[styles.audioIconWrap, { backgroundColor: colors.surfaceSoft }]}>
+                  <Text style={[styles.audioIcon, { color: colors.primary }]}>♫</Text>
                 </View>
                 <View style={styles.audioCopy}>
-                  <Text numberOfLines={1} style={styles.audioTitle}>
+                  <Text numberOfLines={1} style={[styles.audioTitle, { color: colors.text }]}>
                     {podcastAudio?.name || 'Audio файл сонгох'}
                   </Text>
-                  <Text style={styles.audioHint}>MP3, M4A, WAV, AAC, OGG</Text>
+                  <Text style={[styles.audioHint, { color: colors.muted }]}>
+                    MP3, M4A, WAV, AAC, OGG
+                  </Text>
                 </View>
-                <Text style={styles.audioChevron}>›</Text>
+                <Text style={[styles.audioChevron, { color: colors.muted }]}>›</Text>
               </Pressable>
             </View>
           ) : (
@@ -287,23 +332,33 @@ export default function CreateContentScreen() {
                 {user?.avatarUrl ? (
                   <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
                 ) : (
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{userInitial}</Text>
+                  <View
+                    style={[
+                      styles.avatar,
+                      { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
+                    ]}
+                  >
+                    <Text style={[styles.avatarText, { color: colors.primary }]}>
+                      {userInitial}
+                    </Text>
                   </View>
                 )}
-                <Text style={styles.authorName}>{displayName}</Text>
+                <Text style={[styles.authorName, { color: colors.text }]}>{displayName}</Text>
               </View>
 
               {media ? (
-                <Pressable onPress={() => void pickPostMedia()} style={styles.mediaPreview}>
+                <Pressable
+                  onPress={() => void pickPostMedia()}
+                  style={[styles.mediaPreview, { backgroundColor: colors.surface }]}
+                >
                   {media.type === 'image' ? (
                     <Image source={{ uri: media.uri }} style={styles.selectedImage} />
                   ) : (
                     <View style={styles.videoSelected}>
-                      <View style={styles.videoPlay}>
-                        <Text style={styles.videoPlayText}>▶</Text>
+                      <View style={[styles.videoPlay, { backgroundColor: colors.primary }]}>
+                        <Text style={[styles.videoPlayText, { color: colors.ink }]}>▶</Text>
                       </View>
-                      <Text numberOfLines={1} style={styles.videoName}>
+                      <Text numberOfLines={1} style={[styles.videoName, { color: colors.text }]}>
                         {media.name}
                       </Text>
                     </View>
@@ -313,30 +368,40 @@ export default function CreateContentScreen() {
                   </Pressable>
                 </Pressable>
               ) : (
-                <Pressable onPress={() => void pickPostMedia()} style={styles.mediaPicker}>
-                  <View style={styles.mediaPickerIcon}>
-                    <Text style={styles.mediaPickerIconText}>{mode === 'reel' ? '▶' : '▧'}</Text>
+                <Pressable
+                  onPress={() => void pickPostMedia()}
+                  style={[
+                    styles.mediaPicker,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <View style={[styles.mediaPickerIcon, { borderColor: colors.textSecondary }]}>
+                    <Text style={[styles.mediaPickerIconText, { color: colors.text }]}>
+                      {mode === 'reel' ? '▶' : '▧'}
+                    </Text>
                   </View>
-                  <Text style={styles.pickerTitle}>
+                  <Text style={[styles.pickerTitle, { color: colors.text }]}>
                     {mode === 'reel' ? 'Видео сонгох' : 'Зураг сонгох'}
                   </Text>
-                  <Text style={styles.pickerHint}>
+                  <Text style={[styles.pickerHint, { color: colors.muted }]}>
                     {mode === 'reel'
                       ? 'Босоо видео хамгийн тохиромжтой'
                       : 'Gallery-гаас зураг сонгоно'}
                   </Text>
-                  <View style={styles.selectButton}>
-                    <Text style={styles.selectButtonText}>Төхөөрөмжөөс сонгох</Text>
+                  <View style={[styles.selectButton, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.selectButtonText, { color: colors.ink }]}>
+                      Төхөөрөмжөөс сонгох
+                    </Text>
                   </View>
                 </Pressable>
               )}
               {isCommunityArticle && !media && (
-                <Text style={styles.articleMediaHint}>
+                <Text style={[styles.articleMediaHint, { color: colors.primary }]}>
                   Нийтлэл оруулахын тулд нүүр зураг сонгоно уу.
                 </Text>
               )}
 
-              <View style={styles.captionRow}>
+              <View style={[styles.captionRow, { backgroundColor: colors.surfaceRaised }]}>
                 <TextInput
                   multiline
                   maxLength={5000}
@@ -351,18 +416,23 @@ export default function CreateContentScreen() {
                           ? 'Нийтлэлийн агуулгаа бичээрэй...'
                           : 'Тайлбар бичих...'
                   }
-                  placeholderTextColor="#66736E"
-                  style={styles.captionInput}
+                  placeholderTextColor={colors.muted}
+                  style={[styles.captionInput, { color: colors.text }]}
                 />
-                <Text style={styles.counter}>{caption.length}/5000</Text>
+                <Text style={[styles.counter, { color: colors.muted }]}>{caption.length}/5000</Text>
               </View>
             </View>
           )}
 
           {submitting && (
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
-              <Text style={styles.progressLabel}>
+            <View style={[styles.progressTrack, { backgroundColor: colors.surfaceRaised }]}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${uploadProgress}%`, backgroundColor: colors.primary },
+                ]}
+              />
+              <Text style={[styles.progressLabel, { color: colors.text }]}>
                 {uploadingLabel} хуулж байна · {Math.round(uploadProgress)}%
               </Text>
             </View>

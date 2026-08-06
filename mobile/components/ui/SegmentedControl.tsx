@@ -8,17 +8,17 @@ type Props = {
 };
 
 export const SegmentedControl: React.FC<Props> = ({ options, selectedIndex, onChange }) => (
-  <View className="min-h-[50px] flex-row rounded-card border border-border bg-background-paper p-1">
+  <View className="h-[54px] flex-row rounded-btn border border-border bg-background-paper p-1">
     {options.map((option, index) => {
       const active = index === selectedIndex;
       return (
         <Pressable
           key={option}
           onPress={() => onChange(index)}
-          className={`flex-1 items-center justify-center rounded-btn px-s py-xs ${active ? 'bg-brand-primary' : ''}`}
+          className={`flex-1 items-center justify-center rounded-[11px] px-s py-xs ${active ? 'bg-brand-primary' : ''}`}
         >
           <Text
-            className={`text-center text-sm font-bold ${active ? 'text-background-app' : 'text-text-muted'}`}
+            className={`text-center text-base font-bold ${active ? 'text-background-app' : 'text-text-primary'}`}
           >
             {option}
           </Text>
