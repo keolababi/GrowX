@@ -14,6 +14,7 @@ const reelSchema = z.object({
   videoUrl: z.string().url(),
 });
 const reelIdSchema = z.object({ reelId: z.string().min(1) });
+const reelCommentIdSchema = reelIdSchema.extend({ commentId: z.string().min(1) });
 const reelCommentSchema = z.object({ content: z.string().trim().min(1).max(1000) });
 
 export async function listPodcasts(_req: Request, res: Response): Promise<void> {
@@ -47,6 +48,20 @@ export async function addReelComment(req: Request, res: Response): Promise<void>
   const { reelId } = reelIdSchema.parse(req.params);
   const { content } = reelCommentSchema.parse(req.body);
   res.status(201).json(await mediaService.addReelComment(req.auth!.userId, reelId, content));
+}
+
+export async function updateReelComment(req: Request, res: Response): Promise<void> {
+  const { reelId, commentId } = reelCommentIdSchema.parse(req.params);
+  const { content } = reelCommentSchema.parse(req.body);
+  res
+    .status(200)
+    .json(await mediaService.updateReelComment(req.auth!.userId, reelId, commentId, content));
+}
+
+export async function removeReelComment(req: Request, res: Response): Promise<void> {
+  const { reelId, commentId } = reelCommentIdSchema.parse(req.params);
+  await mediaService.deleteReelComment(req.auth!.userId, reelId, commentId);
+  res.status(204).send();
 }
 
 export async function removePodcast(req: Request, res: Response): Promise<void> {

@@ -42,15 +42,17 @@ export default function FeedbackFormsScreen() {
         title="Feedback"
         back
         actions={
-          <Pressable
-            onPress={() => router.push('/feedback/create')}
-            accessibilityRole="button"
-            accessibilityLabel="Шинэ асуулга нэмэх"
-            className="h-10 flex-row items-center justify-center gap-1 rounded-btn bg-brand-primary px-m active:opacity-80"
-          >
-            <Icon name="add" size={19} color={colors.ink} />
-            <Text className="text-xs font-extrabold text-background-app">Шинэ асуулга</Text>
-          </Pressable>
+          forms.length > 0 || !!error ? (
+            <Pressable
+              onPress={() => router.push('/feedback/create')}
+              accessibilityRole="button"
+              accessibilityLabel="Шинэ асуулга нэмэх"
+              className="h-10 flex-row items-center justify-center gap-1 rounded-btn bg-brand-primary px-m active:opacity-80"
+            >
+              <Icon name="add" size={19} color={colors.ink} />
+              <Text className="text-xs font-extrabold text-background-app">Шинэ асуулга</Text>
+            </Pressable>
+          ) : undefined
         }
       />
 
@@ -145,13 +147,13 @@ export default function FeedbackFormsScreen() {
                   )}
                   <View className="mt-s flex-row flex-wrap items-center gap-s">
                     <View className="flex-row items-center gap-1">
-                      <Icon name="help-circle-outline" size={13} color="#A7AEB0" />
+                      <Icon name="help-circle-outline" size={13} color={colors.muted} />
                       <Text className="text-[11px] text-text-muted">
                         {form.questionCount} асуулт
                       </Text>
                     </View>
                     <View className="flex-row items-center gap-1">
-                      <Icon name="people-outline" size={13} color="#A7AEB0" />
+                      <Icon name="people-outline" size={13} color={colors.muted} />
                       <Text className="text-[11px] text-text-muted">
                         {form.responseCount} хариулт
                       </Text>
@@ -161,7 +163,7 @@ export default function FeedbackFormsScreen() {
                     </Text>
                   </View>
                 </View>
-                <Icon name="chevron-forward" size={20} color="#65736E" />
+                <Icon name="chevron-forward" size={20} color={colors.muted} />
               </Pressable>
             ))}
 

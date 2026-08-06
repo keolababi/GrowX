@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { router, type Href } from 'expo-router';
 import {
   Alert,
@@ -12,20 +13,26 @@ import {
 } from 'react-native';
 import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { Icon } from '@/components/ui/Icon';
 
-const menuItems: Array<{ icon: string; label: string; route?: Href }> = [
-  { icon: '♙', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
-  { icon: '▧', label: 'Миний контент', route: '/posts' as Href },
-  { icon: '▯', label: 'Хадгалсан контент', route: '/profile?saved=1' as Href },
-  { icon: '▤', label: 'Миний асуулгууд', route: '/feedback' as Href },
-  { icon: '▣', label: 'Миний төсөл' },
-  { icon: '♧', label: 'Миний зөвлөлүүд' },
-  { icon: '⚙', label: 'Тохиргоо' },
+type IconName = ComponentProps<typeof Icon>['name'];
+
+const menuItems: Array<{ icon: IconName; label: string; route?: Href }> = [
+  { icon: 'person-outline', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
+  { icon: 'newspaper-outline', label: 'Миний контент', route: '/posts' as Href },
+  {
+    icon: 'bookmark-outline',
+    label: 'Хадгалсан контент',
+    route: '/profile?saved=1' as Href,
+  },
+  { icon: 'help-circle-outline', label: 'Миний асуулгууд', route: '/feedback' as Href },
+  { icon: 'folder-open-outline', label: 'Миний төсөл' },
+  { icon: 'people-outline', label: 'Миний зөвлөлүүд' },
 ];
 
 export default function ProfileSettingsScreen() {
   const { logout } = useUser();
-  const { isDark, toggleMode } = useColorMode();
+  const { colors, isDark, toggleMode } = useColorMode();
   const styles = createStyles(isDark);
 
   const signOut = async () => {
@@ -48,7 +55,7 @@ export default function ProfileSettingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.back}>‹</Text>
+          <Icon name="chevron-back" size={27} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Settings</Text>
         <View style={styles.headerSpacer} />
@@ -56,7 +63,11 @@ export default function ProfileSettingsScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.themeItem}>
           <View style={styles.iconWrap}>
-            <Text style={styles.icon}>{isDark ? '☾' : '☀'}</Text>
+            <Icon
+              name={isDark ? 'moon-outline' : 'sunny-outline'}
+              size={23}
+              color={colors.textSecondary}
+            />
           </View>
           <View style={styles.themeCopy}>
             <Text style={styles.label}>{isDark ? 'Dark mode' : 'Light mode'}</Text>
@@ -76,10 +87,10 @@ export default function ProfileSettingsScreen() {
             style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
           >
             <View style={styles.iconWrap}>
-              <Text style={styles.icon}>{item.icon}</Text>
+              <Icon name={item.icon} size={22} color={colors.textSecondary} />
             </View>
             <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Icon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
         ))}
         <Pressable
@@ -87,10 +98,10 @@ export default function ProfileSettingsScreen() {
           style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
         >
           <View style={styles.iconWrap}>
-            <Text style={[styles.icon, styles.signOut]}>↪</Text>
+            <Icon name="log-out-outline" size={22} color={colors.danger} />
           </View>
-          <Text style={[styles.label, styles.signOut]}>Гарах</Text>
-          <Text style={[styles.chevron, styles.signOut]}>›</Text>
+          <Text style={[styles.label, { color: colors.danger }]}>Гарах</Text>
+          <Icon name="chevron-forward" size={20} color={colors.danger} />
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -109,7 +120,6 @@ const createStyles = (isDark: boolean) =>
       borderBottomColor: isDark ? '#173029' : '#D9D9D4',
     },
     backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-    back: { color: isDark ? '#F2F6F4' : '#111111', fontSize: 38, lineHeight: 40 },
     title: {
       flex: 1,
       color: isDark ? '#F4F7F6' : '#111111',
@@ -146,7 +156,6 @@ const createStyles = (isDark: boolean) =>
       justifyContent: 'center',
       backgroundColor: isDark ? '#10261F' : '#F2F2EF',
     },
-    icon: { color: isDark ? '#EFF3F1' : '#111111', fontSize: 23 },
     label: {
       flex: 1,
       color: isDark ? '#F0F3F2' : '#111111',
@@ -154,6 +163,4 @@ const createStyles = (isDark: boolean) =>
       fontWeight: '700',
       marginLeft: 13,
     },
-    chevron: { color: isDark ? '#AEBAB5' : '#7A7A76', fontSize: 32 },
-    signOut: { color: '#FF817B' },
   });

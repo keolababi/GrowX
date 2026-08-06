@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -18,6 +19,7 @@ import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import { useUser } from '@/providers/UserProvider';
 import { getApiError } from '@/utils/auth';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Icon } from '@/components/ui/Icon';
 import type { User } from '@/types/auth';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
@@ -145,7 +147,7 @@ export default function PersonalInformationScreen() {
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Text style={[styles.back, { color: colors.text }]}>‹</Text>
+            <Icon name="chevron-back" size={27} color={colors.text} />
           </Pressable>
           <Text style={[styles.title, { color: colors.text }]}>Хувийн мэдээлэл</Text>
           <View style={styles.headerSpacer} />
@@ -207,7 +209,7 @@ export default function PersonalInformationScreen() {
             ]}
           >
             <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSoft }]}>
-              <Text style={[styles.rowIconText, { color: colors.textSecondary }]}>♙</Text>
+              <Icon name="camera-outline" size={20} color={colors.textSecondary} />
             </View>
             <View style={styles.rowCopy}>
               <Text style={[styles.rowLabel, { color: colors.text }]}>Профайл зураг</Text>
@@ -229,18 +231,20 @@ export default function PersonalInformationScreen() {
                 </Text>
               </View>
             )}
-            <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
+            <View style={styles.chevron}>
+              <Icon name="chevron-forward" size={21} color={colors.muted} />
+            </View>
           </Pressable>
 
           <Field
-            icon="♙"
+            icon="person-outline"
             label="Нэр"
             value={displayName}
             onChangeText={setDisplayName}
             placeholder="Таны нэр"
           />
           <Field
-            icon="▧"
+            icon="document-text-outline"
             label="Bio"
             value={bio}
             onChangeText={setBio}
@@ -249,7 +253,7 @@ export default function PersonalInformationScreen() {
             maxLength={500}
           />
           <Field
-            icon="☎"
+            icon="call-outline"
             label="Утасны дугаар"
             value={phone}
             onChangeText={setPhone}
@@ -258,7 +262,7 @@ export default function PersonalInformationScreen() {
             maxLength={30}
           />
           <Field
-            icon="▣"
+            icon="business-outline"
             label={accountType === 'BUSINESS' ? 'Бизнесийн нэр' : 'Хаана ажилладаг'}
             value={company}
             onChangeText={setCompany}
@@ -269,7 +273,7 @@ export default function PersonalInformationScreen() {
           {accountType === 'BUSINESS' && (
             <>
               <Field
-                icon="◆"
+                icon="layers-outline"
                 label="Салбар"
                 value={industry}
                 onChangeText={setIndustry}
@@ -277,7 +281,7 @@ export default function PersonalInformationScreen() {
                 maxLength={120}
               />
               <Field
-                icon="⌖"
+                icon="location-outline"
                 label="Байршил"
                 value={location}
                 onChangeText={setLocation}
@@ -285,7 +289,7 @@ export default function PersonalInformationScreen() {
                 maxLength={120}
               />
               <Field
-                icon="▤"
+                icon="list-outline"
                 label="Үйлчилгээ"
                 value={services}
                 onChangeText={setServices}
@@ -306,7 +310,7 @@ export default function PersonalInformationScreen() {
             <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email}</Text>
           </View>
 
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
           {!!success && <Text style={[styles.success, { color: colors.primary }]}>{success}</Text>}
 
           <Pressable
@@ -337,18 +341,24 @@ function Field({
   icon,
   label,
   ...inputProps
-}: React.ComponentProps<typeof TextInput> & { icon: string; label: string }) {
-  const { colors } = useColorMode();
+}: React.ComponentProps<typeof TextInput> & {
+  icon: ComponentProps<typeof Icon>['name'];
+  label: string;
+}) {
+  const { colors, isDark } = useColorMode();
   return (
     <View style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSoft }]}>
-        <Text style={[styles.rowIconText, { color: colors.textSecondary }]}>{icon}</Text>
+        <Icon name={icon} size={19} color={colors.textSecondary} />
       </View>
       <View style={styles.fieldCopy}>
         <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
         <TextInput
           {...inputProps}
+          cursorColor={colors.primary}
+          keyboardAppearance={isDark ? 'dark' : 'light'}
           placeholderTextColor={colors.muted}
+          selectionColor={colors.primary}
           style={[
             styles.input,
             { color: colors.text },
@@ -372,7 +382,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#162A26',
   },
   backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-  back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   title: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
   scroll: { flex: 1 },
@@ -415,7 +424,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#10261E',
   },
-  rowIconText: { color: '#DCE5E1', fontSize: 19 },
   rowCopy: { flex: 1, marginLeft: 11 },
   rowLabel: { color: '#EAF0ED', fontSize: 13, fontWeight: '800' },
   rowHint: { color: '#6F7E78', fontSize: 10, marginTop: 5 },
@@ -432,7 +440,7 @@ const styles = StyleSheet.create({
     borderColor: lime,
   },
   avatarInitial: { color: lime, fontSize: 21, fontWeight: '900' },
-  chevron: { color: '#8C9993', fontSize: 29, marginLeft: 8 },
+  chevron: { marginLeft: 8 },
   field: {
     minHeight: 88,
     paddingHorizontal: 14,

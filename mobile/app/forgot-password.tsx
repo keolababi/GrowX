@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
 import { BackButton, Field, FooterLink, PrimaryButton } from '@/components/AuthUI';
+import { Icon } from '@/components/ui/Icon';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 
@@ -37,14 +38,16 @@ export default function ForgotPassword() {
       />
       <View style={styles.art}>
         <View style={styles.envelope}>
-          <Text style={styles.mail}>═</Text>
+          <Icon name="mail-unread-outline" size={52} color="#E5F8C8" />
         </View>
-        <Text style={styles.send}>➤</Text>
+        <View style={styles.send}>
+          <Icon name="paper-plane-outline" size={50} color={colors.lime} />
+        </View>
         <View style={styles.dash} />
       </View>
       <Field
         label="И-мэйл хаяг"
-        icon="✉"
+        icon="mail-outline"
         placeholder="yourname@example.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -76,16 +79,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     transform: [{ perspective: 400 }, { rotateX: '-8deg' }],
   },
-  mail: { color: '#E5F8C8', fontSize: 44, fontWeight: '200' },
   send: {
     position: 'absolute',
-    color: colors.lime,
-    fontSize: 54,
     right: 42,
     top: 30,
     transform: [{ rotate: '-34deg' }],
-    textShadowColor: colors.lime,
-    textShadowRadius: 12,
+    shadowColor: colors.lime,
+    shadowOpacity: 0.7,
+    shadowRadius: 12,
   },
   dash: {
     position: 'absolute',

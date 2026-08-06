@@ -17,6 +17,7 @@ import {
 import { api } from '@/services/api';
 import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import { NotificationBell } from '@/components/NotificationBell';
+import { Icon } from '@/components/ui/Icon';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
@@ -196,7 +197,7 @@ export default function CreateContentScreen() {
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable accessibilityLabel="Хаах" onPress={() => router.back()} style={styles.close}>
-            <Text style={[styles.closeText, { color: colors.text }]}>×</Text>
+            <Icon name="close" size={26} color={colors.text} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>{composerTitle}</Text>
           <View style={styles.headerActions}>
@@ -272,7 +273,7 @@ export default function CreateContentScreen() {
                         { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
                       ]}
                     >
-                      <Text style={[styles.podcastDiscIcon, { color: colors.primary }]}>♫</Text>
+                      <Icon name="mic-outline" size={32} color={colors.primary} />
                     </View>
                     <Text style={[styles.pickerTitle, { color: colors.text }]}>
                       Thumbnail сонгох
@@ -283,7 +284,7 @@ export default function CreateContentScreen() {
                   </>
                 )}
                 <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={[styles.editBadgeText, { color: colors.ink }]}>＋</Text>
+                  <Icon name="add" size={25} color={colors.ink} />
                 </View>
               </Pressable>
 
@@ -292,9 +293,15 @@ export default function CreateContentScreen() {
                 onChangeText={setPodcastTitle}
                 placeholder="Podcast-ийн гарчиг"
                 placeholderTextColor={colors.muted}
+                cursorColor={colors.primary}
+                selectionColor={colors.primary}
                 style={[
                   styles.titleInput,
-                  { color: colors.text, backgroundColor: colors.surfaceRaised },
+                  {
+                    color: colors.text,
+                    backgroundColor: colors.surfaceRaised,
+                    borderColor: colors.border,
+                  },
                 ]}
               />
               <TextInput
@@ -303,9 +310,15 @@ export default function CreateContentScreen() {
                 onChangeText={setPodcastDescription}
                 placeholder="Энэ дугаарын тухай тайлбар..."
                 placeholderTextColor={colors.muted}
+                cursorColor={colors.primary}
+                selectionColor={colors.primary}
                 style={[
                   styles.descriptionInput,
-                  { color: colors.text, backgroundColor: colors.surfaceRaised },
+                  {
+                    color: colors.text,
+                    backgroundColor: colors.surfaceRaised,
+                    borderColor: colors.border,
+                  },
                 ]}
               />
               <Pressable
@@ -313,7 +326,7 @@ export default function CreateContentScreen() {
                 style={[styles.audioPicker, { backgroundColor: colors.surfaceRaised }]}
               >
                 <View style={[styles.audioIconWrap, { backgroundColor: colors.surfaceSoft }]}>
-                  <Text style={[styles.audioIcon, { color: colors.primary }]}>♫</Text>
+                  <Icon name="musical-notes-outline" size={23} color={colors.primary} />
                 </View>
                 <View style={styles.audioCopy}>
                   <Text numberOfLines={1} style={[styles.audioTitle, { color: colors.text }]}>
@@ -323,7 +336,7 @@ export default function CreateContentScreen() {
                     MP3, M4A, WAV, AAC, OGG
                   </Text>
                 </View>
-                <Text style={[styles.audioChevron, { color: colors.muted }]}>›</Text>
+                <Icon name="chevron-forward" size={22} color={colors.muted} />
               </Pressable>
             </View>
           ) : (
@@ -356,7 +369,7 @@ export default function CreateContentScreen() {
                   ) : (
                     <View style={styles.videoSelected}>
                       <View style={[styles.videoPlay, { backgroundColor: colors.primary }]}>
-                        <Text style={[styles.videoPlayText, { color: colors.ink }]}>▶</Text>
+                        <Icon name="play" size={28} color={colors.ink} />
                       </View>
                       <Text numberOfLines={1} style={[styles.videoName, { color: colors.text }]}>
                         {media.name}
@@ -364,7 +377,7 @@ export default function CreateContentScreen() {
                     </View>
                   )}
                   <Pressable onPress={() => setMedia(null)} style={styles.removeButton}>
-                    <Text style={styles.removeText}>×</Text>
+                    <Icon name="close" size={22} color="#FFFFFF" />
                   </Pressable>
                 </Pressable>
               ) : (
@@ -376,9 +389,11 @@ export default function CreateContentScreen() {
                   ]}
                 >
                   <View style={[styles.mediaPickerIcon, { borderColor: colors.textSecondary }]}>
-                    <Text style={[styles.mediaPickerIconText, { color: colors.text }]}>
-                      {mode === 'reel' ? '▶' : '▧'}
-                    </Text>
+                    <Icon
+                      name={mode === 'reel' ? 'videocam-outline' : 'image-outline'}
+                      size={29}
+                      color={colors.text}
+                    />
                   </View>
                   <Text style={[styles.pickerTitle, { color: colors.text }]}>
                     {mode === 'reel' ? 'Видео сонгох' : 'Зураг сонгох'}
@@ -401,7 +416,12 @@ export default function CreateContentScreen() {
                 </Text>
               )}
 
-              <View style={[styles.captionRow, { backgroundColor: colors.surfaceRaised }]}>
+              <View
+                style={[
+                  styles.captionRow,
+                  { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+                ]}
+              >
                 <TextInput
                   multiline
                   maxLength={5000}
@@ -417,7 +437,12 @@ export default function CreateContentScreen() {
                           : 'Тайлбар бичих...'
                   }
                   placeholderTextColor={colors.muted}
-                  style={[styles.captionInput, { color: colors.text }]}
+                  cursorColor={colors.primary}
+                  selectionColor={colors.primary}
+                  style={[
+                    styles.captionInput,
+                    { color: colors.text, backgroundColor: colors.surfaceRaised },
+                  ]}
                 />
                 <Text style={[styles.counter, { color: colors.muted }]}>{caption.length}/5000</Text>
               </View>
@@ -437,7 +462,7 @@ export default function CreateContentScreen() {
               </Text>
             </View>
           )}
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -458,7 +483,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#17272C',
   },
   close: { width: 45, height: 45, alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: '#F1F5F3', fontSize: 35, lineHeight: 37, fontWeight: '300' },
   headerTitle: { color: '#F4F7F6', fontSize: 19, fontWeight: '900' },
   share: { minWidth: 62, color: lime, fontSize: 14, fontWeight: '900', textAlign: 'right' },
   shareDisabled: { color: '#45633C' },
@@ -515,7 +539,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mediaPickerIconText: { color: '#EDF2F0', fontSize: 29 },
   pickerTitle: { color: '#F0F4F2', fontSize: 17, fontWeight: '800', marginTop: 17 },
   pickerHint: { color: '#7E8B86', fontSize: 12, marginTop: 7 },
   selectButton: {
@@ -545,7 +568,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  videoPlayText: { color: '#142000', fontSize: 28, marginLeft: 4 },
   videoName: { color: '#DCE3E0', fontSize: 13, marginTop: 16 },
   removeButton: {
     position: 'absolute',
@@ -558,12 +580,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeText: { color: '#FFF', fontSize: 24, lineHeight: 25 },
   captionRow: {
     minHeight: 105,
     marginTop: 15,
     padding: 14,
     borderRadius: 7,
+    borderWidth: 1,
     backgroundColor: '#07161A',
   },
   captionInput: {
@@ -599,7 +621,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  podcastDiscIcon: { color: lime, fontSize: 32 },
   editBadge: {
     position: 'absolute',
     right: 13,
@@ -611,12 +632,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  editBadgeText: { color: '#142000', fontSize: 27 },
   titleInput: {
     height: 55,
     marginTop: 16,
     paddingHorizontal: 15,
     borderRadius: 8,
+    borderWidth: 1,
     color: '#F1F4F3',
     backgroundColor: '#07161A',
     fontSize: 16,
@@ -627,6 +648,7 @@ const styles = StyleSheet.create({
     marginTop: 11,
     padding: 15,
     borderRadius: 8,
+    borderWidth: 1,
     color: '#E8EDEB',
     backgroundColor: '#07161A',
     fontSize: 14,
@@ -650,11 +672,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  audioIcon: { color: lime, fontSize: 23 },
   audioCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
   audioTitle: { color: '#EEF2F0', fontSize: 14, fontWeight: '800' },
   audioHint: { color: '#71807A', fontSize: 11, marginTop: 4 },
-  audioChevron: { color: '#A7B2AE', fontSize: 31 },
   progressTrack: {
     height: 42,
     marginTop: 17,

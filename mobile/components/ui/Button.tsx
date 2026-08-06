@@ -41,7 +41,7 @@ export const Button: React.FC<Props> = ({
   disabled,
   loading,
 }) => {
-  const { iconAccent } = useColorMode();
+  const { colors, iconAccent } = useColorMode();
   return (
     <Pressable
       onPress={onPress}
@@ -51,7 +51,7 @@ export const Button: React.FC<Props> = ({
       }`}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#020B0D' : iconAccent} />
+        <ActivityIndicator color={variant === 'primary' ? colors.ink : iconAccent} />
       ) : (
         <Text className={`font-bold ${variantTextClasses[variant]} ${textSizeClasses[size]}`}>
           {title}

@@ -259,6 +259,35 @@ export async function listComments(userId: string, postId: string) {
   };
 }
 
+export async function updateComment(
+  userId: string,
+  postId: string,
+  commentId: string,
+  content: string,
+) {
+  await requirePostAccess(userId, postId);
+  const existing = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true, postId: true },
+  });
+  if (!existing || existing.postId !== postId) throw new HttpError(404, 'Сэтгэгдэл олдсонгүй.');
+  if (existing.authorId !== userId) {
+    throw new HttpError(403, 'Зөвхөн өөрийн сэтгэгдлийг засах боломжтой.');
+  }
+
+  const comment = await prisma.comment.update({
+    where: { id: commentId },
+    data: { content },
+    include: { author: { select: authorSelect } },
+  });
+  return {
+    comment: {
+      ...comment,
+      author: serializeAuthor(comment.author),
+    },
+  };
+}
+
 export async function deleteComment(userId: string, postId: string, commentId: string) {
   await requirePostAccess(userId, postId);
   const comment = await prisma.comment.findUnique({

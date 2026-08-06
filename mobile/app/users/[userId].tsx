@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { api } from '@/services/api';
 import { PostCard } from '@/components/ui/PostCard';
+import { Icon } from '@/components/ui/Icon';
 import type { SocialProfile } from '@/types/social';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
@@ -150,13 +151,13 @@ export default function PublicUserProfileScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.back, { color: colors.text }]}>‹</Text>
+          <Icon name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Профайл</Text>
         <View style={styles.headerSpacer} />
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {!!error && <Text style={styles.error}>{error}</Text>}
+        {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
         {profile && (
           <>
             {isBusiness && (
@@ -369,7 +370,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#173029',
   },
   backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-  back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   headerTitle: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
   scroll: { flex: 1 },

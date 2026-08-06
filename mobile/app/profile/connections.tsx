@@ -15,6 +15,7 @@ import { useUser } from '@/providers/UserProvider';
 import type { SocialConnection } from '@/types/social';
 import { getApiError } from '@/utils/auth';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { Icon } from '@/components/ui/Icon';
 
 type Tab = 'followers' | 'following';
 const lime = '#9AF000';
@@ -70,7 +71,7 @@ export default function ConnectionsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.back, { color: colors.text }]}>‹</Text>
+          <Icon name="chevron-back" size={27} color={colors.text} />
         </Pressable>
         <Text style={[styles.title, { color: colors.text }]}>Холбоосууд</Text>
         <View style={styles.headerSpacer} />
@@ -118,7 +119,7 @@ export default function ConnectionsScreen() {
         <ActivityIndicator color={iconAccent} style={styles.loader} />
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
           {users.map((item) => {
             const name = item.displayName || item.email.split('@')[0];
             return (
@@ -196,7 +197,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#173029',
   },
   backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-  back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
   title: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
   tabs: {

@@ -46,7 +46,7 @@ function canModifyMessage(message: ChatMessage) {
 }
 
 export default function ConversationScreen() {
-  const { iconAccent, colors } = useColorMode();
+  const { iconAccent, colors, isDark } = useColorMode();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useUser();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -372,7 +372,10 @@ export default function ConversationScreen() {
           <Pressable
             accessibilityLabel="Мессежийн жагсаалт руу буцах"
             onPress={() => router.replace('/messages')}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+            ]}
           >
             <Icon name="chevron-back" size={27} color={colors.text} />
           </Pressable>
@@ -382,9 +385,17 @@ export default function ConversationScreen() {
             style={styles.profileLink}
           >
             {otherUser?.avatarUrl ? (
-              <Image source={{ uri: otherUser.avatarUrl }} style={styles.headerAvatar} />
+              <Image
+                source={{ uri: otherUser.avatarUrl }}
+                style={[styles.headerAvatar, { borderColor: colors.borderStrong }]}
+              />
             ) : (
-              <View style={[styles.headerAvatar, { backgroundColor: colors.surfaceSoft }]}>
+              <View
+                style={[
+                  styles.headerAvatar,
+                  { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
+                ]}
+              >
                 <Text style={[styles.headerAvatarText, { color: colors.primary }]}>
                   {displayName(otherUser).charAt(0).toUpperCase()}
                 </Text>
@@ -411,7 +422,12 @@ export default function ConversationScreen() {
           >
             {!messages.length && (
               <View style={styles.empty}>
-                <View style={styles.emptyIcon}>
+                <View
+                  style={[
+                    styles.emptyIcon,
+                    { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+                  ]}
+                >
                   <Icon name="chatbubble-ellipses-outline" size={29} color={iconAccent} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>Шинэ яриа</Text>
@@ -467,8 +483,13 @@ export default function ConversationScreen() {
                         styles.bubble,
                         mine
                           ? [styles.mineBubble, { backgroundColor: colors.primary }]
-                          : styles.theirBubble,
-                        !mine && { backgroundColor: colors.surfaceRaised },
+                          : [
+                              styles.theirBubble,
+                              {
+                                backgroundColor: colors.surfaceRaised,
+                                borderColor: colors.border,
+                              },
+                            ],
                       ]}
                     >
                       <Text
@@ -476,21 +497,27 @@ export default function ConversationScreen() {
                       >
                         {message.content}
                       </Text>
-                      <Text style={[styles.messageTime, mine && styles.mineTime]}>
+                      <Text
+                        style={[styles.messageTime, { color: mine ? colors.ink : colors.muted }]}
+                      >
                         {message.editedAt ? 'зассан · ' : ''}
                         {messageTime(message.createdAt)}
                       </Text>
                     </Pressable>
                   </View>
                   {mine && message.id === lastSeenMessageId && (
-                    <Text style={styles.seenText}>Уншсан</Text>
+                    <Text style={[styles.seenText, { color: iconAccent }]}>Уншсан</Text>
                   )}
                   {mine && message.deliveryStatus === 'sending' && (
-                    <Text style={styles.deliverySending}>Илгээж байна…</Text>
+                    <Text style={[styles.deliverySending, { color: colors.muted }]}>
+                      Илгээж байна…
+                    </Text>
                   )}
                   {mine && message.deliveryStatus === 'failed' && (
                     <Pressable onPress={() => void deliverMessage(message)} hitSlop={8}>
-                      <Text style={styles.deliveryFailed}>Илгээгдсэнгүй · Дахин илгээх</Text>
+                      <Text style={[styles.deliveryFailed, { color: colors.danger }]}>
+                        Илгээгдсэнгүй · Дахин илгээх
+                      </Text>
                     </Pressable>
                   )}
                 </View>
@@ -499,7 +526,7 @@ export default function ConversationScreen() {
           </ScrollView>
         )}
 
-        {!!error && <Text style={styles.error}>{error}</Text>}
+        {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
         <View
           style={[
             styles.composerShell,
@@ -507,7 +534,7 @@ export default function ConversationScreen() {
           ]}
         >
           {editingMessage && (
-            <View style={styles.editingHeader}>
+            <View style={[styles.editingHeader, { borderBottomColor: colors.border }]}>
               <View style={styles.editingCopy}>
                 <Text style={[styles.editingLabel, { color: colors.primary }]}>
                   Мессеж засаж байна
@@ -520,7 +547,7 @@ export default function ConversationScreen() {
                 accessibilityLabel="Cancel editing"
                 disabled={savingEdit}
                 onPress={cancelEdit}
-                style={styles.cancelEditingButton}
+                style={[styles.cancelEditingButton, { backgroundColor: colors.surfaceSoft }]}
               >
                 <Icon name="close" size={20} color={colors.textSecondary} />
               </Pressable>
@@ -538,12 +565,19 @@ export default function ConversationScreen() {
               onChangeText={editingMessage ? setEditDraft : setDraft}
               placeholder="Мессеж бичих..."
               placeholderTextColor={colors.muted}
+              keyboardAppearance={isDark ? 'dark' : 'light'}
+              selectionColor={iconAccent}
+              cursorColor={iconAccent}
               multiline
               maxLength={4000}
               scrollEnabled
               style={[
                 styles.input,
-                { color: colors.text },
+                {
+                  color: colors.text,
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.borderStrong,
+                },
                 Platform.OS === 'web' &&
                   ({
                     outlineStyle: 'none',
@@ -565,7 +599,7 @@ export default function ConversationScreen() {
               {savingEdit ? (
                 <ActivityIndicator color={colors.ink} size="small" />
               ) : (
-                <Icon name="arrow-up" size={22} color={colors.ink} />
+                <Icon name="send" size={22} color={colors.ink} />
               )}
             </Pressable>
           </View>
@@ -603,7 +637,7 @@ export default function ConversationScreen() {
                   onPress={() => beginEdit(selectedMessage)}
                   style={({ pressed }) => [
                     styles.popoverItem,
-                    pressed && styles.popoverItemPressed,
+                    pressed && { backgroundColor: colors.surfaceRaised },
                   ]}
                 >
                   <Icon name="create-outline" size={17} color={iconAccent} />
@@ -614,11 +648,11 @@ export default function ConversationScreen() {
                   onPress={() => confirmUnsend(selectedMessage.id)}
                   style={({ pressed }) => [
                     styles.popoverItem,
-                    pressed && styles.popoverItemPressed,
+                    pressed && { backgroundColor: colors.surfaceRaised },
                   ]}
                 >
-                  <Icon name="trash-outline" size={17} color="#E64C55" />
-                  <Text style={styles.popoverDeleteText}>Устгах</Text>
+                  <Icon name="trash-outline" size={17} color={colors.danger} />
+                  <Text style={[styles.popoverDeleteText, { color: colors.danger }]}>Устгах</Text>
                 </Pressable>
               </View>
             )}

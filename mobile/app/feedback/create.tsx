@@ -36,7 +36,7 @@ const questionTypeIcons: Record<FeedbackQuestionType, React.ComponentProps<typeo
   CHECKBOXES: 'checkbox-outline',
   RATING: 'star-outline',
   SCALE: 'options-outline',
-  YES_NO: 'swap-horizontal-outline',
+  YES_NO: 'toggle-outline',
 };
 
 const hasOptions = (type: FeedbackQuestionType) =>
@@ -205,7 +205,10 @@ export default function CreateFeedbackFormScreen() {
                 setError('');
               }}
               placeholder="Жишээ: Үйлчилгээний санал хүсэлт"
-              placeholderTextColor="#A7AEB0"
+              placeholderTextColor={colors.muted}
+              cursorColor={iconAccent}
+              selectionColor={iconAccent}
+              style={{ color: colors.text }}
               className="text-lg font-extrabold text-text-primary"
             />
             <View className="my-s h-px bg-border" />
@@ -216,7 +219,10 @@ export default function CreateFeedbackFormScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder="Асуулгынхаа талаар товч тайлбар бичнэ үү"
-              placeholderTextColor="#A7AEB0"
+              placeholderTextColor={colors.muted}
+              cursorColor={iconAccent}
+              selectionColor={iconAccent}
+              style={{ color: colors.text }}
               multiline
               className="text-sm text-text-primary"
             />
@@ -232,13 +238,16 @@ export default function CreateFeedbackFormScreen() {
                   value={question.label}
                   onChangeText={(value) => updateQuestion(question.key, { label: value })}
                   placeholder={`Асуулт ${index + 1}`}
-                  placeholderTextColor="#A7AEB0"
+                  placeholderTextColor={colors.muted}
+                  cursorColor={iconAccent}
+                  selectionColor={iconAccent}
+                  style={{ color: colors.text }}
                   multiline
                   className="flex-1 text-base font-bold text-text-primary"
                 />
                 {questions.length > 1 && (
                   <Pressable onPress={() => removeQuestion(question.key)} hitSlop={8}>
-                    <Icon name="trash-outline" size={18} color="#A7AEB0" />
+                    <Icon name="trash-outline" size={18} color={colors.danger} />
                   </Pressable>
                 )}
               </View>
@@ -251,7 +260,7 @@ export default function CreateFeedbackFormScreen() {
                 <Text className="text-xs font-bold text-text-secondary">
                   {questionTypeLabels[question.type]}
                 </Text>
-                <Icon name="chevron-down" size={14} color="#A7AEB0" />
+                <Icon name="chevron-down" size={14} color={colors.muted} />
               </Pressable>
 
               {hasOptions(question.type) && (
@@ -265,13 +274,16 @@ export default function CreateFeedbackFormScreen() {
                             : 'radio-button-off-outline'
                         }
                         size={16}
-                        color="#A7AEB0"
+                        color={colors.muted}
                       />
                       <TextInput
                         value={option}
                         onChangeText={(value) => updateOption(question.key, optionIndex, value)}
                         placeholder={`Сонголт ${optionIndex + 1}`}
-                        placeholderTextColor="#A7AEB0"
+                        placeholderTextColor={colors.muted}
+                        cursorColor={iconAccent}
+                        selectionColor={iconAccent}
+                        style={{ color: colors.text }}
                         className="flex-1 text-sm text-text-primary"
                       />
                       {question.options.length > 2 && (
@@ -279,7 +291,7 @@ export default function CreateFeedbackFormScreen() {
                           onPress={() => removeOption(question.key, optionIndex)}
                           hitSlop={8}
                         >
-                          <Icon name="close" size={16} color="#A7AEB0" />
+                          <Icon name="close" size={16} color={colors.muted} />
                         </Pressable>
                       )}
                     </View>

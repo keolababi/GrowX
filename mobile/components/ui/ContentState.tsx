@@ -47,8 +47,8 @@ export function EmptyState({
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.actionText}>{actionLabel}</Text>
-          <Icon name="arrow-forward" size={16} color={design.colors.ink} />
+          <Text style={[styles.actionText, { color: colors.ink }]}>{actionLabel}</Text>
+          <Icon name="arrow-forward" size={16} color={colors.ink} />
         </Pressable>
       )}
     </View>

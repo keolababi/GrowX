@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { TextInputProps } from 'react-native';
 import { colors } from './Screen';
+import { Icon } from './ui/Icon';
+
+type IconName = ComponentProps<typeof Icon>['name'];
 
 export function BackButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={styles.back}>
-      <Text style={styles.backText}>‹</Text>
+      <Icon name="chevron-back" size={25} color="#FFFFFF" />
     </Pressable>
   );
 }
@@ -17,22 +20,31 @@ export function Field({
   icon,
   secret,
   ...props
-}: TextInputProps & { label: string; icon: string; secret?: boolean }) {
+}: TextInputProps & { label: string; icon: IconName; secret?: boolean }) {
   const [visible, setVisible] = useState(false);
   return (
     <View style={styles.group}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputWrap}>
-        <Text style={styles.icon}>{icon}</Text>
+        <View style={styles.icon}>
+          <Icon name={icon} size={18} color="#D7DDDE" />
+        </View>
         <TextInput
           {...props}
-          placeholderTextColor="#747D80"
+          cursorColor={colors.lime}
+          keyboardAppearance="dark"
+          placeholderTextColor="#899790"
+          selectionColor={colors.lime}
           secureTextEntry={secret && !visible}
           style={styles.input}
         />
         {secret && (
-          <Pressable onPress={() => setVisible(!visible)}>
-            <Text style={styles.eye}>{visible ? '◉' : '◎'}</Text>
+          <Pressable
+            accessibilityLabel={visible ? 'Нууц үгийг нуух' : 'Нууц үгийг харуулах'}
+            onPress={() => setVisible(!visible)}
+            style={styles.eye}
+          >
+            <Icon name={visible ? 'eye-off-outline' : 'eye-outline'} size={20} color="#D7DDDE" />
           </Pressable>
         )}
       </View>
@@ -96,7 +108,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 2,
   },
-  backText: { color: '#FFFFFF', fontSize: 32, fontWeight: '200', lineHeight: 33 },
   group: { marginBottom: 16 },
   label: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 8 },
   inputWrap: {
@@ -109,9 +120,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
   },
-  icon: { color: '#D7DDDE', fontSize: 16, width: 27 },
+  icon: { width: 27, alignItems: 'flex-start' },
   input: { color: '#FFFFFF', fontSize: 14, flex: 1, height: '100%' },
-  eye: { color: '#D7DDDE', fontSize: 18, paddingLeft: 8 },
+  eye: { paddingLeft: 8 },
   primary: {
     height: 52,
     borderRadius: 11,

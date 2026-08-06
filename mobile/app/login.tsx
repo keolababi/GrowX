@@ -43,7 +43,7 @@ export default function LoginScreen() {
       />
       <Field
         label="И-мэйл хаяг"
-        icon="✉"
+        icon="mail-outline"
         placeholder="yourname@example.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -52,7 +52,7 @@ export default function LoginScreen() {
       />
       <Field
         label="Нууц үг"
-        icon="♙"
+        icon="lock-closed-outline"
         placeholder="Нууц үгээ оруулна уу"
         secret
         value={password}

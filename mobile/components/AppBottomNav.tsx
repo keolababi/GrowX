@@ -33,13 +33,6 @@ export function AppBottomNav() {
 
   const createPost = () => {
     setPickerOpen(false);
-    if (inCommunity) {
-      router.push({
-        pathname: '/posts/create',
-        params: { type: 'post', communityId: params.communityId, communityKind: 'discussions' },
-      });
-      return;
-    }
     router.push('/posts/create');
   };
 
@@ -58,6 +51,14 @@ export function AppBottomNav() {
     router.push({
       pathname: '/posts/create',
       params: { type: 'post', communityId: params.communityId, communityKind: 'discussions' },
+    });
+  };
+
+  const createArticle = () => {
+    setPickerOpen(false);
+    router.push({
+      pathname: '/posts/create',
+      params: { type: 'post', communityId: params.communityId, communityKind: 'articles' },
     });
   };
 
@@ -117,16 +118,20 @@ export function AppBottomNav() {
           Юу үүсгэхийг хүсэж байна?
         </Text>
         <View className="flex-row flex-wrap justify-center gap-s">
-          <CreateOption icon="create-outline" label="Пост" onPress={createPost} />
+          {inCommunity ? (
+            <>
+              <CreateOption
+                icon="chatbubbles-outline"
+                label="Хэлэлцүүлэг"
+                onPress={createDiscussion}
+              />
+              <CreateOption icon="newspaper-outline" label="Нийтлэл" onPress={createArticle} />
+            </>
+          ) : (
+            <CreateOption icon="create-outline" label="Пост" onPress={createPost} />
+          )}
           <CreateOption icon="film-outline" label="Reel" onPress={createReel} />
           <CreateOption icon="mic-outline" label="Podcast" onPress={createPodcast} />
-          {inCommunity && (
-            <CreateOption
-              icon="chatbubbles-outline"
-              label="Хэлэлцүүлэг"
-              onPress={createDiscussion}
-            />
-          )}
         </View>
       </BottomSheet>
     </>

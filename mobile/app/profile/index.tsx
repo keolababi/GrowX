@@ -189,7 +189,20 @@ export default function ProfileScreen() {
               onAction={() => void load()}
             />
           )}
-          {!!error && !!profile && <Text style={styles.error}>{error}</Text>}
+          {!!error && !!profile && (
+            <Text
+              style={[
+                styles.error,
+                {
+                  color: colors.danger,
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              {error}
+            </Text>
+          )}
           {profile && (
             <>
               <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
@@ -255,7 +268,7 @@ export default function ProfileScreen() {
                   </View>
                   {profile.user.isMentor && (
                     <View style={[styles.accountBadge, { backgroundColor: colors.surfaceSoft }]}>
-                      <Icon name="people-outline" size={13} color={iconAccent} />
+                      <Icon name="school-outline" size={13} color={iconAccent} />
                       <Text style={[styles.accountBadgeText, { color: colors.textSecondary }]}>
                         Ментор
                       </Text>
@@ -329,9 +342,6 @@ export default function ProfileScreen() {
               <View style={styles.postsSection}>
                 <View style={styles.postsHeading}>
                   <Text style={[styles.postsTitle, { color: colors.text }]}>Контент</Text>
-                  <Pressable onPress={() => router.push('/posts/create')}>
-                    <Text style={[styles.createPost, { color: colors.primary }]}>＋ Post</Text>
-                  </Pressable>
                 </View>
                 <View className="mb-3 px-6">
                   <Tabs tabs={profileTabs} activeIndex={tabIndex} onChange={setTabIndex} />
@@ -417,6 +427,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     padding: 12,
     borderRadius: 12,
+    borderWidth: 1,
     backgroundColor: '#2A1215',
   },
   profileCard: {
@@ -505,12 +516,8 @@ const styles = StyleSheet.create({
   statLabel: { color: '#8F9C96', fontSize: 12, fontWeight: '600', marginTop: 5 },
   postsSection: { width: '100%', maxWidth: 680, marginTop: 24 },
   postsHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 13,
     paddingHorizontal: 24,
   },
   postsTitle: { color: '#F4F7F6', fontSize: 20, fontWeight: '900' },
-  createPost: { color: lime, fontSize: 12, fontWeight: '900' },
 });

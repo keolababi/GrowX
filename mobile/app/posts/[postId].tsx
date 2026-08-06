@@ -20,6 +20,7 @@ import { relativeTime } from '@/utils/relativeTime';
 import type { PostComment, SocialPost } from '@/types/post';
 import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { Icon } from '@/components/ui/Icon';
 
 const lime = '#9AF000';
 
@@ -30,6 +31,11 @@ export default function PostCommentsScreen() {
   const [post, setPost] = useState<SocialPost | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [draft, setDraft] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [activeCommentMenuId, setActiveCommentMenuId] = useState<string | null>(null);
+  const [postMenuOpen, setPostMenuOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -79,6 +85,7 @@ export default function PostCommentsScreen() {
 
   const deleteComment = async (commentId: string) => {
     if (!postId) return;
+    setActiveCommentMenuId(null);
     const remove = async () => {
       try {
         await api.delete(`/posts/${postId}/comments/${commentId}`);
@@ -100,6 +107,64 @@ export default function PostCommentsScreen() {
     ]);
   };
 
+  const deletePost = async () => {
+    if (!postId) return;
+    setPostMenuOpen(false);
+    const remove = async () => {
+      setError('');
+      try {
+        await api.delete(`/posts/${postId}`);
+        router.replace('/posts');
+      } catch (value) {
+        setError(getApiError(value, 'Post-ийг устгаж чадсангүй.'));
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm('Post-оо устгах уу?')) await remove();
+      return;
+    }
+    Alert.alert('Post устгах', 'Post-оо устгах уу?', [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
+    ]);
+  };
+
+  const startEditingComment = (comment: PostComment) => {
+    setActiveCommentMenuId(null);
+    setEditingCommentId(comment.id);
+    setEditDraft(comment.content);
+    setError('');
+  };
+
+  const cancelEditingComment = () => {
+    if (savingEdit) return;
+    setEditingCommentId(null);
+    setEditDraft('');
+  };
+
+  const saveCommentEdit = async () => {
+    const content = editDraft.trim();
+    if (!postId || !editingCommentId || !content || savingEdit) return;
+    setSavingEdit(true);
+    setError('');
+    try {
+      const { data } = await api.patch<{ comment: PostComment }>(
+        `/posts/${postId}/comments/${editingCommentId}`,
+        { content },
+      );
+      setComments((current) =>
+        current.map((comment) => (comment.id === editingCommentId ? data.comment : comment)),
+      );
+      setEditingCommentId(null);
+      setEditDraft('');
+    } catch (value) {
+      setError(getApiError(value, 'Сэтгэгдлийг засаж чадсангүй.'));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
@@ -111,19 +176,10 @@ export default function PostCommentsScreen() {
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/posts'))}
             style={styles.backButton}
           >
-            <Text style={[styles.back, { color: colors.text }]}>‹</Text>
+            <Icon name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={[styles.heading, { color: colors.text }]}>Сэтгэгдэл</Text>
-          {post && post.authorId === user?.id ? (
-            <Pressable
-              onPress={() => router.push(`/posts/${post.id}/edit`)}
-              style={styles.editButton}
-            >
-              <Text style={[styles.editText, { color: colors.primary }]}>Засах</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.headerSpacer} />
-          )}
+          <View style={styles.headerSpacer} />
         </View>
 
         {loading ? (
@@ -137,14 +193,20 @@ export default function PostCommentsScreen() {
             showsVerticalScrollIndicator={false}
           >
             {!!post && (
-              <View style={[styles.post, { borderBottomColor: colors.border }]}>
+              <View
+                style={[
+                  styles.post,
+                  postMenuOpen && styles.postActive,
+                  { borderBottomColor: colors.border },
+                ]}
+              >
                 <View style={styles.postAuthor}>
                   <View style={[styles.avatar, { backgroundColor: colors.surfaceSoft }]}>
                     <Text style={[styles.avatarText, { color: colors.primary }]}>
                       {(post.author.displayName || post.author.email).slice(0, 2).toUpperCase()}
                     </Text>
                   </View>
-                  <View>
+                  <View style={styles.postAuthorCopy}>
                     <Text style={[styles.postAuthorName, { color: colors.text }]}>
                       {post.author.displayName || post.author.email.split('@')[0]}
                     </Text>
@@ -152,6 +214,55 @@ export default function PostCommentsScreen() {
                       {relativeTime(post.createdAt)}
                     </Text>
                   </View>
+                  {post.authorId === user?.id && (
+                    <>
+                      <Pressable
+                        accessibilityLabel="Post-ын үйлдлүүд"
+                        hitSlop={10}
+                        onPress={() => {
+                          setActiveCommentMenuId(null);
+                          setPostMenuOpen((open) => !open);
+                        }}
+                        style={styles.postMenuButton}
+                      >
+                        <Icon name="ellipsis-horizontal" size={21} color={colors.textSecondary} />
+                      </Pressable>
+                      {postMenuOpen && (
+                        <View
+                          style={[
+                            styles.postActionMenu,
+                            { backgroundColor: colors.surface, borderColor: colors.border },
+                          ]}
+                        >
+                          <Pressable
+                            onPress={() => {
+                              setPostMenuOpen(false);
+                              router.push(`/posts/${post.id}/edit`);
+                            }}
+                            style={[
+                              styles.postActionButton,
+                              styles.postActionDivider,
+                              { borderBottomColor: colors.border },
+                            ]}
+                          >
+                            <Icon name="create-outline" size={18} color={colors.text} />
+                            <Text style={[styles.postActionLabel, { color: colors.text }]}>
+                              Засах
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => void deletePost()}
+                            style={styles.postActionButton}
+                          >
+                            <Icon name="trash-outline" size={18} color={colors.danger} />
+                            <Text style={[styles.postActionLabel, { color: colors.danger }]}>
+                              Устгах
+                            </Text>
+                          </Pressable>
+                        </View>
+                      )}
+                    </>
+                  )}
                 </View>
                 <Text style={[styles.postText, { color: colors.text }]}>{post.content}</Text>
                 {!!post.imageUrl && (
@@ -164,29 +275,127 @@ export default function PostCommentsScreen() {
             )}
 
             {comments.map((comment) => (
-              <View key={comment.id} style={styles.comment}>
-                <View style={[styles.commentAvatar, { backgroundColor: colors.surfaceSoft }]}>
+              <View
+                key={comment.id}
+                style={[styles.comment, activeCommentMenuId === comment.id && styles.commentActive]}
+              >
+                <View
+                  style={[
+                    styles.commentAvatar,
+                    { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+                  ]}
+                >
                   <Text style={[styles.commentAvatarText, { color: colors.primary }]}>
                     {(comment.author.displayName || comment.author.email).slice(0, 2).toUpperCase()}
                   </Text>
                 </View>
-                <View style={[styles.commentBubble, { backgroundColor: colors.surfaceRaised }]}>
-                  <Text style={[styles.commentAuthor, { color: colors.text }]}>
-                    {comment.author.displayName || comment.author.email.split('@')[0]}
-                  </Text>
-                  <Text style={[styles.commentText, { color: colors.textSecondary }]}>
-                    {comment.content}
-                  </Text>
-                  <View style={styles.commentMeta}>
-                    <Text style={[styles.commentTime, { color: colors.muted }]}>
-                      {relativeTime(comment.createdAt)}
+                <View
+                  style={[
+                    styles.commentBubble,
+                    { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+                  ]}
+                >
+                  <View style={styles.commentHeader}>
+                    <Text numberOfLines={1} style={[styles.commentAuthor, { color: colors.text }]}>
+                      {comment.author.displayName || comment.author.email.split('@')[0]}
                     </Text>
-                    {comment.author.id === user?.id && (
-                      <Pressable onPress={() => void deleteComment(comment.id)} hitSlop={10}>
-                        <Text style={styles.deleteComment}>Устгах</Text>
-                      </Pressable>
-                    )}
+                    <Text style={[styles.commentTime, { color: colors.muted }]}>
+                      · {relativeTime(comment.createdAt)}
+                    </Text>
                   </View>
+                  {editingCommentId === comment.id ? (
+                    <View style={styles.commentEditor}>
+                      <TextInput
+                        autoFocus
+                        multiline
+                        maxLength={1000}
+                        value={editDraft}
+                        onChangeText={setEditDraft}
+                        cursorColor={colors.primary}
+                        selectionColor={colors.primary}
+                        style={[
+                          styles.commentEditInput,
+                          {
+                            color: colors.text,
+                            backgroundColor: colors.surface,
+                            borderColor: colors.border,
+                          },
+                        ]}
+                      />
+                      <View style={styles.commentEditActions}>
+                        <Pressable disabled={savingEdit} onPress={cancelEditingComment} hitSlop={8}>
+                          <Text style={[styles.cancelCommentEdit, { color: colors.muted }]}>
+                            Цуцлах
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          disabled={!editDraft.trim() || savingEdit}
+                          onPress={() => void saveCommentEdit()}
+                          hitSlop={8}
+                        >
+                          <Text
+                            style={[
+                              styles.saveCommentEdit,
+                              { color: colors.primary },
+                              (!editDraft.trim() || savingEdit) && { color: colors.muted },
+                            ]}
+                          >
+                            {savingEdit ? 'Хадгалж байна...' : 'Хадгалах'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text style={[styles.commentText, { color: colors.textSecondary }]}>
+                      {comment.content}
+                    </Text>
+                  )}
+                  {comment.author.id === user?.id && editingCommentId !== comment.id && (
+                    <Pressable
+                      accessibilityLabel="Сэтгэгдлийн үйлдлүүд"
+                      hitSlop={10}
+                      onPress={() => {
+                        setPostMenuOpen(false);
+                        setActiveCommentMenuId((current) =>
+                          current === comment.id ? null : comment.id,
+                        );
+                      }}
+                      style={styles.commentMenuButton}
+                    >
+                      <Icon name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
+                    </Pressable>
+                  )}
+                  {activeCommentMenuId === comment.id && (
+                    <View
+                      style={[
+                        styles.commentActionMenu,
+                        { backgroundColor: colors.surface, borderColor: colors.border },
+                      ]}
+                    >
+                      <Pressable
+                        onPress={() => startEditingComment(comment)}
+                        style={[
+                          styles.commentActionButton,
+                          styles.commentActionDivider,
+                          { borderBottomColor: colors.border },
+                        ]}
+                      >
+                        <Icon name="create-outline" size={17} color={colors.text} />
+                        <Text style={[styles.commentActionLabel, { color: colors.text }]}>
+                          Засах
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => void deleteComment(comment.id)}
+                        style={styles.commentActionButton}
+                      >
+                        <Icon name="trash-outline" size={17} color={colors.danger} />
+                        <Text style={[styles.commentActionLabel, { color: colors.danger }]}>
+                          Устгах
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
                 </View>
               </View>
             ))}
@@ -201,7 +410,7 @@ export default function PostCommentsScreen() {
                 </Text>
               </View>
             )}
-            {!!error && <Text style={styles.error}>{error}</Text>}
+            {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
           </ScrollView>
         )}
 
@@ -217,8 +426,17 @@ export default function PostCommentsScreen() {
             onSubmitEditing={() => void send()}
             placeholder="Сэтгэгдэл бичих..."
             placeholderTextColor={colors.muted}
+            cursorColor={colors.primary}
+            selectionColor={colors.primary}
             returnKeyType="send"
-            style={[styles.input, { color: colors.text, backgroundColor: colors.surfaceRaised }]}
+            style={[
+              styles.input,
+              {
+                color: colors.text,
+                backgroundColor: colors.surfaceRaised,
+                borderColor: colors.border,
+              },
+            ]}
           />
           <Pressable disabled={!draft.trim() || sending} onPress={() => void send()}>
             <Text
@@ -250,16 +468,50 @@ const styles = StyleSheet.create({
     borderBottomColor: '#17272C',
   },
   backButton: { width: 44, height: 44, justifyContent: 'center' },
-  back: { color: '#F1F5F3', fontSize: 43, lineHeight: 44 },
   heading: { color: '#F4F7F6', fontSize: 20, fontWeight: '900' },
   headerSpacer: { width: 44 },
-  editButton: { width: 52, height: 44, alignItems: 'flex-end', justifyContent: 'center' },
-  editText: { color: lime, fontSize: 13, fontWeight: '900' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   content: { paddingBottom: 35 },
-  post: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#17272C' },
-  postAuthor: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  post: {
+    position: 'relative',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#17272C',
+  },
+  postActive: { zIndex: 50 },
+  postAuthor: { position: 'relative', flexDirection: 'row', alignItems: 'center', gap: 11 },
+  postAuthorCopy: { minWidth: 0, flex: 1 },
+  postMenuButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postActionMenu: {
+    position: 'absolute',
+    right: 0,
+    top: 44,
+    zIndex: 60,
+    elevation: 12,
+    minWidth: 150,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: 14,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+  },
+  postActionButton: {
+    minHeight: 46,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  postActionDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
+  postActionLabel: { fontSize: 13, fontWeight: '800' },
   avatar: {
     width: 43,
     height: 43,
@@ -275,15 +527,18 @@ const styles = StyleSheet.create({
   postImage: { width: '100%', aspectRatio: 1.6, borderRadius: 12, marginTop: 13 },
   commentTotal: { color: '#8B9893', fontSize: 12, marginTop: 14 },
   comment: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: 17,
+    paddingTop: 14,
   },
+  commentActive: { zIndex: 40 },
   commentAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
     backgroundColor: '#173027',
     alignItems: 'center',
     justifyContent: 'center',
@@ -291,16 +546,80 @@ const styles = StyleSheet.create({
   commentAvatarText: { color: lime, fontSize: 10, fontWeight: '900' },
   commentBubble: {
     flex: 1,
+    position: 'relative',
     marginLeft: 10,
-    padding: 12,
-    borderRadius: 14,
+    minHeight: 76,
+    paddingLeft: 14,
+    paddingRight: 52,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderRadius: 18,
     backgroundColor: '#08191A',
   },
-  commentAuthor: { color: '#F0F4F2', fontSize: 13, fontWeight: '900' },
-  commentText: { color: '#CBD4D0', fontSize: 14, lineHeight: 20, marginTop: 5 },
-  commentTime: { color: '#71807A', fontSize: 10, marginTop: 7 },
-  commentMeta: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  deleteComment: { color: '#FF817B', fontSize: 10, fontWeight: '800', marginTop: 7 },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
+  commentAuthor: {
+    maxWidth: '58%',
+    color: '#F0F4F2',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  commentText: { color: '#CBD4D0', fontSize: 14, lineHeight: 21, marginTop: 7 },
+  commentEditor: { marginTop: 8 },
+  commentEditInput: {
+    minHeight: 72,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlignVertical: 'top',
+  },
+  commentEditActions: {
+    marginTop: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 18,
+  },
+  cancelCommentEdit: { fontSize: 11, fontWeight: '800' },
+  saveCommentEdit: { fontSize: 11, fontWeight: '900' },
+  commentTime: { flexShrink: 1, color: '#71807A', fontSize: 10, marginLeft: 7 },
+  commentMenuButton: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    width: 30,
+    height: 28,
+    marginTop: -14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentActionMenu: {
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+    marginTop: 18,
+    zIndex: 30,
+    elevation: 10,
+    minWidth: 132,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+  },
+  commentActionButton: {
+    minHeight: 42,
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  commentActionDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
+  commentActionLabel: { fontSize: 12, fontWeight: '800' },
   empty: { alignItems: 'center', paddingTop: 55 },
   emptyTitle: { color: '#EAF0ED', fontSize: 16, fontWeight: '800' },
   emptyCopy: { color: '#77847F', fontSize: 12, marginTop: 7 },
@@ -320,6 +639,7 @@ const styles = StyleSheet.create({
     minHeight: 46,
     paddingHorizontal: 15,
     borderRadius: 23,
+    borderWidth: 1,
     color: '#EDF2F0',
     backgroundColor: '#0A1B1C',
     fontSize: 14,

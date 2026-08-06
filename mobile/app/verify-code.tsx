@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AuthHeader, Screen, colors } from '@/components/Screen';
 import { BackButton, PrimaryButton } from '@/components/AuthUI';
+import { Icon } from '@/components/ui/Icon';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 
@@ -69,18 +70,22 @@ export default function VerifyCode() {
           '9\nWXYZ',
           '',
           '0',
-          '⌫',
+          'backspace',
         ].map((k, i) => (
           <Pressable
             key={i}
             style={[styles.key, !k && { backgroundColor: 'transparent' }]}
             onPress={() =>
-              k === '⌫'
+              k === 'backspace'
                 ? setCode(code.slice(0, -1))
                 : /^\d/.test(k) && setCode((code + k[0]).slice(0, 6))
             }
           >
-            <Text style={styles.keyText}>{k}</Text>
+            {k === 'backspace' ? (
+              <Icon name="backspace-outline" size={25} color="#FFFFFF" />
+            ) : (
+              <Text style={styles.keyText}>{k}</Text>
+            )}
           </Pressable>
         ))}
       </View>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { design } from '@/constants/design';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from './ui/Icon';
@@ -8,6 +8,7 @@ import { Icon } from './ui/Icon';
 type Props = {
   title?: string;
   back?: boolean;
+  backFallback?: Href;
   actions?: ReactNode;
   maxWidth?: number;
   prominent?: boolean;
@@ -16,6 +17,7 @@ type Props = {
 export function AppPageHeader({
   title,
   back = false,
+  backFallback = '/posts',
   actions,
   maxWidth,
   prominent = false,
@@ -41,7 +43,7 @@ export function AppPageHeader({
               accessibilityRole="button"
               accessibilityLabel="Буцах"
               hitSlop={8}
-              onPress={() => router.back()}
+              onPress={() => (router.canGoBack() ? router.back() : router.replace(backFallback))}
               style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
             >
               <Icon name="chevron-back" size={24} color={colors.text} />

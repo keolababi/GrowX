@@ -228,7 +228,7 @@ export default function KnowledgeScreen() {
     },
     {
       label: 'Ментор',
-      icon: 'person-outline',
+      icon: 'school-outline',
       onPress: () => router.push('/mentor'),
     },
     {
@@ -430,7 +430,7 @@ export default function KnowledgeScreen() {
                 { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
               ]}
             >
-              <Icon name="person" size={28} color={iconAccent} />
+              <Icon name="school-outline" size={28} color={iconAccent} />
             </View>
             <View style={styles.mediaCopy}>
               <Text style={[styles.mediaTitle, { color: colors.text }]}>

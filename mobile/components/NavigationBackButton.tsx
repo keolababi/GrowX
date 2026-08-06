@@ -1,7 +1,10 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { useColorMode } from '@/providers/ColorModeProvider';
+import { Icon } from './ui/Icon';
 
 export function NavigationBackButton({ fallback = '/posts' }: { fallback?: '/posts' | '/login' }) {
+  const { colors } = useColorMode();
   const goBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace(fallback);
@@ -15,7 +18,7 @@ export function NavigationBackButton({ fallback = '/posts' }: { fallback?: '/pos
       onPress={goBack}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
     >
-      <Text style={styles.icon}>‹</Text>
+      <Icon name="chevron-back" size={24} color={colors.text} />
     </Pressable>
   );
 }
@@ -28,5 +31,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: { opacity: 0.55 },
-  icon: { color: '#F3F6F5', fontSize: 40, lineHeight: 42, fontWeight: '300' },
 });

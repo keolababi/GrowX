@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, colors } from '@/components/Screen';
 import { PrimaryButton } from '@/components/AuthUI';
+import { Icon } from '@/components/ui/Icon';
 
 export default function PasswordSuccess() {
   return (
@@ -9,7 +10,7 @@ export default function PasswordSuccess() {
       <View style={styles.wrap}>
         <View style={styles.rays}>
           <View style={styles.circle}>
-            <Text style={styles.check}>✓</Text>
+            <Icon name="checkmark" size={72} color={colors.lime} />
           </View>
         </View>
         <Text style={styles.title}>Амжилттай!</Text>
@@ -45,7 +46,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  check: { color: colors.lime, fontSize: 72, fontWeight: '500' },
   title: { color: '#FFFFFF', fontSize: 31, fontWeight: '900' },
   body: { color: '#C6CBCD', textAlign: 'center', fontSize: 15, lineHeight: 23, marginTop: 10 },
   button: { width: '100%', marginTop: 68 },
