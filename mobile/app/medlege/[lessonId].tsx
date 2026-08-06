@@ -11,7 +11,7 @@ import type { Lesson } from '@/types/learning';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function LessonDetailScreen() {
-  const { iconAccent } = useColorMode();
+  const { colors, iconAccent } = useColorMode();
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const fallbackLesson = fallbackLessons.find((item) => item.id === lessonId);
   const [lesson, setLesson] = useState<Lesson | undefined>(fallbackLesson);
@@ -94,7 +94,7 @@ export default function LessonDetailScreen() {
         </Text>
 
         <View className="mt-s flex-row items-center gap-s">
-          <Icon name="time-outline" size={16} color="#A7AEB0" />
+          <Icon name="time-outline" size={16} color={colors.muted} />
           <Text className="text-sm text-text-muted">{lesson.durationMin} минут</Text>
           {started && (
             <Text className="text-sm font-bold text-brand-primary">

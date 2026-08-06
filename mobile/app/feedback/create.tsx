@@ -61,7 +61,7 @@ function newQuestion(): DraftQuestion {
 }
 
 export default function CreateFeedbackFormScreen() {
-  const { iconAccent } = useColorMode();
+  const { colors, iconAccent } = useColorMode();
   const titleInputRef = useRef<TextInput>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -299,7 +299,7 @@ export default function CreateFeedbackFormScreen() {
                 <Switch
                   value={question.required}
                   onValueChange={(value) => updateQuestion(question.key, { required: value })}
-                  trackColor={{ false: '#263033', true: '#9AF000' }}
+                  trackColor={{ false: colors.borderStrong, true: colors.primary }}
                   thumbColor="#FFFFFF"
                 />
               </View>

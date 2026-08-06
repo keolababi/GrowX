@@ -17,33 +17,33 @@ enum NotificationType {
 }
 
 model User {
-  id                   String               @id @default(cuid())
-  email                String               @unique
-  passwordHash         String
-  resetCodeHash        String?
-  resetCodeExpiresAt   DateTime?
-  lastSeenAt           DateTime?
-  role                 String               @default("USER")
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  profile              Profile?
-  podcasts             Podcast[]            @relation("PodcastAuthor")
-  reels                Reel[]               @relation("ReelAuthor")
-  communities          Community[]          @relation("CommunityOwner")
-  posts                Post[]
-  comments             Comment[]
-  likes                Like[]
-  notifications        Notification[]       @relation("NotificationRecipient")
-  sentNotifications    Notification[]       @relation("NotificationActor")
-  communityMemberships CommunityMember[]
-  conversationMembers  ConversationMember[]
-  sentMessages         Message[]
-  followers            Follow[]             @relation("UserFollowers")
-  following            Follow[]             @relation("UserFollowing")
-  reelLikes            ReelLike[]
-  reelComments         ReelComment[]
-  feedbackForms        FeedbackForm[]
-  feedbackResponses    FeedbackResponse[]
+  id                            String                 @id @default(cuid())
+  email                         String                 @unique
+  passwordHash                  String
+  resetCodeHash                 String?
+  resetCodeExpiresAt            DateTime?
+  lastSeenAt                    DateTime?
+  role                          String                 @default("USER")
+  createdAt                     DateTime               @default(now())
+  updatedAt                     DateTime               @updatedAt
+  profile                       Profile?
+  podcasts                      Podcast[]              @relation("PodcastAuthor")
+  reels                         Reel[]                 @relation("ReelAuthor")
+  communities                   Community[]            @relation("CommunityOwner")
+  posts                         Post[]
+  comments                      Comment[]
+  likes                         Like[]
+  notifications                 Notification[]         @relation("NotificationRecipient")
+  sentNotifications             Notification[]         @relation("NotificationActor")
+  communityMemberships          CommunityMember[]
+  conversationMembers           ConversationMember[]
+  sentMessages                  Message[]
+  followers                     Follow[]               @relation("UserFollowers")
+  following                     Follow[]               @relation("UserFollowing")
+  reelLikes                     ReelLike[]
+  reelComments                  ReelComment[]
+  feedbackForms                 FeedbackForm[]
+  feedbackResponses             FeedbackResponse[]
   sentCollaborationRequests     CollaborationRequest[] @relation("CollaborationRequester")
   receivedCollaborationRequests CollaborationRequest[] @relation("CollaborationTarget")
 
@@ -103,6 +103,23 @@ model Episode {
   podcast     Podcast   @relation(fields: [podcastId], references: [id], onDelete: Cascade)
 
   @@index([podcastId, publishedAt])
+}
+
+model Lesson {
+  id          String   @id
+  title       String   @db.VarChar(200)
+  description String   @db.Text
+  content     String   @db.Text
+  category    String   @db.VarChar(80)
+  difficulty  String   @db.VarChar(30)
+  durationMin Int
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@index([category, published])
 }
 
 model Reel {
@@ -259,6 +276,7 @@ model ConversationMember {
 
 model Message {
   id             String       @id @default(cuid())
+  clientMessageId String?      @unique
   conversationId String
   senderId       String
   content        String       @db.Text

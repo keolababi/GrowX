@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist"
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"]

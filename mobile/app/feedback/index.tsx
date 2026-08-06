@@ -10,7 +10,7 @@ import { AppPageHeader } from '@/components/AppPageHeader';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function FeedbackFormsScreen() {
-  const { iconAccent: lime } = useColorMode();
+  const { colors, iconAccent: lime } = useColorMode();
   const [forms, setForms] = useState<FeedbackFormSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -48,7 +48,7 @@ export default function FeedbackFormsScreen() {
             accessibilityLabel="Шинэ асуулга нэмэх"
             className="h-10 flex-row items-center justify-center gap-1 rounded-btn bg-brand-primary px-m active:opacity-80"
           >
-            <Icon name="add" size={19} color="#020B0D" />
+            <Icon name="add" size={19} color={colors.ink} />
             <Text className="text-xs font-extrabold text-background-app">Шинэ асуулга</Text>
           </Pressable>
         }
@@ -66,12 +66,12 @@ export default function FeedbackFormsScreen() {
           contentContainerStyle={{ paddingBottom: 48 }}
         >
           <View className="w-full max-w-[900px] self-center px-l pt-l">
-            <View className="relative min-h-[190px] overflow-hidden rounded-[24px] border border-[#1D4938] bg-[#09261C] p-l">
-              <View className="absolute -right-10 -top-16 h-48 w-48 rounded-avatar bg-[#174B32] opacity-60" />
-              <View className="absolute -bottom-20 right-20 h-40 w-40 rounded-avatar bg-[#123B2B] opacity-80" />
+            <View className="relative min-h-[190px] overflow-hidden rounded-[24px] border border-border bg-background-paper p-l">
+              <View className="absolute -right-10 -top-16 h-48 w-48 rounded-avatar bg-background-soft opacity-60" />
+              <View className="absolute -bottom-20 right-20 h-40 w-40 rounded-avatar bg-background-raised opacity-80" />
               <View className="relative max-w-[560px]">
                 <View className="mb-m h-12 w-12 items-center justify-center rounded-card bg-brand-primary">
-                  <Icon name="chatbox-ellipses" size={25} color="#020B0D" />
+                  <Icon name="chatbox-ellipses" size={25} color={colors.ink} />
                 </View>
                 <Text className="text-2xl font-extrabold text-text-primary">
                   Санал хүсэлтээс илүү сайн шийдвэр төрнө.
@@ -85,7 +85,7 @@ export default function FeedbackFormsScreen() {
             <View className="mt-m flex-row gap-s">
               <View className="flex-1 rounded-card border border-border bg-background-paper p-m">
                 <View className="flex-row items-center justify-between">
-                  <View className="h-9 w-9 items-center justify-center rounded-avatar bg-[#173126]">
+                  <View className="h-9 w-9 items-center justify-center rounded-avatar bg-background-soft">
                     <Icon name="documents-outline" size={18} color={lime} />
                   </View>
                   <Text className="text-2xl font-extrabold text-text-primary">{forms.length}</Text>
@@ -94,7 +94,7 @@ export default function FeedbackFormsScreen() {
               </View>
               <View className="flex-1 rounded-card border border-border bg-background-paper p-m">
                 <View className="flex-row items-center justify-between">
-                  <View className="h-9 w-9 items-center justify-center rounded-avatar bg-[#173126]">
+                  <View className="h-9 w-9 items-center justify-center rounded-avatar bg-background-soft">
                     <Icon name="people-outline" size={18} color={lime} />
                   </View>
                   <Text className="text-2xl font-extrabold text-text-primary">
@@ -129,9 +129,9 @@ export default function FeedbackFormsScreen() {
               <Pressable
                 key={form.id}
                 onPress={() => router.push(`/feedback/${form.id}`)}
-                className="mb-s flex-row items-center rounded-card border border-border bg-background-paper p-m active:border-[#376B55] active:opacity-80"
+                className="mb-s flex-row items-center rounded-card border border-border bg-background-paper p-m active:border-brand-primary active:opacity-80"
               >
-                <View className="mr-m h-12 w-12 shrink-0 items-center justify-center rounded-card bg-[#102A20]">
+                <View className="mr-m h-12 w-12 shrink-0 items-center justify-center rounded-card bg-background-soft">
                   <Icon name="clipboard-outline" size={23} color={lime} />
                 </View>
                 <View className="min-w-0 flex-1">
@@ -167,7 +167,7 @@ export default function FeedbackFormsScreen() {
 
             {!forms.length && !error && (
               <View className="items-center rounded-[24px] border border-dashed border-border bg-background-paper px-l py-12">
-                <View className="h-16 w-16 items-center justify-center rounded-avatar bg-[#102A20]">
+                <View className="h-16 w-16 items-center justify-center rounded-avatar bg-background-soft">
                   <Icon name="clipboard-outline" size={30} color={lime} />
                 </View>
                 <Text className="mt-m text-lg font-extrabold text-text-primary">
@@ -181,7 +181,7 @@ export default function FeedbackFormsScreen() {
                   onPress={() => router.push('/feedback/create')}
                   className="mt-l h-11 flex-row items-center justify-center gap-s rounded-btn bg-brand-primary px-l active:opacity-80"
                 >
-                  <Icon name="add" size={18} color="#020B0D" />
+                  <Icon name="add" size={18} color={colors.ink} />
                   <Text className="text-sm font-extrabold text-background-app">Асуулга үүсгэх</Text>
                 </Pressable>
               </View>

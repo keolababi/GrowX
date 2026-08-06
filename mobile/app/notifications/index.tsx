@@ -22,7 +22,7 @@ function notificationIcon(
 }
 
 export default function NotificationsScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,7 +72,7 @@ export default function NotificationsScreen() {
   const unreadCount = notifications.filter((notification) => !notification.readAt).length;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <AppPageHeader
         title="Мэдэгдэл"
         back
@@ -82,6 +82,7 @@ export default function NotificationsScreen() {
             onPress={() => void markAllRead()}
             style={({ pressed }) => [
               styles.readAllButton,
+              { backgroundColor: colors.primary },
               !hasUnread && styles.readAllDisabled,
               pressed && hasUnread && styles.readAllPressed,
             ]}
@@ -98,16 +99,21 @@ export default function NotificationsScreen() {
         }
       />
 
-      <View style={styles.filterShell}>
+      <View style={[styles.filterShell, { borderBottomColor: colors.border }]}>
         <View style={styles.filterInner}>
-          <View style={styles.summaryRow}>
+          <View style={[styles.summaryRow, { backgroundColor: colors.surface }]}>
             <View>
               <Text style={styles.summaryEyebrow}>ТАНЫ МЭДЭГДЭЛ</Text>
-              <Text style={styles.summaryTitle}>
+              <Text style={[styles.summaryTitle, { color: colors.text }]}>
                 {unreadCount > 0 ? `${unreadCount} шинэ мэдэгдэл` : 'Бүх мэдэгдлээ уншсан'}
               </Text>
             </View>
-            <View style={[styles.summaryIcon, unreadCount > 0 && styles.summaryIconActive]}>
+            <View
+              style={[
+                styles.summaryIcon,
+                { backgroundColor: unreadCount > 0 ? colors.surfaceSoft : colors.surfaceRaised },
+              ]}
+            >
               <Icon
                 name={unreadCount > 0 ? 'notifications' : 'checkmark-circle'}
                 size={22}
@@ -139,16 +145,21 @@ export default function NotificationsScreen() {
                 onPress={() => void openNotification(notification)}
                 style={({ pressed }) => [
                   styles.item,
-                  !notification.readAt && styles.unreadItem,
+                  {
+                    backgroundColor: notification.readAt ? colors.surface : colors.surfaceSoft,
+                    borderColor: notification.readAt ? 'transparent' : colors.borderStrong,
+                  },
                   pressed && styles.itemPressed,
                 ]}
               >
                 {notification.actor?.avatarUrl ? (
                   <Image source={{ uri: notification.actor.avatarUrl }} style={styles.avatar} />
                 ) : (
-                  <View style={styles.avatar}>
+                  <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
                     {notification.actor ? (
-                      <Text style={styles.avatarText}>{actorName.charAt(0).toUpperCase()}</Text>
+                      <Text style={[styles.avatarText, { color: colors.primary }]}>
+                        {actorName.charAt(0).toUpperCase()}
+                      </Text>
                     ) : (
                       <Icon
                         name={notificationIcon(notification.type)}
@@ -171,9 +182,13 @@ export default function NotificationsScreen() {
                               ? 'ХАМТРАХ ХҮСЭЛТ'
                               : 'СИСТЕМ'}
                     </Text>
-                    <Text style={styles.time}>{relativeTime(notification.createdAt)}</Text>
+                    <Text style={[styles.time, { color: colors.muted }]}>
+                      {relativeTime(notification.createdAt)}
+                    </Text>
                   </View>
-                  <Text style={styles.message}>{notification.message}</Text>
+                  <Text style={[styles.message, { color: colors.textSecondary }]}>
+                    {notification.message}
+                  </Text>
                 </View>
                 {!notification.readAt && <View style={styles.unreadDot} />}
               </Pressable>

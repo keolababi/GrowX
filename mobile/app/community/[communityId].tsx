@@ -19,9 +19,8 @@ import type { CommunityDetail, CommunityMember } from '@/types/community';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
-import { useColorMode } from '@/providers/ColorModeProvider';
+import { useColorMode, type AppModeColors } from '@/providers/ColorModeProvider';
 
-const lime = '#9AF000';
 type GroupTab = 'discussions' | 'articles' | 'members';
 
 const tabs: Array<{ value: GroupTab; label: string }> = [
@@ -31,7 +30,8 @@ const tabs: Array<{ value: GroupTab; label: string }> = [
 ];
 
 export default function CommunityDetailScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { communityId } = useLocalSearchParams<{ communityId: string }>();
   const [community, setCommunity] = useState<CommunityDetail | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -244,14 +244,14 @@ export default function CommunityDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={iconAccent} style={styles.loader} size="large" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.back}>‹</Text>
@@ -387,7 +387,7 @@ export default function CommunityDetailScreen() {
                           value={candidateQuery}
                           onChangeText={setCandidateQuery}
                           placeholder="Нэр эсвэл и-мэйлээр хайх"
-                          placeholderTextColor="#65736D"
+                          placeholderTextColor={colors.muted}
                           style={styles.candidateSearch}
                         />
                         {candidates.map((candidate) => {
@@ -421,7 +421,7 @@ export default function CommunityDetailScreen() {
                                 style={styles.candidateAdd}
                               >
                                 {adminBusy === candidate.id ? (
-                                  <ActivityIndicator color="#142000" size="small" />
+                                  <ActivityIndicator color={colors.ink} size="small" />
                                 ) : (
                                   <Text style={styles.candidateAddText}>Нэмэх</Text>
                                 )}
@@ -572,6 +572,8 @@ export default function CommunityDetailScreen() {
 }
 
 function Empty({ title, copy }: { title: string; copy: string }) {
+  const { colors } = useColorMode();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyTitle}>{title}</Text>
@@ -580,263 +582,280 @@ function Empty({ title, copy }: { title: string; copy: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020B0D' },
-  loader: { flex: 1 },
-  header: {
-    height: 68,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#173029',
-  },
-  backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-  back: { color: '#F2F6F4', fontSize: 38, lineHeight: 40 },
-  headerTitle: { flex: 1, color: '#F4F7F6', fontSize: 20, fontWeight: '900', textAlign: 'center' },
-  headerSpacer: { width: 46 },
-  scroll: { flex: 1 },
-  content: { width: '100%', maxWidth: 650, alignSelf: 'center', padding: 20, paddingBottom: 110 },
-  error: { color: '#FF817B', marginBottom: 12 },
-  cover: {
-    height: 150,
-    overflow: 'hidden',
-    borderRadius: 22,
-    backgroundColor: '#0C291F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coverImage: { width: '100%', height: '100%' },
-  coverGlow: {
-    position: 'absolute',
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: '#214C25',
-    opacity: 0.55,
-  },
-  groupMark: {
-    width: 88,
-    height: 88,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: lime,
-    backgroundColor: '#10291F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  groupMarkText: { color: lime, fontSize: 24, fontWeight: '900' },
-  name: { color: '#F4F7F6', fontSize: 25, fontWeight: '900', marginTop: 20 },
-  description: { color: '#9AA7A1', fontSize: 13, lineHeight: 20, marginTop: 7 },
-  stats: { color: '#74827C', fontSize: 11, marginTop: 9 },
-  membershipButton: {
-    height: 48,
-    marginTop: 19,
-    borderRadius: 14,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  membershipButtonText: { color: '#142000', fontSize: 14, fontWeight: '900' },
-  leaveButton: { backgroundColor: '#10251F', borderWidth: 1, borderColor: '#3E5A50' },
-  leaveButtonText: { color: '#E5ECE9' },
-  ownerButton: { opacity: 0.72 },
-  tabs: {
-    height: 54,
-    marginTop: 25,
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#193029',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: { borderBottomColor: lime },
-  tabText: { color: '#7E8B85', fontSize: 12, fontWeight: '800' },
-  activeTabText: { color: lime },
-  feed: { paddingTop: 5 },
-  postCard: { paddingVertical: 19, borderBottomWidth: 1, borderBottomColor: '#172B28' },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 43, height: 43, borderRadius: 22 },
-  avatarFallback: {
-    width: 43,
-    height: 43,
-    borderRadius: 22,
-    backgroundColor: '#173329',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: lime, fontSize: 15, fontWeight: '900' },
-  authorName: { color: '#F0F4F2', fontSize: 14, fontWeight: '900' },
-  time: { color: '#75827C', fontSize: 10, marginTop: 3 },
-  postContent: { color: '#E7ECEA', fontSize: 15, lineHeight: 23, marginTop: 14 },
-  postImage: { width: '100%', aspectRatio: 1.55, borderRadius: 14, marginTop: 13 },
-  actions: { flexDirection: 'row', gap: 24, marginTop: 13 },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionIcon: { color: '#D0D8D5', fontSize: 23 },
-  commentIcon: { color: '#D0D8D5', fontSize: 23 },
-  actionText: { color: '#A4B0AA', fontSize: 12, fontWeight: '700' },
-  liked: { color: lime },
-  memberList: { paddingTop: 5 },
-  adminPanel: {
-    marginVertical: 14,
-    padding: 15,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#29483D',
-    backgroundColor: '#081A17',
-  },
-  adminPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  adminPanelCopy: { flex: 1, minWidth: 0 },
-  adminPanelTitle: { color: '#EFF3F1', fontSize: 14, fontWeight: '900' },
-  adminPanelHint: { color: '#7E8B85', fontSize: 10, lineHeight: 15, marginTop: 4 },
-  addMemberButton: {
-    height: 36,
-    paddingHorizontal: 13,
-    borderRadius: 18,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addMemberButtonOpen: {
-    borderWidth: 1,
-    borderColor: '#486157',
-    backgroundColor: '#10251F',
-  },
-  addMemberButtonText: { color: '#142000', fontSize: 11, fontWeight: '900' },
-  candidatePanel: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#1B332B',
-  },
-  candidateSearch: {
-    height: 44,
-    paddingHorizontal: 13,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#25443A',
-    backgroundColor: '#0A211C',
-    color: '#F1F5F3',
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  candidateRow: {
-    minHeight: 62,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#173029',
-  },
-  candidateAvatar: { width: 38, height: 38, borderRadius: 19 },
-  candidateAvatarFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#173329',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  candidateAvatarText: { color: lime, fontSize: 13, fontWeight: '900' },
-  candidateCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
-  candidateName: { color: '#ECF1EF', fontSize: 12, fontWeight: '800' },
-  candidateEmail: { color: '#73817B', fontSize: 9, marginTop: 3 },
-  candidateAdd: {
-    minWidth: 62,
-    height: 32,
-    paddingHorizontal: 10,
-    borderRadius: 16,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  candidateAddText: { color: '#142000', fontSize: 10, fontWeight: '900' },
-  noCandidates: { color: '#718079', fontSize: 11, textAlign: 'center', paddingVertical: 18 },
-  memberRow: {
-    minHeight: 72,
-    paddingHorizontal: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#172B28',
-  },
-  memberRowPressed: { backgroundColor: '#081A17' },
-  memberAvatar: { width: 46, height: 46, borderRadius: 23 },
-  memberAvatarFallback: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#173329',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  memberAvatarText: { color: lime, fontSize: 16, fontWeight: '900' },
-  memberCopy: { flex: 1, minWidth: 0, marginLeft: 11 },
-  memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  memberName: { color: '#EFF3F1', fontSize: 14, fontWeight: '900', flexShrink: 1 },
-  adminBadge: {
-    color: lime,
-    fontSize: 8,
-    fontWeight: '900',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 7,
-    backgroundColor: '#17331F',
-  },
-  memberBio: { color: '#7E8B85', fontSize: 11, marginTop: 4 },
-  chevron: { color: '#8F9C96', fontSize: 29 },
-  removeMemberButton: {
-    minWidth: 58,
-    height: 32,
-    paddingHorizontal: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#713D3A',
-    backgroundColor: '#271513',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  removeMemberText: { color: '#FF817B', fontSize: 10, fontWeight: '900' },
-  dangerZone: {
-    marginTop: 24,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#5A302E',
-    backgroundColor: '#1D1110',
-  },
-  dangerTitle: { color: '#FFAAA5', fontSize: 13, fontWeight: '900' },
-  dangerHint: { color: '#9F7774', fontSize: 10, lineHeight: 16, marginTop: 5 },
-  deleteGroupButton: {
-    height: 42,
-    marginTop: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#A54D48',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteGroupText: { color: '#FF817B', fontSize: 12, fontWeight: '900' },
-  empty: { alignItems: 'center', paddingVertical: 55, paddingHorizontal: 25 },
-  emptyTitle: { color: '#EFF3F1', fontSize: 17, fontWeight: '900' },
-  emptyCopy: { color: '#78867F', fontSize: 12, lineHeight: 19, textAlign: 'center', marginTop: 8 },
-  floatingAdd: {
-    position: 'absolute',
-    right: 24,
-    bottom: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: lime,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-  },
-  floatingAddText: { color: '#142000', fontSize: 38, lineHeight: 40 },
-});
+const createStyles = (colors: AppModeColors) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.background },
+    loader: { flex: 1 },
+    header: {
+      height: 68,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
+    back: { color: colors.text, fontSize: 38, lineHeight: 40 },
+    headerTitle: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
+    headerSpacer: { width: 46 },
+    scroll: { flex: 1 },
+    content: { width: '100%', maxWidth: 650, alignSelf: 'center', padding: 20, paddingBottom: 110 },
+    error: { color: '#FF817B', marginBottom: 12 },
+    cover: {
+      height: 150,
+      overflow: 'hidden',
+      borderRadius: 22,
+      backgroundColor: colors.surfaceSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    coverImage: { width: '100%', height: '100%' },
+    coverGlow: {
+      position: 'absolute',
+      width: 230,
+      height: 230,
+      borderRadius: 115,
+      backgroundColor: colors.surfaceRaised,
+      opacity: 0.55,
+    },
+    groupMark: {
+      width: 88,
+      height: 88,
+      borderRadius: 28,
+      borderWidth: 2,
+      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    groupMarkText: { color: colors.primary, fontSize: 24, fontWeight: '900' },
+    name: { color: colors.text, fontSize: 25, fontWeight: '900', marginTop: 20 },
+    description: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 7 },
+    stats: { color: colors.muted, fontSize: 11, marginTop: 9 },
+    membershipButton: {
+      height: 48,
+      marginTop: 19,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    membershipButtonText: { color: colors.ink, fontSize: 14, fontWeight: '900' },
+    leaveButton: {
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+    },
+    leaveButtonText: { color: colors.textSecondary },
+    ownerButton: { opacity: 0.72 },
+    tabs: {
+      height: 54,
+      marginTop: 25,
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tab: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderBottomWidth: 3,
+      borderBottomColor: 'transparent',
+    },
+    activeTab: { borderBottomColor: colors.primary },
+    tabText: { color: colors.muted, fontSize: 12, fontWeight: '800' },
+    activeTabText: { color: colors.primary },
+    feed: { paddingTop: 5 },
+    postCard: { paddingVertical: 19, borderBottomWidth: 1, borderBottomColor: colors.border },
+    authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    avatar: { width: 43, height: 43, borderRadius: 22 },
+    avatarFallback: {
+      width: 43,
+      height: 43,
+      borderRadius: 22,
+      backgroundColor: colors.surfaceSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: { color: colors.primary, fontSize: 15, fontWeight: '900' },
+    authorName: { color: colors.text, fontSize: 14, fontWeight: '900' },
+    time: { color: colors.muted, fontSize: 10, marginTop: 3 },
+    postContent: { color: colors.text, fontSize: 15, lineHeight: 23, marginTop: 14 },
+    postImage: { width: '100%', aspectRatio: 1.55, borderRadius: 14, marginTop: 13 },
+    actions: { flexDirection: 'row', gap: 24, marginTop: 13 },
+    action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    actionIcon: { color: colors.textSecondary, fontSize: 23 },
+    commentIcon: { color: colors.textSecondary, fontSize: 23 },
+    actionText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
+    liked: { color: colors.primary },
+    memberList: { paddingTop: 5 },
+    adminPanel: {
+      marginVertical: 14,
+      padding: 15,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    adminPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    adminPanelCopy: { flex: 1, minWidth: 0 },
+    adminPanelTitle: { color: colors.text, fontSize: 14, fontWeight: '900' },
+    adminPanelHint: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 4 },
+    addMemberButton: {
+      height: 36,
+      paddingHorizontal: 13,
+      borderRadius: 18,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addMemberButtonOpen: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      backgroundColor: colors.surfaceRaised,
+    },
+    addMemberButtonText: { color: colors.ink, fontSize: 11, fontWeight: '900' },
+    candidatePanel: {
+      marginTop: 14,
+      paddingTop: 14,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    candidateSearch: {
+      height: 44,
+      paddingHorizontal: 13,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceRaised,
+      color: colors.text,
+      fontSize: 12,
+      marginBottom: 8,
+    },
+    candidateRow: {
+      minHeight: 62,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    candidateAvatar: { width: 38, height: 38, borderRadius: 19 },
+    candidateAvatarFallback: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.surfaceSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    candidateAvatarText: { color: colors.primary, fontSize: 13, fontWeight: '900' },
+    candidateCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
+    candidateName: { color: colors.text, fontSize: 12, fontWeight: '800' },
+    candidateEmail: { color: colors.muted, fontSize: 9, marginTop: 3 },
+    candidateAdd: {
+      minWidth: 62,
+      height: 32,
+      paddingHorizontal: 10,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    candidateAddText: { color: colors.ink, fontSize: 10, fontWeight: '900' },
+    noCandidates: { color: colors.muted, fontSize: 11, textAlign: 'center', paddingVertical: 18 },
+    memberRow: {
+      minHeight: 72,
+      paddingHorizontal: 5,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    memberRowPressed: { backgroundColor: colors.surfaceRaised },
+    memberAvatar: { width: 46, height: 46, borderRadius: 23 },
+    memberAvatarFallback: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.surfaceSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    memberAvatarText: { color: colors.primary, fontSize: 16, fontWeight: '900' },
+    memberCopy: { flex: 1, minWidth: 0, marginLeft: 11 },
+    memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+    memberName: { color: colors.text, fontSize: 14, fontWeight: '900', flexShrink: 1 },
+    adminBadge: {
+      color: colors.primary,
+      fontSize: 8,
+      fontWeight: '900',
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: 7,
+      backgroundColor: colors.surfaceSoft,
+    },
+    memberBio: { color: colors.muted, fontSize: 11, marginTop: 4 },
+    chevron: { color: colors.muted, fontSize: 29 },
+    removeMemberButton: {
+      minWidth: 58,
+      height: 32,
+      paddingHorizontal: 10,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: '#713D3A',
+      backgroundColor: '#271513',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    removeMemberText: { color: '#FF817B', fontSize: 10, fontWeight: '900' },
+    dangerZone: {
+      marginTop: 24,
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: '#5A302E',
+      backgroundColor: '#1D1110',
+    },
+    dangerTitle: { color: '#FFAAA5', fontSize: 13, fontWeight: '900' },
+    dangerHint: { color: '#9F7774', fontSize: 10, lineHeight: 16, marginTop: 5 },
+    deleteGroupButton: {
+      height: 42,
+      marginTop: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#A54D48',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteGroupText: { color: '#FF817B', fontSize: 12, fontWeight: '900' },
+    empty: { alignItems: 'center', paddingVertical: 55, paddingHorizontal: 25 },
+    emptyTitle: { color: colors.text, fontSize: 17, fontWeight: '900' },
+    emptyCopy: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 19,
+      textAlign: 'center',
+      marginTop: 8,
+    },
+    floatingAdd: {
+      position: 'absolute',
+      right: 24,
+      bottom: 24,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.primary,
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+    },
+    floatingAddText: { color: colors.ink, fontSize: 38, lineHeight: 40 },
+  });

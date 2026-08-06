@@ -27,7 +27,7 @@ import type { Reel, ReelComment } from '@/types/reel';
 import { useEngagementStore } from '@/store/engagementStore';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
-const lime = '#9AF000';
+const controlAccent = '#FFFFFF';
 
 function initials(name: string | null, email: string) {
   return (name?.trim() || email).slice(0, 2).toUpperCase();
@@ -65,9 +65,9 @@ function PlayerControls({
         minimumValue={0}
         maximumValue={Math.max(duration, 1)}
         onSlidingComplete={onSeek}
-        minimumTrackTintColor={lime}
+        minimumTrackTintColor={controlAccent}
         maximumTrackTintColor="rgba(255,255,255,0.4)"
-        thumbTintColor={lime}
+        thumbTintColor={controlAccent}
         style={{ width: '100%', height: 20 }}
       />
       <View className="flex-row items-center justify-between px-1">
@@ -421,7 +421,7 @@ function ReelCard({
               <Icon
                 name={saved ? 'bookmark' : 'bookmark-outline'}
                 size={21}
-                color={saved ? lime : '#FFFFFF'}
+                color={controlAccent}
               />
             </View>
             <Text className="text-[10px] font-bold text-white">Хадгалах</Text>
@@ -490,7 +490,7 @@ function ReelCard({
 }
 
 export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
-  const { iconAccent } = useColorMode();
+  const { colors, iconAccent } = useColorMode();
   const { height } = useWindowDimensions();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -585,7 +585,7 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
             onPress={() => router.push({ pathname: '/posts/create', params: { type: 'reel' } })}
             className="h-11 w-11 items-center justify-center rounded-avatar bg-brand-primary"
           >
-            <Icon name="add" size={24} color="#020B0D" />
+            <Icon name="add" size={24} color={colors.ink} />
           </Pressable>
         </View>
       </View>

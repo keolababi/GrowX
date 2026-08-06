@@ -30,7 +30,7 @@ import type { PostComment, SocialPost } from '@/types/post';
 import { useColorMode } from '@/providers/ColorModeProvider';
 const tabs = ['Пост', 'Reel'];
 const webFeedScrollStyle = {
-  height: 'calc(100vh - 215px)',
+  height: 'calc(100vh - 229px)',
   flexGrow: 0,
   flexShrink: 0,
   flexBasis: 'auto',
@@ -59,26 +59,8 @@ function AuthorAvatar({ author, size = 46 }: { author: PostCardAuthor; size?: nu
   );
 }
 
-function CommentRow({ comment }: { comment: PostComment }) {
-  return (
-    <View className="mt-s flex-row items-start gap-s">
-      <Pressable onPress={() => router.push(`/users/${comment.author.id}` as Href)}>
-        <AuthorAvatar author={comment.author} size={28} />
-      </Pressable>
-      <View className="flex-1 min-w-0">
-        <Pressable onPress={() => router.push(`/users/${comment.author.id}` as Href)}>
-          <Text className="text-xs font-extrabold text-text-primary">
-            {comment.author.displayName || comment.author.email.split('@')[0]}
-          </Text>
-        </Pressable>
-        <Text className="text-xs leading-4 text-text-secondary">{comment.content}</Text>
-      </View>
-    </View>
-  );
-}
-
 export default function PostsScreen() {
-  const { iconAccent: lime } = useColorMode();
+  const { colors, iconAccent: accent, isDark } = useColorMode();
   const { user } = useUser();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -236,27 +218,32 @@ export default function PostsScreen() {
     <SafeAreaView className="min-h-0 flex-1 overflow-hidden bg-background-app">
       <AppPageHeader
         maxWidth={680}
+        prominent
         actions={
           <>
-            <GlobalSearchButton />
+            <GlobalSearchButton prominent />
             <NotificationBell />
             <IconButton
               name="film-outline"
               accessibilityLabel="Reels үзэх"
+              variant={isDark ? 'filled' : 'plain'}
+              color={colors.text}
+              size={25}
               onPress={() => router.push('/reels')}
             />
             <IconButton
               name="add"
               accessibilityLabel="Шинэ post"
-              variant="filled"
-              color={lime}
+              variant="primary"
+              color={colors.ink}
+              size={25}
               onPress={() => router.push('/posts/create')}
             />
           </>
         }
       />
 
-      <View className="w-full max-w-[680px] self-center px-l py-s">
+      <View className="w-full max-w-[680px] self-center bg-background-paper px-l py-s">
         <SegmentedControl
           options={tabs}
           selectedIndex={0}
@@ -268,20 +255,20 @@ export default function PostsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={lime} size="large" />
+          <ActivityIndicator color={accent} size="large" />
         </View>
       ) : (
         <ScrollView
           className="min-h-0 w-full max-w-[680px] flex-1 self-center"
           style={Platform.OS === 'web' ? webFeedScrollStyle : undefined}
           scrollEnabled
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => void loadPosts(true)}
-              tintColor={lime}
+              tintColor={accent}
             />
           }
         >
@@ -324,15 +311,13 @@ export default function PostsScreen() {
               onToggleFollow={() => void toggleFollowAuthor(post.authorId)}
               onToggleRepost={() => toggleRepost(post.id)}
               onToggleSave={() => toggleSave(post.id)}
+              onPressMore={() => router.push(`/posts/${post.id}`)}
               onEdit={() => router.push(`/posts/${post.id}/edit`)}
               onDelete={() => void deletePost(post.id)}
               footer={
-                <>
-                  {post.comments.map((comment) => (
-                    <CommentRow key={comment.id} comment={comment} />
-                  ))}
-
-                  <View className="mt-s flex-row items-center rounded-card bg-background-paper px-m">
+                <View className="mt-m flex-row items-center gap-s">
+                  {!!user && <AuthorAvatar author={user} size={34} />}
+                  <View className="min-w-0 flex-1 flex-row items-center rounded-avatar border border-border bg-background-paper px-m">
                     <TextInput
                       value={commentDrafts[post.id] ?? ''}
                       onChangeText={(value) =>
@@ -340,7 +325,7 @@ export default function PostsScreen() {
                       }
                       onSubmitEditing={() => void addComment(post.id)}
                       placeholder="Сэтгэгдэл бичих..."
-                      placeholderTextColor="#A7AEB0"
+                      placeholderTextColor={colors.muted}
                       returnKeyType="send"
                       className="h-11 flex-1 text-sm text-text-primary"
                     />
@@ -348,7 +333,7 @@ export default function PostsScreen() {
                       <Text className="text-sm font-bold text-brand-primary">Илгээх</Text>
                     </Pressable>
                   </View>
-                </>
+                </View>
               }
             />
           ))}

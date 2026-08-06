@@ -45,7 +45,7 @@ function PodcastRow({
   activeEpisodeId: string | null;
   onActivateEpisode: (episodeId: string) => void;
 }) {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const episode = podcast.episodes[0];
   const mediaUrl = episode?.audioUrl ?? episode?.videoUrl ?? null;
   const player = useAudioPlayer(mediaUrl, { updateInterval: 250 });
@@ -119,24 +119,30 @@ function PodcastRow({
   };
 
   return (
-    <View style={[styles.uploadedCard, isPlaying && styles.uploadedCardActive]}>
+    <View
+      style={[
+        styles.uploadedCard,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        isPlaying && [styles.uploadedCardActive, { borderColor: colors.primary }],
+      ]}
+    >
       <View style={styles.podcastHero}>
         {podcast.coverUrl ? (
           <Image source={{ uri: podcast.coverUrl }} style={styles.podcastCover} />
         ) : (
-          <View style={styles.podcastCoverFallback}>
+          <View style={[styles.podcastCoverFallback, { backgroundColor: colors.surfaceSoft }]}>
             <Icon name="mic" size={30} color={iconAccent} />
           </View>
         )}
         <View style={styles.podcastHeroCopy}>
-          <View style={styles.audioTypePill}>
-            <View style={styles.liveDot} />
-            <Text style={styles.audioTypePillText}>GROWX PODCAST</Text>
+          <View style={[styles.audioTypePill, { backgroundColor: colors.surfaceSoft }]}>
+            <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
+            <Text style={[styles.audioTypePillText, { color: colors.primary }]}>GROWX PODCAST</Text>
           </View>
-          <Text numberOfLines={2} style={styles.heroTitle}>
+          <Text numberOfLines={2} style={[styles.heroTitle, { color: colors.text }]}>
             {podcast.title}
           </Text>
-          <Text numberOfLines={1} style={styles.heroAuthor}>
+          <Text numberOfLines={1} style={[styles.heroAuthor, { color: colors.muted }]}>
             {podcast.author.displayName || 'GrowX хэрэглэгч'}
           </Text>
         </View>
@@ -149,9 +155,19 @@ function PodcastRow({
           onPress={(event) => seekFromPress(event.nativeEvent.locationX)}
           style={styles.progressTrack}
         >
-          <View style={styles.progressRail} />
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          <View style={[styles.progressThumb, { left: `${progress * 100}%` }]} />
+          <View style={[styles.progressRail, { backgroundColor: colors.surfaceSoft }]} />
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${progress * 100}%`, backgroundColor: colors.primary },
+            ]}
+          />
+          <View
+            style={[
+              styles.progressThumb,
+              { left: `${progress * 100}%`, backgroundColor: colors.primary },
+            ]}
+          />
         </Pressable>
         <View style={styles.controlRow}>
           <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
@@ -166,9 +182,9 @@ function PodcastRow({
             <Pressable
               accessibilityLabel={isPlaying ? 'Түр зогсоох' : 'Тоглуулах'}
               onPress={togglePlayback}
-              style={styles.playButton}
+              style={[styles.playButton, { backgroundColor: colors.primary }]}
             >
-              <Icon name={isPlaying ? 'pause' : 'play'} size={24} color="#071209" />
+              <Icon name={isPlaying ? 'pause' : 'play'} size={24} color={colors.ink} />
             </Pressable>
             <Pressable
               accessibilityLabel="5 секунд урагшлуулах"
@@ -191,29 +207,46 @@ function PodcastRow({
             {podcast.author.avatarUrl ? (
               <Image source={{ uri: podcast.author.avatarUrl }} style={styles.uploadedAvatar} />
             ) : (
-              <View style={styles.uploadedAvatarFallback}>
-                <Text style={styles.uploadedAvatarText}>
+              <View
+                style={[styles.uploadedAvatarFallback, { backgroundColor: colors.surfaceSoft }]}
+              >
+                <Text style={[styles.uploadedAvatarText, { color: colors.primary }]}>
                   {(podcast.author.displayName || 'G').charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
-            <Text style={styles.uploadedAuthor}>
+            <Text style={[styles.uploadedAuthor, { color: colors.text }]}>
               {podcast.author.displayName || 'GrowX хэрэглэгч'}
             </Text>
           </Pressable>
-          <Text style={styles.episodeNumber}>ШИНЭ ДУГААР</Text>
+          <Text style={[styles.episodeNumber, { color: colors.primary }]}>ШИНЭ ДУГААР</Text>
         </View>
-        <Text numberOfLines={2} style={styles.uploadedDescription}>
+        <Text
+          numberOfLines={2}
+          style={[styles.uploadedDescription, { color: colors.textSecondary }]}
+        >
           {podcast.description || 'Энэ видеонд тайлбар оруулаагүй байна.'}
         </Text>
         <View style={styles.videoFooter}>
-          <Text style={styles.episodeLabel}>GROWX ORIGINALS</Text>
+          <Text style={[styles.episodeLabel, { color: colors.muted }]}>GROWX ORIGINALS</Text>
           <View style={styles.secondaryActions}>
             <Pressable
               onPress={onToggleFollowHost}
-              style={[styles.followChip, isFollowingHost && styles.followChipActive]}
+              style={[
+                styles.followChip,
+                { borderColor: colors.borderStrong },
+                isFollowingHost && [
+                  styles.followChipActive,
+                  { backgroundColor: colors.primary, borderColor: colors.primary },
+                ],
+              ]}
             >
-              <Text style={[styles.followChipText, isFollowingHost && styles.followChipTextActive]}>
+              <Text
+                style={[
+                  styles.followChipText,
+                  { color: isFollowingHost ? colors.ink : colors.textSecondary },
+                ]}
+              >
                 {isFollowingHost ? 'Дагаж буй' : 'Дагах'}
               </Text>
             </Pressable>
@@ -225,7 +258,7 @@ function PodcastRow({
               <Icon
                 name={saved ? 'bookmark' : 'bookmark-outline'}
                 size={20}
-                color={saved ? iconAccent : '#D6DBDC'}
+                color={saved ? iconAccent : colors.textSecondary}
               />
             </Pressable>
             <Pressable
@@ -233,7 +266,7 @@ function PodcastRow({
               onPress={() => void share()}
               style={styles.iconAction}
             >
-              <Icon name="arrow-redo-outline" size={20} color="#D6DBDC" />
+              <Icon name="arrow-redo-outline" size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
         </View>
@@ -243,7 +276,7 @@ function PodcastRow({
 }
 
 export default function PodcastScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { podcastId } = useLocalSearchParams<{ podcastId?: string }>();
   const { user } = useUser();
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
@@ -301,7 +334,7 @@ export default function PodcastScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <AppPageHeader
         maxWidth={900}
@@ -318,11 +351,13 @@ export default function PodcastScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.page}>
-          <View style={styles.header}>
+          <View
+            style={[styles.header, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
             <View style={styles.headingGroup}>
-              <Text style={styles.eyebrow}>GROWX ORIGINALS</Text>
-              <Text style={styles.heading}>Подкаст</Text>
-              <Text style={styles.headingDescription}>
+              <Text style={[styles.eyebrow, { color: colors.primary }]}>GROWX ORIGINALS</Text>
+              <Text style={[styles.heading, { color: colors.text }]}>Подкаст</Text>
+              <Text style={[styles.headingDescription, { color: colors.muted }]}>
                 Бизнесийн бодит түүх, туршлага, ярилцлага.
               </Text>
             </View>
@@ -332,18 +367,20 @@ export default function PodcastScreen() {
                 onPress={() =>
                   router.push({ pathname: '/posts/create', params: { type: 'podcast' } })
                 }
-                style={styles.createButton}
+                style={[styles.createButton, { backgroundColor: colors.primary }]}
               >
-                <Icon name="mic" size={18} color="#142000" />
-                <Text style={styles.createButtonText}>Подкаст нэмэх</Text>
+                <Icon name="mic" size={18} color={colors.ink} />
+                <Text style={[styles.createButtonText, { color: colors.ink }]}>Подкаст нэмэх</Text>
               </Pressable>
             </View>
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.allTitle}>Сүүлийн дугаарууд</Text>
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{podcasts.length}</Text>
+            <Text style={[styles.allTitle, { color: colors.text }]}>Сүүлийн дугаарууд</Text>
+            <View style={[styles.countBadge, { backgroundColor: colors.surfaceSoft }]}>
+              <Text style={[styles.countBadgeText, { color: colors.primary }]}>
+                {podcasts.length}
+              </Text>
             </View>
           </View>
           <View style={styles.uploadedList}>
@@ -358,22 +395,29 @@ export default function PodcastScreen() {
               />
             ))}
             {!podcasts.length && (
-              <View style={styles.emptyCard}>
-                <View style={styles.emptyIcon}>
+              <View
+                style={[
+                  styles.emptyCard,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
+                <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceSoft }]}>
                   <Icon name="mic-outline" size={30} color={iconAccent} />
                 </View>
-                <Text style={styles.emptyTitle}>Подкаст алга</Text>
-                <Text style={styles.emptyDescription}>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Подкаст алга</Text>
+                <Text style={[styles.emptyDescription, { color: colors.muted }]}>
                   Анхны подкастаа оруулж GrowX хамт олонтой хуваалцаарай.
                 </Text>
                 <Pressable
                   onPress={() =>
                     router.push({ pathname: '/posts/create', params: { type: 'podcast' } })
                   }
-                  style={styles.emptyButton}
+                  style={[styles.emptyButton, { backgroundColor: colors.primary }]}
                 >
-                  <Icon name="add" size={18} color="#142000" />
-                  <Text style={styles.emptyButtonText}>Подкаст оруулах</Text>
+                  <Icon name="add" size={18} color={colors.ink} />
+                  <Text style={[styles.emptyButtonText, { color: colors.ink }]}>
+                    Подкаст оруулах
+                  </Text>
                 </Pressable>
               </View>
             )}

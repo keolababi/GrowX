@@ -14,6 +14,8 @@ import { chatRouter } from './routes/chat.routes.js';
 import { socialRouter } from './routes/social.routes.js';
 import { feedbackRouter } from './routes/feedback.routes.js';
 import { collaborationRouter } from './routes/collaboration.routes.js';
+import { lessonRouter } from './routes/lesson.routes.js';
+import { searchRouter } from './routes/search.routes.js';
 
 export const app = express();
 
@@ -50,5 +52,7 @@ app.use('/api/conversations', chatRouter);
 app.use('/api/users', socialRouter);
 app.use('/api/feedback-forms', feedbackRouter);
 app.use('/api/collaborations', collaborationRouter);
+app.use('/api/lessons', lessonRouter);
+app.use('/api/search', searchRouter);
 app.use(notFound);
 app.use(errorHandler);

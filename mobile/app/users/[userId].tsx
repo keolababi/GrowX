@@ -24,7 +24,7 @@ import { useColorMode } from '@/providers/ColorModeProvider';
 const lime = '#9AF000';
 
 export default function PublicUserProfileScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -140,19 +140,19 @@ export default function PublicUserProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={iconAccent} style={styles.loader} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.back}>‹</Text>
+          <Text style={[styles.back, { color: colors.text }]}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Профайл</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Профайл</Text>
         <View style={styles.headerSpacer} />
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -168,15 +168,23 @@ export default function PublicUserProfileScreen() {
             )}
 
             {profile.user.avatarUrl ? (
-              <Image source={{ uri: profile.user.avatarUrl }} style={styles.avatar} />
+              <Image
+                source={{ uri: profile.user.avatarUrl }}
+                style={[styles.avatar, { borderColor: colors.primary }]}
+              />
             ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarInitial}>
+              <View
+                style={[
+                  styles.avatarFallback,
+                  { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+                ]}
+              >
+                <Text style={[styles.avatarInitial, { color: colors.primary }]}>
                   {(profile.user.displayName || profile.user.email).charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
-            <Text style={styles.name}>
+            <Text style={[styles.name, { color: colors.text }]}>
               {isBusiness && profile.user.company
                 ? profile.user.company
                 : profile.user.displayName || profile.user.email.split('@')[0]}
@@ -188,7 +196,9 @@ export default function PublicUserProfileScreen() {
                     {[profile.user.industry, profile.user.location].filter(Boolean).join(' · ')}
                   </Text>
                 )}
-                <Text style={styles.bio}>{profile.user.bio || 'GrowX бизнес хэрэглэгч'}</Text>
+                <Text style={[styles.bio, { color: colors.muted }]}>
+                  {profile.user.bio || 'GrowX бизнес хэрэглэгч'}
+                </Text>
                 {!!profile.user.services && (
                   <Text className="mt-2 max-w-[430px] text-center text-sm leading-5 text-text-secondary">
                     {profile.user.services}
@@ -197,14 +207,18 @@ export default function PublicUserProfileScreen() {
               </>
             ) : (
               <>
-                <Text style={styles.bio}>{profile.user.bio || 'GrowX хэрэглэгч'}</Text>
+                <Text style={[styles.bio, { color: colors.muted }]}>
+                  {profile.user.bio || 'GrowX хэрэглэгч'}
+                </Text>
                 {!!profile.user.company && (
-                  <Text style={styles.company}>{profile.user.company}</Text>
+                  <Text style={[styles.company, { color: colors.primary }]}>
+                    {profile.user.company}
+                  </Text>
                 )}
               </>
             )}
 
-            <View style={styles.stats}>
+            <View style={[styles.stats, { borderColor: colors.border }]}>
               <Stat value={profile.counts.posts} label="Posts" />
               <Pressable
                 onPress={() =>
@@ -227,28 +241,53 @@ export default function PublicUserProfileScreen() {
             </View>
 
             {profile.isMe ? (
-              <Pressable onPress={() => router.replace('/profile')} style={styles.followButton}>
-                <Text style={styles.followText}>Миний профайл</Text>
+              <Pressable
+                onPress={() => router.replace('/profile')}
+                style={[styles.followButton, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[styles.followText, { color: colors.ink }]}>Миний профайл</Text>
               </Pressable>
             ) : (
               <View style={styles.actions}>
                 <Pressable
                   disabled={followingBusy}
                   onPress={() => void toggleFollow()}
-                  style={[styles.followButton, profile.isFollowing && styles.followingButton]}
+                  style={[
+                    styles.followButton,
+                    profile.isFollowing
+                      ? [
+                          styles.followingButton,
+                          {
+                            backgroundColor: colors.surfaceRaised,
+                            borderColor: colors.borderStrong,
+                          },
+                        ]
+                      : { backgroundColor: colors.primary },
+                  ]}
                 >
                   <Text
-                    style={[styles.followText, profile.isFollowing && styles.followingButtonText]}
+                    style={[
+                      styles.followText,
+                      { color: profile.isFollowing ? colors.textSecondary : colors.ink },
+                    ]}
                   >
                     {profile.isFollowing ? 'Дагаж байгаа' : 'Дагах'}
                   </Text>
                 </Pressable>
-                <Pressable onPress={() => void startMessage()} style={styles.messageButton}>
-                  <Text style={styles.messageButtonText}>Мессеж</Text>
+                <Pressable
+                  onPress={() => void startMessage()}
+                  style={[styles.messageButton, { backgroundColor: colors.surfaceRaised }]}
+                >
+                  <Text style={[styles.messageButtonText, { color: colors.text }]}>Мессеж</Text>
                 </Pressable>
                 {isBusiness && (
-                  <Pressable onPress={contactAuthor} style={styles.messageButton}>
-                    <Text style={styles.messageButtonText}>Холбоо барих</Text>
+                  <Pressable
+                    onPress={contactAuthor}
+                    style={[styles.messageButton, { backgroundColor: colors.surfaceRaised }]}
+                  >
+                    <Text style={[styles.messageButtonText, { color: colors.text }]}>
+                      Холбоо барих
+                    </Text>
                   </Pressable>
                 )}
               </View>
@@ -256,7 +295,7 @@ export default function PublicUserProfileScreen() {
 
             {isBusiness && !!mediaPosts.length && (
               <View className="mt-8 w-full max-w-[520px]">
-                <Text style={styles.postsTitle}>Медиа</Text>
+                <Text style={[styles.postsTitle, { color: colors.text }]}>Медиа</Text>
                 <View className="mt-2 flex-row flex-wrap gap-1">
                   {mediaPosts.map((post) => (
                     <Pressable
@@ -275,7 +314,7 @@ export default function PublicUserProfileScreen() {
             )}
 
             <View style={styles.postsSection}>
-              <Text style={styles.postsTitle}>Posts</Text>
+              <Text style={[styles.postsTitle, { color: colors.text }]}>Posts</Text>
               {posts.map((post) => (
                 <PostCard
                   key={post.id}
@@ -294,7 +333,11 @@ export default function PublicUserProfileScreen() {
                 />
               ))}
               {!posts.length && (
-                <Text style={styles.noPosts}>Одоогоор нийтлэл оруулаагүй байна.</Text>
+                <Text
+                  style={[styles.noPosts, { color: colors.muted, backgroundColor: colors.surface }]}
+                >
+                  Одоогоор нийтлэл оруулаагүй байна.
+                </Text>
               )}
             </View>
           </>
@@ -305,10 +348,11 @@ export default function PublicUserProfileScreen() {
 }
 
 function Stat({ value, label }: { value: number; label: string }) {
+  const { colors } = useColorMode();
   return (
     <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
     </View>
   );
 }

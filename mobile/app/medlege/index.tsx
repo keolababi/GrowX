@@ -62,13 +62,13 @@ function SectionHeader({
   action?: string;
   onAction?: () => void;
 }) {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
       {!!action && !!onAction && (
         <Pressable onPress={onAction} style={styles.sectionAction}>
-          <Text style={styles.sectionActionText}>{action}</Text>
+          <Text style={[styles.sectionActionText, { color: iconAccent }]}>{action}</Text>
           <Icon name="chevron-forward" size={16} color={iconAccent} />
         </Pressable>
       )}
@@ -89,20 +89,27 @@ function LessonCard({
   featured?: boolean;
   compact?: boolean;
 }) {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   return (
     <Pressable
       onPress={() => router.push(`/medlege/${lesson.id}`)}
       style={({ pressed }) => [
         featured ? styles.featuredLesson : styles.lessonCard,
+        { backgroundColor: colors.surface, borderColor: colors.border },
         featured && compact && styles.featuredLessonCompact,
         pressed && styles.cardPressed,
       ]}
     >
       {featured && (
-        <View style={[styles.lessonArtwork, compact && styles.lessonArtworkCompact]}>
-          <View style={styles.targetOuter}>
-            <View style={styles.targetMiddle}>
+        <View
+          style={[
+            styles.lessonArtwork,
+            { backgroundColor: colors.surfaceSoft },
+            compact && styles.lessonArtworkCompact,
+          ]}
+        >
+          <View style={[styles.targetOuter, { borderColor: colors.borderStrong }]}>
+            <View style={[styles.targetMiddle, { borderColor: colors.primary }]}>
               <Icon name="trending-up" size={35} color={iconAccent} />
             </View>
           </View>
@@ -110,44 +117,53 @@ function LessonCard({
       )}
       <View style={styles.lessonCopy}>
         <View style={styles.lessonBadges}>
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryBadgeText}>{lesson.category}</Text>
+          <View style={[styles.categoryBadge, { backgroundColor: colors.surfaceSoft }]}>
+            <Text style={[styles.categoryBadgeText, { color: colors.primary }]}>
+              {lesson.category}
+            </Text>
           </View>
-          <View style={styles.difficultyBadge}>
-            <Text style={styles.difficultyBadgeText}>{lesson.difficulty}</Text>
+          <View style={[styles.difficultyBadge, { backgroundColor: colors.surfaceRaised }]}>
+            <Text style={[styles.difficultyBadgeText, { color: colors.muted }]}>
+              {lesson.difficulty}
+            </Text>
           </View>
           {completed && (
-            <View style={styles.completedBadge}>
-              <Icon name="checkmark" size={12} color="#071209" />
-              <Text style={styles.completedBadgeText}>Дууссан</Text>
+            <View style={[styles.completedBadge, { backgroundColor: colors.primary }]}>
+              <Icon name="checkmark" size={12} color={colors.ink} />
+              <Text style={[styles.completedBadgeText, { color: colors.ink }]}>Дууссан</Text>
             </View>
           )}
         </View>
         <Text
           numberOfLines={featured ? 2 : 1}
-          style={featured ? styles.featuredTitle : styles.lessonTitle}
+          style={[featured ? styles.featuredTitle : styles.lessonTitle, { color: colors.text }]}
         >
           {lesson.title}
         </Text>
-        <Text numberOfLines={2} style={styles.lessonDescription}>
+        <Text numberOfLines={2} style={[styles.lessonDescription, { color: colors.muted }]}>
           {lesson.description}
         </Text>
         <View style={styles.lessonMeta}>
-          <Icon name="time-outline" size={15} color="#91A09A" />
-          <Text style={styles.lessonMetaText}>{lesson.durationMin} мин</Text>
-          {started && !completed && <Text style={styles.startedText}>· Үргэлжлүүлэх</Text>}
+          <Icon name="time-outline" size={15} color={colors.muted} />
+          <Text style={[styles.lessonMetaText, { color: colors.muted }]}>
+            {lesson.durationMin} мин
+          </Text>
+          {started && !completed && (
+            <Text style={[styles.startedText, { color: colors.primary }]}>· Үргэлжлүүлэх</Text>
+          )}
         </View>
       </View>
       <View
         style={[
           featured ? styles.featuredPlay : styles.lessonArrow,
+          { backgroundColor: colors.primary },
           featured && compact && styles.featuredPlayCompact,
         ]}
       >
         <Icon
           name={completed ? 'checkmark' : started ? 'play' : 'arrow-forward'}
           size={featured ? 22 : 18}
-          color="#071209"
+          color={colors.ink}
         />
       </View>
     </Pressable>
@@ -155,7 +171,7 @@ function LessonCard({
 }
 
 export default function KnowledgeScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { width } = useWindowDimensions();
   const compact = width < 680;
   const [category, setCategory] = useState<(typeof categories)[number]>('Бүгд');
@@ -223,7 +239,7 @@ export default function KnowledgeScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
         style={[styles.scroll, Platform.OS === 'web' && webKnowledgeScrollStyle]}
@@ -242,33 +258,52 @@ export default function KnowledgeScreen() {
             }
           />
 
-          <View style={[styles.progressHero, compact && styles.progressHeroCompact]}>
+          <View
+            style={[
+              styles.progressHero,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              compact && styles.progressHeroCompact,
+            ]}
+          >
             <View style={styles.progressCopy}>
-              <Text style={styles.eyebrow}>ТАНЫ СУРАЛЦАХ ЗАМ</Text>
-              <Text style={styles.progressTitle}>Бизнесийн сууриа бэхжүүлье</Text>
+              <Text style={[styles.eyebrow, { color: colors.primary }]}>ТАНЫ СУРАЛЦАХ ЗАМ</Text>
+              <Text style={[styles.progressTitle, { color: colors.text }]}>
+                Бизнесийн сууриа бэхжүүлье
+              </Text>
               <View style={styles.progressRow}>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSoft }]}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${progress}%`, backgroundColor: colors.primary },
+                    ]}
+                  />
                 </View>
-                <Text style={styles.progressPercent}>{progress}%</Text>
+                <Text style={[styles.progressPercent, { color: colors.primary }]}>{progress}%</Text>
               </View>
-              <Text style={styles.progressDescription}>
+              <Text style={[styles.progressDescription, { color: colors.muted }]}>
                 {lessonCatalog.length} хичээлээс {completedCount}-ыг дуусгасан
               </Text>
               <Pressable
                 disabled={!nextLesson}
                 onPress={() => nextLesson && router.push(`/medlege/${nextLesson.id}`)}
-                style={styles.continueButton}
+                style={[styles.continueButton, { backgroundColor: colors.primary }]}
               >
-                <Text style={styles.continueText}>
+                <Text style={[styles.continueText, { color: colors.ink }]}>
                   {completedCount === lessonCatalog.length ? 'Дахин үзэх' : 'Үргэлжлүүлэх'}
                 </Text>
-                <Icon name="chevron-forward" size={18} color="#071209" />
+                <Icon name="chevron-forward" size={18} color={colors.ink} />
               </Pressable>
             </View>
             <View style={[styles.progressVisual, compact && styles.progressVisualCompact]}>
-              <View style={[styles.progressCircle, compact && styles.progressCircleCompact]}>
-                <View style={styles.progressCircleInner}>
+              <View
+                style={[
+                  styles.progressCircle,
+                  { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+                  compact && styles.progressCircleCompact,
+                ]}
+              >
+                <View style={[styles.progressCircleInner, { backgroundColor: colors.surface }]}>
                   <GrowXMark size={compact ? 60 : 78} />
                 </View>
               </View>
@@ -280,10 +315,16 @@ export default function KnowledgeScreen() {
               <Pressable
                 key={shortcut.label}
                 onPress={shortcut.onPress}
-                style={({ pressed }) => [styles.shortcutCard, pressed && styles.cardPressed]}
+                style={({ pressed }) => [
+                  styles.shortcutCard,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  pressed && styles.cardPressed,
+                ]}
               >
                 <Icon name={shortcut.icon} size={28} color={iconAccent} />
-                <Text style={styles.shortcutLabel}>{shortcut.label}</Text>
+                <Text style={[styles.shortcutLabel, { color: colors.textSecondary }]}>
+                  {shortcut.label}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -299,9 +340,22 @@ export default function KnowledgeScreen() {
                 <Pressable
                   key={item}
                   onPress={() => setCategory(item)}
-                  style={[styles.categoryChip, selected && styles.categoryChipSelected]}
+                  style={[
+                    styles.categoryChip,
+                    !selected && { backgroundColor: colors.surface, borderColor: colors.border },
+                    selected && [
+                      styles.categoryChipSelected,
+                      { backgroundColor: colors.primary, borderColor: colors.primary },
+                    ],
+                  ]}
                 >
-                  <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      !selected && { color: colors.textSecondary },
+                      selected && [styles.categoryTextSelected, { color: colors.ink }],
+                    ]}
+                  >
                     {item}
                   </Text>
                 </Pressable>
@@ -333,21 +387,27 @@ export default function KnowledgeScreen() {
           />
           <Pressable
             onPress={() => router.push('/podcast')}
-            style={({ pressed }) => [styles.mediaCard, pressed && styles.cardPressed]}
+            style={({ pressed }) => [
+              styles.mediaCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && styles.cardPressed,
+            ]}
           >
-            <View style={styles.podcastArt}>
-              <Text style={styles.podcastBrand}>GrowX</Text>
+            <View style={[styles.podcastArt, { backgroundColor: colors.surfaceSoft }]}>
+              <Text style={[styles.podcastBrand, { color: colors.text }]}>GrowX</Text>
               <Icon name="mic" size={30} color={iconAccent} />
-              <Text style={styles.podcastWord}>PODCAST</Text>
+              <Text style={[styles.podcastWord, { color: colors.text }]}>PODCAST</Text>
             </View>
             <View style={styles.mediaCopy}>
-              <Text numberOfLines={2} style={styles.mediaTitle}>
+              <Text numberOfLines={2} style={[styles.mediaTitle, { color: colors.text }]}>
                 Санаанаас бодит бизнес хүртэл
               </Text>
-              <Text style={styles.mediaMeta}>GrowX Podcast · Шинэ дугаарууд</Text>
+              <Text style={[styles.mediaMeta, { color: colors.muted }]}>
+                GrowX Podcast · Шинэ дугаарууд
+              </Text>
             </View>
-            <View style={styles.roundAction}>
-              <Icon name="play" size={20} color="#071209" />
+            <View style={[styles.roundAction, { backgroundColor: colors.primary }]}>
+              <Icon name="play" size={20} color={colors.ink} />
             </View>
           </Pressable>
 
@@ -358,17 +418,30 @@ export default function KnowledgeScreen() {
           />
           <Pressable
             onPress={() => router.push('/mentor')}
-            style={({ pressed }) => [styles.mentorCard, pressed && styles.cardPressed]}
+            style={({ pressed }) => [
+              styles.mentorCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && styles.cardPressed,
+            ]}
           >
-            <View style={styles.mentorAvatar}>
+            <View
+              style={[
+                styles.mentorAvatar,
+                { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
+              ]}
+            >
               <Icon name="person" size={28} color={iconAccent} />
             </View>
             <View style={styles.mediaCopy}>
-              <Text style={styles.mediaTitle}>Туршлагатай ментортой холбогдох</Text>
-              <Text style={styles.mediaMeta}>Бизнес · Маркетинг · Санхүү · Бүтээгдэхүүн</Text>
+              <Text style={[styles.mediaTitle, { color: colors.text }]}>
+                Туршлагатай ментортой холбогдох
+              </Text>
+              <Text style={[styles.mediaMeta, { color: colors.muted }]}>
+                Бизнес · Маркетинг · Санхүү · Бүтээгдэхүүн
+              </Text>
             </View>
-            <View style={styles.profileButton}>
-              <Text style={styles.profileButtonText}>Профайл харах</Text>
+            <View style={[styles.profileButton, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.profileButtonText, { color: colors.ink }]}>Профайл харах</Text>
             </View>
           </Pressable>
 
@@ -383,10 +456,17 @@ export default function KnowledgeScreen() {
               />
             ))}
             {!visibleLessons.length && (
-              <View style={styles.emptyCard}>
+              <View
+                style={[
+                  styles.emptyCard,
+                  { backgroundColor: colors.surface, borderColor: colors.borderStrong },
+                ]}
+              >
                 <Icon name="book-outline" size={29} color={iconAccent} />
-                <Text style={styles.emptyTitle}>Хичээл олдсонгүй</Text>
-                <Text style={styles.emptyCopy}>Өөр ангилал сонгоод дахин үзээрэй.</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>Хичээл олдсонгүй</Text>
+                <Text style={[styles.emptyCopy, { color: colors.muted }]}>
+                  Өөр ангилал сонгоод дахин үзээрэй.
+                </Text>
               </View>
             )}
           </View>

@@ -19,12 +19,14 @@ import { useUser } from '@/providers/UserProvider';
 import { getApiError } from '@/utils/auth';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { User } from '@/types/auth';
+import { useColorMode } from '@/providers/ColorModeProvider';
 
 type AccountType = 'PERSONAL' | 'BUSINESS';
 
 const lime = '#9AF000';
 
 export default function PersonalInformationScreen() {
+  const { colors } = useColorMode();
   const { user, refreshUser } = useUser();
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -136,16 +138,16 @@ export default function PersonalInformationScreen() {
   const coverUri = cover?.uri || user?.coverUrl;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboard}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.back}>‹</Text>
+            <Text style={[styles.back, { color: colors.text }]}>‹</Text>
           </Pressable>
-          <Text style={styles.title}>Хувийн мэдээлэл</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Хувийн мэдээлэл</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -161,9 +163,16 @@ export default function PersonalInformationScreen() {
           />
 
           {accountType === 'PERSONAL' && (
-            <View style={styles.badgeSection}>
-              <Text style={styles.badgeLabel}>Профайлын badge</Text>
-              <Text style={styles.badgeHint}>Ментороор харагдах бол “Ментор”-ыг сонгоно уу.</Text>
+            <View
+              style={[
+                styles.badgeSection,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.badgeLabel, { color: colors.text }]}>Профайлын badge</Text>
+              <Text style={[styles.badgeHint, { color: colors.muted }]}>
+                Ментороор харагдах бол “Ментор”-ыг сонгоно уу.
+              </Text>
               <SegmentedControl
                 options={['Энгийн хэрэглэгч', 'Ментор']}
                 selectedIndex={isMentor ? 1 : 0}
@@ -173,35 +182,54 @@ export default function PersonalInformationScreen() {
           )}
 
           {accountType === 'BUSINESS' && (
-            <Pressable onPress={() => void pickCover()} style={styles.coverCard}>
+            <Pressable
+              onPress={() => void pickCover()}
+              style={[
+                styles.coverCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
               {coverUri ? (
                 <Image source={{ uri: coverUri }} style={styles.coverImage} />
               ) : (
                 <View style={styles.coverPlaceholder}>
-                  <Text style={styles.rowHint}>Нүүр зураг нэмэх</Text>
+                  <Text style={[styles.rowHint, { color: colors.muted }]}>Нүүр зураг нэмэх</Text>
                 </View>
               )}
             </Pressable>
           )}
 
-          <Pressable onPress={() => void pickAvatar()} style={styles.avatarCard}>
-            <View style={styles.rowIcon}>
-              <Text style={styles.rowIconText}>♙</Text>
+          <Pressable
+            onPress={() => void pickAvatar()}
+            style={[
+              styles.avatarCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSoft }]}>
+              <Text style={[styles.rowIconText, { color: colors.textSecondary }]}>♙</Text>
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowLabel}>Профайл зураг</Text>
-              <Text style={styles.rowHint}>Зураг солихын тулд дарна уу</Text>
+              <Text style={[styles.rowLabel, { color: colors.text }]}>Профайл зураг</Text>
+              <Text style={[styles.rowHint, { color: colors.muted }]}>
+                Зураг солихын тулд дарна уу
+              </Text>
             </View>
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarInitial}>
+              <View
+                style={[
+                  styles.avatarFallback,
+                  { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+                ]}
+              >
+                <Text style={[styles.avatarInitial, { color: colors.primary }]}>
                   {(displayName || user?.email || 'G').charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
           </Pressable>
 
           <Field
@@ -268,27 +296,37 @@ export default function PersonalInformationScreen() {
             </>
           )}
 
-          <View style={styles.emailCard}>
-            <Text style={styles.emailLabel}>И-мэйл</Text>
-            <Text style={styles.email}>{user?.email}</Text>
+          <View
+            style={[
+              styles.emailCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[styles.emailLabel, { color: colors.muted }]}>И-мэйл</Text>
+            <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email}</Text>
           </View>
 
           {!!error && <Text style={styles.error}>{error}</Text>}
-          {!!success && <Text style={styles.success}>{success}</Text>}
+          {!!success && <Text style={[styles.success, { color: colors.primary }]}>{success}</Text>}
 
           <Pressable
             disabled={saving}
             onPress={() => void save()}
             style={({ pressed }) => [
               styles.saveButton,
+              { backgroundColor: colors.primary },
               saving && styles.saveDisabled,
               pressed && styles.savePressed,
             ]}
           >
-            <Text style={styles.saveText}>{saving ? 'Хадгалж байна...' : 'Хадгалах'}</Text>
+            <Text style={[styles.saveText, { color: colors.ink }]}>
+              {saving ? 'Хадгалж байна...' : 'Хадгалах'}
+            </Text>
           </Pressable>
 
-          <Text style={styles.note}>Та өөрийн хувийн мэдээллийг хүссэн үедээ шинэчилж болно.</Text>
+          <Text style={[styles.note, { color: colors.muted }]}>
+            Та өөрийн хувийн мэдээллийг хүссэн үедээ шинэчилж болно.
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -300,17 +338,22 @@ function Field({
   label,
   ...inputProps
 }: React.ComponentProps<typeof TextInput> & { icon: string; label: string }) {
+  const { colors } = useColorMode();
   return (
-    <View style={styles.field}>
-      <View style={styles.rowIcon}>
-        <Text style={styles.rowIconText}>{icon}</Text>
+    <View style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.rowIcon, { backgroundColor: colors.surfaceSoft }]}>
+        <Text style={[styles.rowIconText, { color: colors.textSecondary }]}>{icon}</Text>
       </View>
       <View style={styles.fieldCopy}>
-        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
         <TextInput
           {...inputProps}
-          placeholderTextColor="#65736D"
-          style={[styles.input, inputProps.multiline && styles.multilineInput]}
+          placeholderTextColor={colors.muted}
+          style={[
+            styles.input,
+            { color: colors.text },
+            inputProps.multiline && styles.multilineInput,
+          ]}
         />
       </View>
     </View>

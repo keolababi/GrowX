@@ -34,7 +34,7 @@ const profileTabs = ['Пост', 'Дахин нийтэлсэн', 'Хадгал�
 const lime = '#9AF000';
 
 export default function ProfileScreen() {
-  const { iconAccent } = useColorMode();
+  const { iconAccent, colors } = useColorMode();
   const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useUser();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
@@ -151,7 +151,7 @@ export default function ProfileScreen() {
   ][tabIndex];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <AppPageHeader
         title="Профайл"
         actions={
@@ -161,7 +161,10 @@ export default function ProfileScreen() {
             <Pressable
               accessibilityLabel="Тохиргоо"
               onPress={() => router.push('/profile/settings' as Href)}
-              style={styles.settingsButton}
+              style={[
+                styles.settingsButton,
+                { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+              ]}
             >
               <Icon name="settings-outline" size={20} color={iconAccent} />
             </Pressable>
@@ -189,13 +192,17 @@ export default function ProfileScreen() {
           {!!error && !!profile && <Text style={styles.error}>{error}</Text>}
           {profile && (
             <>
-              <View style={styles.profileCard}>
+              <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
                 {profile.user.accountType === 'BUSINESS' && (
-                  <View style={styles.cover}>
+                  <View style={[styles.cover, { backgroundColor: colors.surfaceSoft }]}>
                     {profile.user.coverUrl && (
                       <Image source={{ uri: profile.user.coverUrl }} style={styles.coverImage} />
                     )}
-                    {!profile.user.coverUrl && <View style={styles.coverPattern} />}
+                    {!profile.user.coverUrl && (
+                      <View
+                        style={[styles.coverPattern, { backgroundColor: colors.surfaceRaised }]}
+                      />
+                    )}
                   </View>
                 )}
 
@@ -204,6 +211,7 @@ export default function ProfileScreen() {
                     source={{ uri: profile.user.avatarUrl }}
                     style={[
                       styles.avatar,
+                      { borderColor: colors.primary },
                       profile.user.accountType === 'BUSINESS' && styles.avatarOverCover,
                     ]}
                   />
@@ -211,22 +219,25 @@ export default function ProfileScreen() {
                   <View
                     style={[
                       styles.avatarFallback,
+                      { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
                       profile.user.accountType === 'BUSINESS' && styles.avatarOverCover,
                     ]}
                   >
-                    <Text style={styles.avatarInitial}>
+                    <Text style={[styles.avatarInitial, { color: colors.primary }]}>
                       {(profile.user.displayName || profile.user.email).charAt(0).toUpperCase()}
                     </Text>
                   </View>
                 )}
-                <Text style={styles.name}>
+                <Text style={[styles.name, { color: colors.text }]}>
                   {profile.user.accountType === 'BUSINESS' && profile.user.company
                     ? profile.user.company
                     : profile.user.displayName || profile.user.email.split('@')[0]}
                 </Text>
-                <Text style={styles.username}>@{profile.user.email.split('@')[0]}</Text>
+                <Text style={[styles.username, { color: colors.muted }]}>
+                  @{profile.user.email.split('@')[0]}
+                </Text>
                 <View style={styles.badges}>
-                  <View style={styles.accountBadge}>
+                  <View style={[styles.accountBadge, { backgroundColor: colors.surfaceSoft }]}>
                     <Icon
                       name={
                         profile.user.accountType === 'BUSINESS'
@@ -236,16 +247,18 @@ export default function ProfileScreen() {
                       size={13}
                       color={iconAccent}
                     />
-                    <Text style={styles.accountBadgeText}>
+                    <Text style={[styles.accountBadgeText, { color: colors.textSecondary }]}>
                       {profile.user.accountType === 'BUSINESS'
                         ? 'Бизнес профайл'
                         : 'Хувийн профайл'}
                     </Text>
                   </View>
                   {profile.user.isMentor && (
-                    <View style={styles.accountBadge}>
+                    <View style={[styles.accountBadge, { backgroundColor: colors.surfaceSoft }]}>
                       <Icon name="people-outline" size={13} color={iconAccent} />
-                      <Text style={styles.accountBadgeText}>Ментор</Text>
+                      <Text style={[styles.accountBadgeText, { color: colors.textSecondary }]}>
+                        Ментор
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -256,7 +269,9 @@ export default function ProfileScreen() {
                         {[profile.user.industry, profile.user.location].filter(Boolean).join(' · ')}
                       </Text>
                     )}
-                    <Text style={styles.bio}>{profile.user.bio || 'GrowX бизнес хэрэглэгч'}</Text>
+                    <Text style={[styles.bio, { color: colors.muted }]}>
+                      {profile.user.bio || 'GrowX бизнес хэрэглэгч'}
+                    </Text>
                     {!!profile.user.services && (
                       <Text className="mt-2 max-w-[430px] text-center text-sm leading-5 text-text-secondary">
                         {profile.user.services}
@@ -265,22 +280,30 @@ export default function ProfileScreen() {
                   </>
                 ) : (
                   <>
-                    <Text style={styles.bio}>{profile.user.bio || 'GrowX хэрэглэгч'}</Text>
+                    <Text style={[styles.bio, { color: colors.muted }]}>
+                      {profile.user.bio || 'GrowX хэрэглэгч'}
+                    </Text>
                     {!!profile.user.company && (
-                      <Text style={styles.company}>{profile.user.company}</Text>
+                      <Text style={[styles.company, { color: colors.primary }]}>
+                        {profile.user.company}
+                      </Text>
                     )}
                   </>
                 )}
 
                 <Pressable
                   onPress={() => router.push('/profile/personal' as Href)}
-                  style={({ pressed }) => [styles.editProfile, pressed && styles.buttonPressed]}
+                  style={({ pressed }) => [
+                    styles.editProfile,
+                    { backgroundColor: colors.primary },
+                    pressed && styles.buttonPressed,
+                  ]}
                 >
-                  <Icon name="pencil-outline" size={16} color={design.colors.ink} />
-                  <Text style={styles.editProfileText}>Профайл засах</Text>
+                  <Icon name="pencil-outline" size={16} color={colors.ink} />
+                  <Text style={[styles.editProfileText, { color: colors.ink }]}>Профайл засах</Text>
                 </Pressable>
 
-                <View style={styles.stats}>
+                <View style={[styles.stats, { backgroundColor: colors.surfaceRaised }]}>
                   <Stat value={profile.counts.posts} label="Posts" />
                   <Pressable
                     onPress={() =>
@@ -305,9 +328,9 @@ export default function ProfileScreen() {
 
               <View style={styles.postsSection}>
                 <View style={styles.postsHeading}>
-                  <Text style={styles.postsTitle}>Контент</Text>
+                  <Text style={[styles.postsTitle, { color: colors.text }]}>Контент</Text>
                   <Pressable onPress={() => router.push('/posts/create')}>
-                    <Text style={styles.createPost}>＋ Post</Text>
+                    <Text style={[styles.createPost, { color: colors.primary }]}>＋ Post</Text>
                   </Pressable>
                 </View>
                 <View className="mb-3 px-6">
@@ -358,10 +381,11 @@ export default function ProfileScreen() {
 }
 
 function Stat({ value, label }: { value: number; label: string }) {
+  const { colors } = useColorMode();
   return (
     <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
     </View>
   );
 }

@@ -36,6 +36,7 @@ type Props = {
   onToggleSave?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPressMore?: () => void;
   footer?: React.ReactNode;
 };
 
@@ -73,7 +74,7 @@ function MediaGrid({ media }: { media: PostCardMediaItem[] }) {
       <Image
         source={{ uri: item.url }}
         resizeMode="cover"
-        className="mt-s aspect-[4/3] w-full rounded-card bg-background-paper"
+        className="mt-s aspect-video w-full rounded-btn bg-background-paper"
       />
     );
   }
@@ -89,7 +90,7 @@ function MediaGrid({ media }: { media: PostCardMediaItem[] }) {
             key={`${item.url}-${index}`}
             source={{ uri: item.url }}
             resizeMode="cover"
-            className="aspect-square w-[49%] rounded-card bg-background-paper"
+            className="aspect-square w-[49%] rounded-btn bg-background-paper"
           />
         ),
       )}
@@ -119,29 +120,29 @@ export const PostCard: React.FC<Props> = ({
   onToggleSave,
   onEdit,
   onDelete,
+  onPressMore,
   footer,
 }) => {
-  const { iconAccent } = useColorMode();
+  const { colors, iconAccent, isDark } = useColorMode();
   return (
-    <View className="border-b border-border px-l py-l">
+    <View
+      className={
+        isDark
+          ? 'border-b border-border px-l py-l'
+          : 'border-b border-border bg-background-paper px-l py-m'
+      }
+    >
       <View className="flex-row items-center">
         <Pressable onPress={onPressAuthor} className="flex-1 flex-row items-center min-w-0">
           <AuthorAvatar author={author} />
           <View className="ml-s flex-1 min-w-0">
-            <View className="flex-row items-center gap-s">
+            <View className="flex-row items-center">
               <Text
                 numberOfLines={1}
                 className="flex-shrink text-base font-extrabold text-text-primary"
               >
                 {author.displayName || author.email.split('@')[0]}
               </Text>
-              {!!author.company && (
-                <View className="rounded-avatar border border-border bg-background-paper px-s py-[1px]">
-                  <Text numberOfLines={1} className="text-[10px] font-bold text-text-secondary">
-                    {author.company}
-                  </Text>
-                </View>
-              )}
             </View>
             <Text className="mt-[2px] text-xs text-text-muted">
               {timestamp}
@@ -164,31 +165,25 @@ export const PostCard: React.FC<Props> = ({
             </Text>
           </Pressable>
         )}
-        {isOwnPost && (onEdit || onDelete) && (
-          <View className="ml-s flex-row items-center gap-m">
-            {onEdit && (
-              <Pressable accessibilityLabel="Post засах" hitSlop={10} onPress={onEdit}>
-                <Icon name="create-outline" size={20} color={iconAccent} />
-              </Pressable>
-            )}
-            {onDelete && (
-              <Pressable accessibilityLabel="Post устгах" hitSlop={10} onPress={onDelete}>
-                <Icon name="trash-outline" size={19} color="#FF817B" />
-              </Pressable>
-            )}
-          </View>
-        )}
+        <Pressable
+          accessibilityLabel="Post-ын дэлгэрэнгүй үйлдэл"
+          hitSlop={10}
+          onPress={onPressMore || onEdit || onDelete}
+          className="ml-m h-8 w-6 items-center justify-center"
+        >
+          <Icon name="ellipsis-vertical" size={20} color={colors.text} />
+        </Pressable>
       </View>
 
       {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}
       <MediaGrid media={media} />
 
-      <View className="mt-m flex-row items-center gap-l">
+      <View className="mt-m flex-row items-center justify-between">
         <Pressable onPress={onPressLike} className="flex-row items-center gap-1">
           <Icon
             name={likedByMe ? 'heart' : 'heart-outline'}
             size={22}
-            color={likedByMe ? '#EF4444' : '#D6DBDC'}
+            color={likedByMe ? colors.danger : colors.textSecondary}
           />
           {likeCount > 0 && (
             <Text className={`text-xs font-bold ${likedByMe ? 'text-danger' : 'text-text-muted'}`}>
@@ -198,14 +193,14 @@ export const PostCard: React.FC<Props> = ({
         </Pressable>
         {onPressComment ? (
           <Pressable onPress={onPressComment} className="flex-row items-center gap-1">
-            <Icon name="chatbubble-outline" size={21} color="#D6DBDC" />
+            <Icon name="chatbubble-outline" size={21} color={colors.textSecondary} />
             {commentCount > 0 && (
               <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
             )}
           </Pressable>
         ) : (
           <View className="flex-row items-center gap-1">
-            <Icon name="chatbubble-outline" size={21} color="#D6DBDC" />
+            <Icon name="chatbubble-outline" size={21} color={colors.textSecondary} />
             {commentCount > 0 && (
               <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
             )}
@@ -213,12 +208,12 @@ export const PostCard: React.FC<Props> = ({
         )}
         {onToggleRepost && (
           <Pressable onPress={onToggleRepost}>
-            <Icon name="repeat" size={22} color={reposted ? iconAccent : '#D6DBDC'} />
+            <Icon name="repeat" size={22} color={reposted ? iconAccent : colors.textSecondary} />
           </Pressable>
         )}
         {onPressShare && (
           <Pressable onPress={onPressShare}>
-            <Icon name="arrow-redo-outline" size={22} color="#D6DBDC" />
+            <Icon name="paper-plane-outline" size={22} color={colors.textSecondary} />
           </Pressable>
         )}
         {onToggleSave && (
@@ -226,7 +221,7 @@ export const PostCard: React.FC<Props> = ({
             <Icon
               name={saved ? 'bookmark' : 'bookmark-outline'}
               size={21}
-              color={saved ? iconAccent : '#D6DBDC'}
+              color={saved ? iconAccent : colors.textSecondary}
             />
           </Pressable>
         )}

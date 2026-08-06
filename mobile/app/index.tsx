@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function IndexScreen() {
-  const { isDark, iconAccent } = useColorMode();
+  const { colors, iconAccent } = useColorMode();
   const token = useAuthStore((state) => state.token);
   const isHydrating = useAuthStore((state) => state.isHydrating);
   if (isHydrating) {
@@ -12,7 +12,7 @@ export default function IndexScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: isDark ? '#020B0D' : '#F7F9F8',
+          backgroundColor: colors.background,
           alignItems: 'center',
           justifyContent: 'center',
         }}

@@ -65,7 +65,7 @@ export default function ProfileSettingsScreen() {
           <Switch
             value={isDark}
             onValueChange={toggleMode}
-            trackColor={{ false: '#CDD8D3', true: '#49651D' }}
+            trackColor={{ false: '#D9D9D4', true: '#49651D' }}
             thumbColor={isDark ? '#9AF000' : '#FFFFFF'}
           />
         </View>
@@ -99,20 +99,20 @@ export default function ProfileSettingsScreen() {
 
 const createStyles = (isDark: boolean) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: isDark ? '#020B0D' : '#F7F9F8' },
+    safeArea: { flex: 1, backgroundColor: isDark ? '#020B0D' : '#FFFFFF' },
     header: {
       height: 68,
       paddingHorizontal: 12,
       flexDirection: 'row',
       alignItems: 'center',
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? '#173029' : '#CDD8D3',
+      borderBottomColor: isDark ? '#173029' : '#D9D9D4',
     },
     backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-    back: { color: isDark ? '#F2F6F4' : '#111A1D', fontSize: 38, lineHeight: 40 },
+    back: { color: isDark ? '#F2F6F4' : '#111111', fontSize: 38, lineHeight: 40 },
     title: {
       flex: 1,
-      color: isDark ? '#F4F7F6' : '#111A1D',
+      color: isDark ? '#F4F7F6' : '#111111',
       fontSize: 21,
       fontWeight: '900',
       textAlign: 'center',
@@ -127,7 +127,7 @@ const createStyles = (isDark: boolean) =>
       flexDirection: 'row',
       alignItems: 'center',
     },
-    menuItemPressed: { backgroundColor: isDark ? '#0A201A' : '#E7EEE9' },
+    menuItemPressed: { backgroundColor: isDark ? '#0A201A' : '#F2F2EF' },
     themeItem: {
       minHeight: 72,
       paddingHorizontal: 10,
@@ -137,23 +137,23 @@ const createStyles = (isDark: boolean) =>
       marginBottom: 8,
     },
     themeCopy: { flex: 1, marginLeft: 13 },
-    themeHint: { color: isDark ? '#899790' : '#687478', fontSize: 12, marginTop: 3 },
+    themeHint: { color: isDark ? '#899790' : '#7A7A76', fontSize: 12, marginTop: 3 },
     iconWrap: {
       width: 43,
       height: 43,
       borderRadius: 13,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? '#10261F' : '#E7EEE9',
+      backgroundColor: isDark ? '#10261F' : '#F2F2EF',
     },
-    icon: { color: isDark ? '#EFF3F1' : '#111A1D', fontSize: 23 },
+    icon: { color: isDark ? '#EFF3F1' : '#111111', fontSize: 23 },
     label: {
       flex: 1,
-      color: isDark ? '#F0F3F2' : '#111A1D',
+      color: isDark ? '#F0F3F2' : '#111111',
       fontSize: 16,
       fontWeight: '700',
       marginLeft: 13,
     },
-    chevron: { color: isDark ? '#AEBAB5' : '#687478', fontSize: 32 },
+    chevron: { color: isDark ? '#AEBAB5' : '#7A7A76', fontSize: 32 },
     signOut: { color: '#FF817B' },
   });

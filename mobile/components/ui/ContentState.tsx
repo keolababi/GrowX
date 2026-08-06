@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { design } from '@/constants/design';
+import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from './Icon';
 
 type EmptyStateProps = {
@@ -26,18 +27,25 @@ export function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const { colors } = useColorMode();
   return (
-    <View style={styles.empty}>
-      <View style={styles.iconWrap}>
-        <Icon name={icon} size={25} color={design.colors.primary} />
+    <View style={[styles.empty, { backgroundColor: colors.surface }]}>
+      <View style={[styles.iconWrap, { backgroundColor: colors.surfaceSoft }]}>
+        <Icon name={icon} size={25} color={colors.primary} />
       </View>
-      <Text style={styles.title}>{title}</Text>
-      {!!description && <Text style={styles.description}>{description}</Text>}
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      {!!description && (
+        <Text style={[styles.description, { color: colors.muted }]}>{description}</Text>
+      )}
       {!!actionLabel && !!onAction && (
         <Pressable
           accessibilityRole="button"
           onPress={onAction}
-          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.action,
+            { backgroundColor: colors.primary },
+            pressed && styles.pressed,
+          ]}
         >
           <Text style={styles.actionText}>{actionLabel}</Text>
           <Icon name="arrow-forward" size={16} color={design.colors.ink} />
@@ -48,24 +56,25 @@ export function EmptyState({
 }
 
 export function LoadingState({ label = 'Уншиж байна...' }: { label?: string }) {
+  const { colors } = useColorMode();
   return (
     <View style={styles.loading} accessibilityRole="progressbar">
       <View style={styles.loadingIcon}>
-        <ActivityIndicator color={design.colors.primary} />
+        <ActivityIndicator color={colors.primary} />
       </View>
-      <Text style={styles.loadingLabel}>{label}</Text>
-      <View style={styles.skeletonCard}>
-        <View style={styles.skeletonAvatar} />
+      <Text style={[styles.loadingLabel, { color: colors.muted }]}>{label}</Text>
+      <View style={[styles.skeletonCard, { backgroundColor: colors.surface }]}>
+        <View style={[styles.skeletonAvatar, { backgroundColor: colors.surfaceSoft }]} />
         <View style={styles.skeletonCopy}>
-          <View style={styles.skeletonLineWide} />
-          <View style={styles.skeletonLine} />
+          <View style={[styles.skeletonLineWide, { backgroundColor: colors.surfaceSoft }]} />
+          <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceRaised }]} />
         </View>
       </View>
-      <View style={styles.skeletonCard}>
-        <View style={styles.skeletonAvatar} />
+      <View style={[styles.skeletonCard, { backgroundColor: colors.surface }]}>
+        <View style={[styles.skeletonAvatar, { backgroundColor: colors.surfaceSoft }]} />
         <View style={styles.skeletonCopy}>
-          <View style={styles.skeletonLineWide} />
-          <View style={styles.skeletonLine} />
+          <View style={[styles.skeletonLineWide, { backgroundColor: colors.surfaceSoft }]} />
+          <View style={[styles.skeletonLine, { backgroundColor: colors.surfaceRaised }]} />
         </View>
       </View>
     </View>
@@ -73,6 +82,7 @@ export function LoadingState({ label = 'Уншиж байна...' }: { label?: s
 }
 
 function SkeletonBlock({ style }: { style?: ViewStyle | ViewStyle[] }) {
+  const { colors } = useColorMode();
   const opacity = useRef(new Animated.Value(0.42)).current;
 
   useEffect(() => {
@@ -86,13 +96,18 @@ function SkeletonBlock({ style }: { style?: ViewStyle | ViewStyle[] }) {
     return () => animation.stop();
   }, [opacity]);
 
-  return <Animated.View style={[styles.skeletonBlock, style, { opacity }]} />;
+  return (
+    <Animated.View
+      style={[styles.skeletonBlock, style, { backgroundColor: colors.surfaceSoft, opacity }]}
+    />
+  );
 }
 
 export function ProfileSkeleton() {
+  const { colors } = useColorMode();
   return (
     <View style={styles.profileSkeleton} accessibilityRole="progressbar">
-      <View style={styles.profileSkeletonCard}>
+      <View style={[styles.profileSkeletonCard, { backgroundColor: colors.surface }]}>
         <SkeletonBlock style={styles.profileSkeletonAvatar} />
         <SkeletonBlock style={styles.profileSkeletonName} />
         <SkeletonBlock style={styles.profileSkeletonHandle} />
@@ -102,7 +117,7 @@ export function ProfileSkeleton() {
         </View>
         <SkeletonBlock style={styles.profileSkeletonBio} />
         <SkeletonBlock style={styles.profileSkeletonButton} />
-        <View style={styles.profileSkeletonStats}>
+        <View style={[styles.profileSkeletonStats, { backgroundColor: colors.surfaceRaised }]}>
           {[0, 1, 2].map((item) => (
             <View key={item} style={styles.profileSkeletonStat}>
               <SkeletonBlock style={styles.profileSkeletonStatValue} />
@@ -117,7 +132,7 @@ export function ProfileSkeleton() {
         <SkeletonBlock style={styles.profileSkeletonLink} />
       </View>
       <SkeletonBlock style={styles.profileSkeletonTabs} />
-      <View style={styles.profileSkeletonPost}>
+      <View style={[styles.profileSkeletonPost, { backgroundColor: colors.surface }]}>
         <View style={styles.profileSkeletonPostHeader}>
           <SkeletonBlock style={styles.profileSkeletonPostAvatar} />
           <View style={styles.profileSkeletonPostCopy}>
