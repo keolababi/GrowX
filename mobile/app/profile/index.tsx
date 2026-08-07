@@ -18,18 +18,20 @@ import { GlobalSearchButton } from '@/components/GlobalSearchButton';
 import { Icon } from '@/components/ui/Icon';
 import { PostCard } from '@/components/ui/PostCard';
 import { Tabs } from '@/components/ui/Tabs';
+import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { EmptyState, ProfileSkeleton } from '@/components/ui/ContentState';
 import { design } from '@/constants/design';
 import { useUser } from '@/providers/UserProvider';
 import { useEngagementStore } from '@/store/engagementStore';
 import { api } from '@/services/api';
 import type { SocialPost } from '@/types/post';
+import type { Reel } from '@/types/reel';
 import type { SocialProfile } from '@/types/social';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
-const profileTabs = ['Пост', 'Дахин нийтэлсэн', 'Хадгалсан'];
+const profileTabs = ['Пост', 'Reel', 'Дахин', 'Хадгалсан'];
 
 const lime = '#9AF000';
 
@@ -40,6 +42,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [allPosts, setAllPosts] = useState<SocialPost[]>([]);
+  const [reels, setReels] = useState<Reel[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,20 +52,23 @@ export default function ProfileScreen() {
   const toggleSave = useEngagementStore((state) => state.toggleSave);
 
   useEffect(() => {
-    if (saved === '1') setTabIndex(2);
+    if (saved === '1') setTabIndex(3);
   }, [saved]);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const [{ data }, { data: postsData }, { data: allPostsData }] = await Promise.all([
-        api.get<SocialProfile>(`/users/${user.id}`),
-        api.get<{ posts: SocialPost[] }>(`/posts/user/${user.id}`),
-        api.get<{ posts: SocialPost[] }>('/posts'),
-      ]);
+      const [{ data }, { data: postsData }, { data: allPostsData }, { data: reelsData }] =
+        await Promise.all([
+          api.get<SocialProfile>(`/users/${user.id}`),
+          api.get<{ posts: SocialPost[] }>(`/posts/user/${user.id}`),
+          api.get<{ posts: SocialPost[] }>('/posts'),
+          api.get<{ reels: Reel[] }>('/media/reels/mine'),
+        ]);
       setProfile(data);
       setPosts(postsData.posts);
       setAllPosts(allPostsData.posts);
+      setReels(reelsData.reels);
       setError('');
     } catch (value) {
       setError(getApiError(value, 'Профайлыг авч чадсангүй.'));
@@ -122,9 +128,11 @@ export default function ProfileScreen() {
   const tabPosts =
     tabIndex === 0
       ? posts
-      : tabIndex === 1
+      : tabIndex === 2
         ? allPosts.filter((post) => repostedIds.has(post.id))
-        : allPosts.filter((post) => savedIds.has(post.id));
+        : tabIndex === 3
+          ? allPosts.filter((post) => savedIds.has(post.id))
+          : [];
 
   const emptyTab = [
     {
@@ -133,6 +141,13 @@ export default function ProfileScreen() {
       description: 'Санаа, сурсан зүйл эсвэл асуултаа GrowX community-той хуваалцаарай.',
       action: 'Post үүсгэх',
       route: '/posts/create' as Href,
+    },
+    {
+      icon: 'videocam-outline' as const,
+      title: 'Таны эхний Reel энд харагдана',
+      description: 'Босоо видеогоо оруулаад GrowX community-той хуваалцаарай.',
+      action: 'Reel оруулах',
+      route: { pathname: '/posts/create', params: { type: 'reel' } } as Href,
     },
     {
       icon: 'repeat-outline' as const,
@@ -318,6 +333,9 @@ export default function ProfileScreen() {
 
                 <View style={[styles.stats, { backgroundColor: colors.surfaceRaised }]}>
                   <Stat value={profile.counts.posts} label="Posts" />
+                  <Pressable onPress={() => setTabIndex(1)}>
+                    <Stat value={reels.length} label="Reels" />
+                  </Pressable>
                   <Pressable
                     onPress={() =>
                       router.push(
@@ -346,38 +364,74 @@ export default function ProfileScreen() {
                 <View className="mb-3 px-6">
                   <Tabs tabs={profileTabs} activeIndex={tabIndex} onChange={setTabIndex} />
                 </View>
-                {tabPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    author={post.author}
-                    timestamp={relativeTime(post.createdAt)}
-                    content={post.content}
-                    media={post.imageUrl ? [{ type: 'image', url: post.imageUrl }] : []}
-                    communityName={post.community?.name}
-                    likeCount={post.likeCount}
-                    commentCount={post.commentCount}
-                    likedByMe={post.likedByMe}
-                    isOwnPost={post.authorId === user?.id}
-                    reposted={repostedIds.has(post.id)}
-                    saved={savedIds.has(post.id)}
-                    onPressLike={() => void toggleLike(post)}
-                    onPressComment={() => router.push(`/posts/${post.id}`)}
-                    onToggleRepost={() => toggleRepost(post.id)}
-                    onToggleSave={() => toggleSave(post.id)}
-                    onEdit={() => router.push(`/posts/${post.id}/edit`)}
-                    onDelete={
-                      post.authorId === user?.id ? () => void deletePost(post.id) : undefined
-                    }
-                  />
-                ))}
-                {!tabPosts.length && (
-                  <EmptyState
-                    icon={emptyTab.icon}
-                    title={emptyTab.title}
-                    description={emptyTab.description}
-                    actionLabel={emptyTab.action}
-                    onAction={() => router.push(emptyTab.route)}
-                  />
+                {tabIndex === 1 ? (
+                  reels.length ? (
+                    <>
+                      <View style={styles.reelSectionHeader}>
+                        <Text style={[styles.reelCount, { color: colors.muted }]}>
+                          {reels.length} Reel
+                        </Text>
+                        <Pressable
+                          onPress={() => router.push('/reels/mine')}
+                          style={styles.viewAllReels}
+                        >
+                          <Text style={[styles.viewAllReelsText, { color: colors.primary }]}>
+                            Бүгдийг үзэх
+                          </Text>
+                          <Icon name="chevron-forward" size={16} color={iconAccent} />
+                        </Pressable>
+                      </View>
+                      <View style={styles.reelGrid}>
+                        {reels.slice(0, 6).map((reel) => (
+                          <ProfileReelCard key={reel.id} reel={reel} />
+                        ))}
+                      </View>
+                    </>
+                  ) : (
+                    <EmptyState
+                      icon={emptyTab.icon}
+                      title={emptyTab.title}
+                      description={emptyTab.description}
+                      actionLabel={emptyTab.action}
+                      onAction={() => router.push(emptyTab.route)}
+                    />
+                  )
+                ) : (
+                  <>
+                    {tabPosts.map((post) => (
+                      <PostCard
+                        key={post.id}
+                        author={post.author}
+                        timestamp={relativeTime(post.createdAt)}
+                        content={post.content}
+                        media={post.imageUrl ? [{ type: 'image', url: post.imageUrl }] : []}
+                        communityName={post.community?.name}
+                        likeCount={post.likeCount}
+                        commentCount={post.commentCount}
+                        likedByMe={post.likedByMe}
+                        isOwnPost={post.authorId === user?.id}
+                        reposted={repostedIds.has(post.id)}
+                        saved={savedIds.has(post.id)}
+                        onPressLike={() => void toggleLike(post)}
+                        onPressComment={() => router.push(`/posts/${post.id}`)}
+                        onToggleRepost={() => toggleRepost(post.id)}
+                        onToggleSave={() => toggleSave(post.id)}
+                        onEdit={() => router.push(`/posts/${post.id}/edit`)}
+                        onDelete={
+                          post.authorId === user?.id ? () => void deletePost(post.id) : undefined
+                        }
+                      />
+                    ))}
+                    {!tabPosts.length && (
+                      <EmptyState
+                        icon={emptyTab.icon}
+                        title={emptyTab.title}
+                        description={emptyTab.description}
+                        actionLabel={emptyTab.action}
+                        onAction={() => router.push(emptyTab.route)}
+                      />
+                    )}
+                  </>
                 )}
               </View>
             </>
@@ -396,6 +450,32 @@ function Stat({ value, label }: { value: number; label: string }) {
     <View style={styles.stat}>
       <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text>
+    </View>
+  );
+}
+
+function ProfileReelCard({ reel }: { reel: Reel }) {
+  const { colors } = useColorMode();
+  return (
+    <View
+      style={[styles.reelCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    >
+      <VideoPlayer source={reel.videoUrl} aspectRatio={9 / 16} loop />
+      <View style={styles.reelMeta}>
+        <Text numberOfLines={2} style={[styles.reelCaption, { color: colors.text }]}>
+          {reel.caption || 'Тайлбаргүй Reel'}
+        </Text>
+        <View style={styles.reelStats}>
+          <View style={styles.reelStat}>
+            <Icon name="heart-outline" size={14} color={colors.muted} />
+            <Text style={[styles.reelStatText, { color: colors.muted }]}>{reel.likeCount}</Text>
+          </View>
+          <View style={styles.reelStat}>
+            <Icon name="chatbubble-outline" size={14} color={colors.muted} />
+            <Text style={[styles.reelStatText, { color: colors.muted }]}>{reel.commentCount}</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -520,4 +600,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   postsTitle: { color: '#F4F7F6', fontSize: 20, fontWeight: '900' },
+  reelSectionHeader: {
+    minHeight: 38,
+    paddingHorizontal: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  reelCount: { fontSize: 12, fontWeight: '700' },
+  viewAllReels: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingVertical: 8 },
+  viewAllReelsText: { fontSize: 12, fontWeight: '900' },
+  reelGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  reelCard: {
+    width: '48.5%',
+    overflow: 'hidden',
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  reelMeta: { paddingHorizontal: 10, paddingVertical: 10 },
+  reelCaption: { minHeight: 36, fontSize: 12, lineHeight: 17, fontWeight: '700' },
+  reelStats: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
+  reelStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  reelStatText: { fontSize: 10, fontWeight: '700' },
 });
