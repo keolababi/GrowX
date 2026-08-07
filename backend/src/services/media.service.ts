@@ -127,11 +127,30 @@ function serializeReel(reel: {
 }
 
 export async function listReels(viewerId: string) {
-  const reels = await prisma.reel.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: reelInclude(viewerId),
+  const [reels, following] = await Promise.all([
+    prisma.reel.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: reelInclude(viewerId),
+    }),
+    prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } }),
+  ]);
+  const followingIds = new Set(following.map((row) => row.followingId));
+  const now = Date.now();
+  const ranked = reels.sort((a, b) => {
+    const score = (reel: (typeof reels)[number]) => {
+      const ageHours = Math.max(0, (now - reel.createdAt.getTime()) / 3_600_000);
+      const relationshipBoost = followingIds.has(reel.authorId)
+        ? 120
+        : reel.authorId === viewerId
+          ? 90
+          : 0;
+      const engagement = reel._count.likes * 3 + reel._count.comments * 5;
+      return relationshipBoost + engagement + Math.max(0, 72 - ageHours);
+    };
+    return score(b) - score(a) || b.createdAt.getTime() - a.createdAt.getTime();
   });
-  return { reels: reels.map(serializeReel) };
+  return { reels: ranked.slice(0, 50).map(serializeReel) };
 }
 
 export async function listMyReels(viewerId: string) {

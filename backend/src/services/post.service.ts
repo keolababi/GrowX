@@ -98,13 +98,31 @@ async function requirePostAccess(userId: string, postId: string) {
 }
 
 export async function listPosts(userId: string) {
-  const posts = await prisma.post.findMany({
-    where: visibleToUserWhere(userId),
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-    include: postInclude(userId),
+  const [posts, following] = await Promise.all([
+    prisma.post.findMany({
+      where: visibleToUserWhere(userId),
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: postInclude(userId),
+    }),
+    prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } }),
+  ]);
+  const followingIds = new Set(following.map((row) => row.followingId));
+  const now = Date.now();
+  const ranked = posts.sort((a, b) => {
+    const score = (post: (typeof posts)[number]) => {
+      const ageHours = Math.max(0, (now - post.createdAt.getTime()) / 3_600_000);
+      const relationshipBoost = followingIds.has(post.authorId)
+        ? 120
+        : post.authorId === userId
+          ? 90
+          : 0;
+      const engagement = post._count.likes * 3 + post._count.comments * 5;
+      return relationshipBoost + engagement + Math.max(0, 72 - ageHours);
+    };
+    return score(b) - score(a) || b.createdAt.getTime() - a.createdAt.getTime();
   });
-  return { posts: posts.map(serializePost) };
+  return { posts: ranked.slice(0, 50).map(serializePost) };
 }
 
 export async function listUserPosts(viewerId: string, authorId: string) {
