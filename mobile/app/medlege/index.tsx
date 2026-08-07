@@ -236,6 +236,11 @@ export default function KnowledgeScreen() {
       icon: 'people-outline',
       onPress: () => router.push('/community'),
     },
+    {
+      label: 'Feedback',
+      icon: 'chatbox-ellipses-outline',
+      onPress: () => router.push('/feedback'),
+    },
   ];
 
   return (
@@ -317,6 +322,7 @@ export default function KnowledgeScreen() {
                 onPress={shortcut.onPress}
                 style={({ pressed }) => [
                   styles.shortcutCard,
+                  compact && styles.shortcutCardCompact,
                   { backgroundColor: colors.surface, borderColor: colors.border },
                   pressed && styles.cardPressed,
                 ]}
@@ -571,7 +577,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   progressCircleCompact: { width: 102, height: 102, borderRadius: 51, borderWidth: 10 },
-  shortcutGrid: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 },
   shortcutCard: {
     flex: 1,
     minWidth: 0,
@@ -585,6 +591,7 @@ const styles = StyleSheet.create({
     gap: 9,
     paddingHorizontal: 5,
   },
+  shortcutCardCompact: { flexBasis: '30%', minWidth: '30%' },
   shortcutLabel: { color: '#C8D1CD', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   cardPressed: { opacity: 0.72, transform: [{ scale: 0.993 }] },
   categoryList: { gap: 9, paddingVertical: 22 },
