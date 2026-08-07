@@ -1,29 +1,17 @@
 import BrandLogo from '../assets/growx-logo.svg';
-import { View } from 'react-native';
+import GrapeBrandLogo from '../assets/growx-logo-grape.svg';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export function GrowXMark({ size = 72 }: { size?: number }) {
   const { isDark } = useColorMode();
+  const Mark = isDark ? BrandLogo : GrapeBrandLogo;
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: isDark ? 'transparent' : '#FFFFFF',
-        boxShadow: isDark ? undefined : '0 8px 24px rgba(18, 31, 25, 0.10)',
-      }}
-    >
-      <BrandLogo
-        width={isDark ? size : size * 0.88}
-        height={isDark ? size : size * 0.88}
-        preserveAspectRatio="xMidYMid meet"
-        accessibilityLabel="GrowX тэмдэг"
-        style={isDark ? undefined : ({ filter: 'grayscale(1) brightness(0.16)' } as never)}
-      />
-    </View>
+    <Mark
+      width={size}
+      height={size}
+      preserveAspectRatio="xMidYMid meet"
+      accessibilityLabel="GrowX тэмдэг"
+    />
   );
 }
 
@@ -38,14 +26,14 @@ export function GrowXLogo({
   const onDarkBackground = appearance === 'dark' || (appearance === 'auto' && isDark);
   const width = compact ? 180 : 300;
   const height = compact ? 120 : 255;
+  const Mark = onDarkBackground ? BrandLogo : GrapeBrandLogo;
 
   return (
-    <BrandLogo
+    <Mark
       width={width}
       height={height}
       preserveAspectRatio="xMidYMid meet"
       accessibilityLabel="GrowX"
-      style={onDarkBackground ? undefined : ({ filter: 'grayscale(1) brightness(0.16)' } as never)}
     />
   );
 }

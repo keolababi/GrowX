@@ -59,8 +59,8 @@ const lightColors: AppModeColors = {
   text: '#111111',
   textSecondary: '#454545',
   muted: '#7A7A76',
-  primary: '#171717',
-  primaryPressed: '#000000',
+  primary: '#8a2be2',
+  primaryPressed: '#6e22b5',
   ink: '#FFFFFF',
   danger: '#D94848',
 };
@@ -81,9 +81,9 @@ const darkVariableValues = {
 };
 
 const lightVariableValues = {
-  '--brand-primary': '23 23 23',
-  '--brand-primary-dark': '0 0 0',
-  '--brand-accent': '45 45 45',
+  '--brand-primary': '138 43 226',
+  '--brand-primary-dark': '110 34 181',
+  '--brand-accent': '138 43 226',
   '--text-primary': '17 17 17',
   '--text-secondary': '69 69 69',
   '--text-muted': '122 122 118',
