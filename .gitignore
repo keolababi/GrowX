@@ -33,3 +33,5 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+.vercel
+.env*
