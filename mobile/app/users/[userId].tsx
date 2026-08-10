@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Linking,
@@ -16,6 +15,7 @@ import {
 import { api } from '@/services/api';
 import { PostCard } from '@/components/ui/PostCard';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import type { SocialProfile } from '@/types/social';
 import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
@@ -25,7 +25,7 @@ import { useColorMode } from '@/providers/ColorModeProvider';
 const lime = '#9AF000';
 
 export default function PublicUserProfileScreen() {
-  const { iconAccent, colors } = useColorMode();
+  const { colors } = useColorMode();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -142,7 +142,7 @@ export default function PublicUserProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={iconAccent} style={styles.loader} />
+        <Loader size={32} style={styles.loader} />
       </SafeAreaView>
     );
   }

@@ -89,7 +89,7 @@ function LessonCard({
   featured?: boolean;
   compact?: boolean;
 }) {
-  const { iconAccent, colors } = useColorMode();
+  const { colors } = useColorMode();
   return (
     <Pressable
       onPress={() => router.push(`/medlege/${lesson.id}`)}
@@ -108,10 +108,8 @@ function LessonCard({
             compact && styles.lessonArtworkCompact,
           ]}
         >
-          <View style={[styles.targetOuter, { borderColor: colors.borderStrong }]}>
-            <View style={[styles.targetMiddle, { borderColor: colors.primary }]}>
-              <Icon name="trending-up" size={35} color={iconAccent} />
-            </View>
+          <View style={[styles.targetMiddle, { borderColor: colors.primary }]}>
+            <Icon name="trending-up" size={35} color={colors.primary} />
           </View>
         </View>
       )}
@@ -304,7 +302,7 @@ export default function KnowledgeScreen() {
               <View
                 style={[
                   styles.progressCircle,
-                  { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+                  { backgroundColor: colors.surface, borderColor: colors.primary },
                   compact && styles.progressCircleCompact,
                 ]}
               >
@@ -638,19 +636,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   lessonArtworkCompact: { width: 92, height: 136 },
-  targetOuter: {
-    width: 105,
-    height: 105,
-    borderRadius: 53,
-    borderWidth: 2,
-    borderColor: '#345847',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   targetMiddle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     borderWidth: 2,
     borderColor: lime,
     alignItems: 'center',

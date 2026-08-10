@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
@@ -58,7 +59,7 @@ export default function FeedbackFormsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={lime} size="large" />
+          <Loader size={44} />
           <Text className="mt-s text-sm text-text-muted">Асуулгуудыг ачаалж байна...</Text>
         </View>
       ) : (

@@ -1,15 +1,20 @@
-import BrandLogo from '../assets/growx-logo.svg';
-import GrapeBrandLogo from '../assets/growx-logo-grape.svg';
+import { Image } from 'react-native';
 import { useColorMode } from '@/providers/ColorModeProvider';
+
+// React Native resolves static image dimensions from literal require calls.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const BrandLogo = require('../assets/growx-logo.png');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const GrapeBrandLogo = require('../assets/growx-logo-grape.png');
 
 export function GrowXMark({ size = 72 }: { size?: number }) {
   const { isDark } = useColorMode();
   const Mark = isDark ? BrandLogo : GrapeBrandLogo;
   return (
-    <Mark
-      width={size}
-      height={size}
-      preserveAspectRatio="xMidYMid meet"
+    <Image
+      source={Mark}
+      style={{ width: size, height: size }}
+      resizeMode="contain"
       accessibilityLabel="GrowX тэмдэг"
     />
   );
@@ -29,10 +34,10 @@ export function GrowXLogo({
   const Mark = onDarkBackground ? BrandLogo : GrapeBrandLogo;
 
   return (
-    <Mark
-      width={width}
-      height={height}
-      preserveAspectRatio="xMidYMid meet"
+    <Image
+      source={Mark}
+      style={{ width, height }}
+      resizeMode="contain"
       accessibilityLabel="GrowX"
     />
   );

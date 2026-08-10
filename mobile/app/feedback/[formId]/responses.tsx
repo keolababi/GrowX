@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { AppPageHeader } from '@/components/AppPageHeader';
+import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackResponsesPayload } from '@/types/feedback';
-import { useColorMode } from '@/providers/ColorModeProvider';
 
 function QuestionSummary({
   question,
@@ -94,7 +94,6 @@ function QuestionSummary({
 }
 
 export default function FeedbackResponsesScreen() {
-  const { iconAccent: lime } = useColorMode();
   const { formId } = useLocalSearchParams<{ formId: string }>();
   const [data, setData] = useState<FeedbackResponsesPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -115,7 +114,7 @@ export default function FeedbackResponsesScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={lime} size="large" />
+          <Loader size={44} />
         </View>
       ) : (
         <ScrollView

@@ -1,20 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import axios from 'axios';
-import {
-  ActivityIndicator,
-  Image,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Platform, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { Tag } from '@/components/ui/Tag';
 import { api } from '@/services/api';
@@ -326,7 +318,7 @@ export default function DiscoverScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={iconAccent} size="large" />
+          <Loader size={44} />
           <Text className="mt-s text-xs text-text-muted">Хайж байна...</Text>
         </View>
       ) : (

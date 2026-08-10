@@ -1,16 +1,9 @@
 import { useEffect, useRef } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { design } from '@/constants/design';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from './Icon';
+import { Loader } from './Loader';
 
 type EmptyStateProps = {
   icon?: React.ComponentProps<typeof Icon>['name'];
@@ -60,7 +53,7 @@ export function LoadingState({ label = 'Уншиж байна...' }: { label?: s
   return (
     <View style={styles.loading} accessibilityRole="progressbar">
       <View style={styles.loadingIcon}>
-        <ActivityIndicator color={colors.primary} />
+        <Loader size={34} />
       </View>
       <Text style={[styles.loadingLabel, { color: colors.muted }]}>{label}</Text>
       <View style={[styles.skeletonCard, { backgroundColor: colors.surface }]}>
@@ -197,6 +190,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: design.layout.feedWidth,
     alignSelf: 'center',
+    justifyContent: 'center',
     padding: design.layout.pagePadding,
   },
   loadingIcon: { height: 38, alignItems: 'center', justifyContent: 'center' },

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Platform,
@@ -18,6 +17,7 @@ import {
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { GlobalSearchButton } from '@/components/GlobalSearchButton';
+import { Loader } from '@/components/ui/Loader';
 import { PostCard, type PostCardAuthor } from '@/components/ui/PostCard';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { api } from '@/services/api';
@@ -226,7 +226,7 @@ export default function PostsScreen() {
         }
       />
 
-      <View className="w-full max-w-[680px] self-center bg-background-paper px-l py-s">
+      <View className="w-full max-w-[680px] self-center px-l py-s">
         <SegmentedControl
           options={tabs}
           selectedIndex={0}
@@ -238,7 +238,7 @@ export default function PostsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={accent} size="large" />
+          <Loader size={44} />
         </View>
       ) : (
         <ScrollView

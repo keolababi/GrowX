@@ -3,7 +3,6 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Slider from '@react-native-community/slider';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -22,6 +21,7 @@ import { NavigationBackButton } from '@/components/NavigationBackButton';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { Reel, ReelComment } from '@/types/reel';
@@ -653,7 +653,6 @@ function ReelCard({
 }
 
 export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
-  const { iconAccent } = useColorMode();
   const { height } = useWindowDimensions();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -785,7 +784,7 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={iconAccent} />
+          <Loader size={32} />
         </View>
       ) : (
         <FlatList

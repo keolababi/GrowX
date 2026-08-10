@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import {
-  ActivityIndicator,
   Image,
   Platform,
   Pressable,
@@ -22,6 +21,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { TextInput } from '@/components/ui/TextInput';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
@@ -499,7 +499,7 @@ export default function MentorScreen() {
 
             {loading ? (
               <View className="min-h-0 flex-1 items-center justify-center">
-                <ActivityIndicator color={lime} size="large" />
+                <Loader size={44} />
               </View>
             ) : (
               <ScrollView
@@ -544,7 +544,7 @@ export default function MentorScreen() {
             </View>
             {requestsLoading ? (
               <View className="flex-1 items-center justify-center">
-                <ActivityIndicator color={lime} size="large" />
+                <Loader size={44} />
               </View>
             ) : (
               <ScrollView
