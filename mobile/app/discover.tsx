@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import axios from 'axios';
-import { Image, Platform, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import {
+  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -302,6 +311,8 @@ export default function DiscoverScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="Хүн, групп, пост, хичээл, подкаст хайх"
+            autoFocus
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
           <View className="mt-s flex-row flex-wrap gap-xs px-1 pb-1">
             {categories.map((item) => (

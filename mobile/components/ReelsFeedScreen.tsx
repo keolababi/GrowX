@@ -3,9 +3,11 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Slider from '@react-native-community/slider';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Linking,
   Platform,
   Pressable,
@@ -346,6 +348,7 @@ function ReelCard({
   const { colors } = useColorMode();
   const { height: windowHeight } = useWindowDimensions();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const commentInputRef = useRef<TextInput>(null);
   const [commentDraft, setCommentDraft] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -425,6 +428,12 @@ function ReelCard({
     ]);
   };
 
+  useEffect(() => {
+    if (!commentsOpen) return;
+    const timer = setTimeout(() => commentInputRef.current?.focus(), 300);
+    return () => clearTimeout(timer);
+  }, [commentsOpen]);
+
   const closeComments = () => {
     setCommentsOpen(false);
     setActiveCommentMenuId(null);
@@ -503,7 +512,8 @@ function ReelCard({
       </View>
 
       <BottomSheet visible={commentsOpen} onClose={closeComments}>
-        <View
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="w-full max-w-[620px] self-center"
           style={{ height: Math.min(Math.max(windowHeight - 100, 480), 760) }}
         >
@@ -516,7 +526,11 @@ function ReelCard({
               <Icon name="close" size={24} color={colors.text} />
             </Pressable>
           </View>
-          <ScrollView className="min-h-0 flex-1" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="min-h-0 flex-1"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {reel.comments.map((comment: ReelComment) => (
               <View
                 key={comment.id}
@@ -629,6 +643,7 @@ function ReelCard({
             style={{ backgroundColor: colors.background }}
           >
             <TextInput
+              ref={commentInputRef}
               value={commentDraft}
               onChangeText={setCommentDraft}
               onSubmitEditing={() => void submitComment()}
@@ -640,13 +655,30 @@ function ReelCard({
               returnKeyType="send"
               className="h-12 flex-1 text-sm text-text-primary outline-none"
             />
-            <Pressable onPress={() => void submitComment()} hitSlop={8} className="outline-none">
-              <Text className="text-sm font-bold text-brand-primary">
-                {sendingComment ? '...' : 'Илгээх'}
-              </Text>
+            <Pressable
+              onPress={() => void submitComment()}
+              disabled={!commentDraft.trim() || sendingComment}
+              hitSlop={8}
+              className="outline-none"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: 8,
+                backgroundColor: colors.primary,
+                opacity: !commentDraft.trim() || sendingComment ? 0.35 : 1,
+              }}
+            >
+              {sendingComment ? (
+                <ActivityIndicator color={colors.ink} size="small" />
+              ) : (
+                <Icon name="send" size={16} color={colors.ink} />
+              )}
             </Pressable>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </BottomSheet>
     </View>
   );

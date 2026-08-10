@@ -10,6 +10,7 @@ chatRouter.get('/users', asyncHandler(chatController.searchUsers));
 chatRouter.get('/unread-count', asyncHandler(chatController.unreadCount));
 chatRouter.get('/', asyncHandler(chatController.list));
 chatRouter.post('/', asyncHandler(chatController.create));
+chatRouter.delete('/:conversationId', asyncHandler(chatController.remove));
 chatRouter.get('/:conversationId/messages', asyncHandler(chatController.messages));
 chatRouter.post('/:conversationId/messages', asyncHandler(chatController.send));
 chatRouter.patch('/:conversationId/messages/:messageId', asyncHandler(chatController.edit));
