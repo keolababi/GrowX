@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  ActivityIndicator,
   Image,
   Platform,
   Pressable,
@@ -17,6 +16,7 @@ import {
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import type { ChatUser, Conversation } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
@@ -229,7 +229,7 @@ export default function MessagesScreen() {
 
         {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
         {loading ? (
-          <ActivityIndicator color={iconAccent} style={styles.loader} />
+          <Loader size={32} style={styles.loader} />
         ) : (
           <ScrollView
             style={styles.scroll}
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   error: { color: '#FF7777', paddingHorizontal: 20, paddingVertical: 7 },
-  loader: { marginTop: 60 },
+  loader: { flex: 1 },
   scroll: { flex: 1, minHeight: 0 },
   list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 28, gap: 9 },
   row: {

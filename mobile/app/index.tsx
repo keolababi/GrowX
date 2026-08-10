@@ -1,10 +1,11 @@
 import { Redirect } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import { Loader } from '@/components/ui/Loader';
 import { useAuthStore } from '@/store/authStore';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function IndexScreen() {
-  const { colors, iconAccent } = useColorMode();
+  const { colors } = useColorMode();
   const token = useAuthStore((state) => state.token);
   const isHydrating = useAuthStore((state) => state.isHydrating);
   if (isHydrating) {
@@ -17,7 +18,7 @@ export default function IndexScreen() {
           justifyContent: 'center',
         }}
       >
-        <ActivityIndicator color={iconAccent} />
+        <Loader size={32} />
       </View>
     );
   }

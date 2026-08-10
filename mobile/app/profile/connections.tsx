@@ -1,27 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '@/services/api';
 import { useUser } from '@/providers/UserProvider';
 import type { SocialConnection } from '@/types/social';
 import { getApiError } from '@/utils/auth';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 
 type Tab = 'followers' | 'following';
 const lime = '#9AF000';
 
 export default function ConnectionsScreen() {
-  const { iconAccent, colors } = useColorMode();
+  const { colors } = useColorMode();
   const params = useLocalSearchParams<{ userId?: string; tab?: string }>();
   const { user } = useUser();
   const userId = params.userId || user?.id;
@@ -116,7 +108,7 @@ export default function ConnectionsScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={iconAccent} style={styles.loader} />
+        <Loader size={32} style={styles.loader} />
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
           {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
@@ -216,7 +208,7 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: lime },
   tabText: { color: '#A1ACA7', fontSize: 13, fontWeight: '800' },
   activeTabText: { color: '#142000' },
-  loader: { marginTop: 60 },
+  loader: { flex: 1 },
   scroll: { flex: 1 },
   list: { padding: 15, paddingBottom: 40 },
   error: { color: '#FF7777', padding: 12 },

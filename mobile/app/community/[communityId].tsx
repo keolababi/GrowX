@@ -21,6 +21,7 @@ import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import { useColorMode, type AppModeColors } from '@/providers/ColorModeProvider';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 
 type GroupTab = 'discussions' | 'articles' | 'members';
 
@@ -234,7 +235,7 @@ export default function CommunityDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={iconAccent} style={styles.loader} size="large" />
+        <Loader size={44} style={styles.loader} />
       </SafeAreaView>
     );
   }

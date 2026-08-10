@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   SafeAreaView,
@@ -18,6 +17,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { PostCard } from '@/components/ui/PostCard';
 import { Tabs } from '@/components/ui/Tabs';
 import type { SocialPost } from '@/types/post';
@@ -31,7 +31,7 @@ const tabOrder: Tab[] = ['groups', 'discussions', 'articles'];
 const tabLabels = ['Бүлгүүд', 'Хэлэлцүүлэг', 'Нийтлэл'];
 
 export default function CommunityScreen() {
-  const { iconAccent, colors } = useColorMode();
+  const { colors } = useColorMode();
   const { user } = useUser();
   const [tab, setTab] = useState<Tab>('groups');
   const [query, setQuery] = useState('');
@@ -166,7 +166,7 @@ export default function CommunityScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={iconAccent} size="large" />
+            <Loader size={44} />
           </View>
         ) : (
           <ScrollView

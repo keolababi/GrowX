@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { lessons as fallbackLessons } from '@/data/lessons';
 import { api } from '@/services/api';
@@ -11,7 +12,7 @@ import type { Lesson } from '@/types/learning';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function LessonDetailScreen() {
-  const { colors, iconAccent } = useColorMode();
+  const { colors } = useColorMode();
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const fallbackLesson = fallbackLessons.find((item) => item.id === lessonId);
   const [lesson, setLesson] = useState<Lesson | undefined>(fallbackLesson);
@@ -54,7 +55,7 @@ export default function LessonDetailScreen() {
   if (loading && !lesson) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background-app">
-        <ActivityIndicator color={iconAccent} size="large" />
+        <Loader size={44} />
       </SafeAreaView>
     );
   }

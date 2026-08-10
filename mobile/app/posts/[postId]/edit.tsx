@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,11 +15,12 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { SocialPost } from '@/types/post';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { Loader } from '@/components/ui/Loader';
 
 const lime = '#9AF000';
 
 export default function EditPostScreen() {
-  const { iconAccent, colors } = useColorMode();
+  const { colors } = useColorMode();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
   const [content, setContent] = useState('');
@@ -87,7 +87,7 @@ export default function EditPostScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={iconAccent} size="large" />
+            <Loader size={44} />
           </View>
         ) : (
           <View style={styles.editor}>

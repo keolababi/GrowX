@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Alert,
@@ -21,11 +20,12 @@ import type { PostComment, SocialPost } from '@/types/post';
 import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 
 const lime = '#9AF000';
 
 export default function PostCommentsScreen() {
-  const { iconAccent, colors } = useColorMode();
+  const { colors } = useColorMode();
   const { user } = useUser();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
@@ -184,7 +184,7 @@ export default function PostCommentsScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={iconAccent} size="large" />
+            <Loader size={44} />
           </View>
         ) : (
           <ScrollView

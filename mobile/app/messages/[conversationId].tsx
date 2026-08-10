@@ -21,6 +21,7 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
 import { useUser } from '@/providers/UserProvider';
 import { Icon } from '@/components/ui/Icon';
+import { Loader } from '@/components/ui/Loader';
 import { getSocket } from '@/services/socket';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
@@ -410,7 +411,7 @@ export default function ConversationScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={iconAccent} style={styles.loader} />
+          <Loader size={32} style={styles.loader} />
         ) : (
           <ScrollView
             ref={scrollRef}
