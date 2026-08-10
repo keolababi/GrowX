@@ -5,8 +5,7 @@ import { MessageUnreadBadge } from './MessageUnreadBadge';
 import { BottomSheet } from './ui/BottomSheet';
 import { Icon } from './ui/Icon';
 import { useColorMode } from '@/providers/ColorModeProvider';
-
-type NavSection = 'home' | 'knowledge' | 'messages' | 'profile';
+import { useTabPressStore, type NavSection } from '@/store/tabPressStore';
 
 function getActiveSection(firstSegment?: string): NavSection {
   if (firstSegment === 'medlege' || firstSegment === 'podcast') return 'knowledge';
@@ -22,6 +21,15 @@ export function AppBottomNav() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const { colors, isDark } = useColorMode();
   const inCommunity = segments[0] === 'community' && !!params.communityId;
+  const pressActiveTab = useTabPressStore((state) => state.pressActiveTab);
+
+  const goToTab = (section: NavSection, path: '/posts' | '/medlege' | '/messages' | '/profile') => {
+    if (active === section) {
+      pressActiveTab(section);
+      return;
+    }
+    router.replace(path);
+  };
 
   const openCreate = () => {
     if (segments[0] === 'community' && segments.length === 1) {
@@ -73,13 +81,13 @@ export function AppBottomNav() {
             active={active === 'home'}
             icon={active === 'home' ? 'home' : 'home-outline'}
             label="Нүүр"
-            onPress={() => router.replace('/posts')}
+            onPress={() => goToTab('home', '/posts')}
           />
           <NavItem
             active={active === 'knowledge'}
             icon={active === 'knowledge' ? 'school' : 'school-outline'}
             label="Мэдлэг"
-            onPress={() => router.replace('/medlege')}
+            onPress={() => goToTab('knowledge', '/medlege')}
           />
           <View
             className={`-mt-7 h-[72px] w-[72px] items-center justify-center rounded-avatar ${isDark ? 'bg-background-app' : 'bg-background-paper'}`}
@@ -102,13 +110,13 @@ export function AppBottomNav() {
             icon={active === 'messages' ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'}
             label="Мессеж"
             showUnread
-            onPress={() => router.replace('/messages')}
+            onPress={() => goToTab('messages', '/messages')}
           />
           <NavItem
             active={active === 'profile'}
             icon={active === 'profile' ? 'person' : 'person-outline'}
             label="Профайл"
-            onPress={() => router.replace('/profile')}
+            onPress={() => goToTab('profile', '/profile')}
           />
         </View>
       </SafeAreaView>

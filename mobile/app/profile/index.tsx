@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
+import { useTabPressStore } from '@/store/tabPressStore';
 import {
   Alert,
   Image,
@@ -82,6 +83,18 @@ export default function ProfileScreen() {
       void load();
     }, [load]),
   );
+
+  const scrollRef = useRef<ScrollView>(null);
+  const tabPress = useTabPressStore((state) => (state.section === 'profile' ? state.ts : 0));
+  const isFirstTabPressRef = useRef(true);
+  useEffect(() => {
+    if (isFirstTabPressRef.current) {
+      isFirstTabPressRef.current = false;
+      return;
+    }
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    void load();
+  }, [tabPress, load]);
 
   const applyLike = (items: SocialPost[], postId: string, patch: Partial<SocialPost>) =>
     items.map((item) => (item.id === postId ? { ...item, ...patch } : item));
@@ -191,6 +204,7 @@ export default function ProfileScreen() {
         <ProfileSkeleton />
       ) : (
         <ScrollView
+          ref={scrollRef}
           style={styles.scroll}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}

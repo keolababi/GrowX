@@ -88,8 +88,12 @@ export default function ConversationScreen() {
           otherLastReadAt: string | null;
           messages: ChatMessage[];
         }>(`/conversations/${conversationId}/messages`);
-        setOtherUser(data.otherUser);
-        setOtherLastReadAt(data.otherLastReadAt);
+        setOtherUser((current) =>
+          JSON.stringify(current) === JSON.stringify(data.otherUser) ? current : data.otherUser,
+        );
+        setOtherLastReadAt((current) =>
+          current === data.otherLastReadAt ? current : data.otherLastReadAt,
+        );
         setMessages((current) => {
           const serverClientIds = new Set(
             data.messages.map((message) => message.clientMessageId).filter(Boolean),
@@ -100,9 +104,10 @@ export default function ConversationScreen() {
               message.clientMessageId &&
               !serverClientIds.has(message.clientMessageId),
           );
-          return [...data.messages, ...localOnly].sort(
+          const next = [...data.messages, ...localOnly].sort(
             (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
           );
+          return JSON.stringify(current) === JSON.stringify(next) ? current : next;
         });
         setError('');
         void api.patch(`/conversations/${conversationId}/read`).catch(() => undefined);

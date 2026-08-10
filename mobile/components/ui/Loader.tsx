@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Animated, Easing, Platform, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export function Loader({ size = 32, style }: { size?: number; style?: StyleProp<ViewStyle> }) {
@@ -7,12 +7,13 @@ export function Loader({ size = 32, style }: { size?: number; style?: StyleProp<
   const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    rotation.setValue(0);
     const spin = Animated.loop(
       Animated.timing(rotation, {
         toValue: 1,
         duration: 800,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     );
     spin.start();

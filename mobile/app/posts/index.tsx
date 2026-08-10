@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { router, type Href } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useTabPressStore } from '@/store/tabPressStore';
 import {
   Alert,
   Image,
@@ -75,9 +76,11 @@ export default function PostsScreen() {
   const [busyIds, setBusyIds] = useState<string[]>([]);
 
   const loadPosts = useCallback(
-    async (refresh = false) => {
-      if (refresh) setRefreshing(true);
-      else setLoading(true);
+    async (refresh = false, silent = false) => {
+      if (!silent) {
+        if (refresh) setRefreshing(true);
+        else setLoading(true);
+      }
       setError('');
       try {
         const postsResponse = await api.get<{ posts: SocialPost[] }>('/posts');
@@ -106,6 +109,29 @@ export default function PostsScreen() {
   useEffect(() => {
     void loadPosts();
   }, [loadPosts]);
+
+  const hasFocusedOnceRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnceRef.current) {
+        hasFocusedOnceRef.current = true;
+        return;
+      }
+      void loadPosts(false, true);
+    }, [loadPosts]),
+  );
+
+  const scrollRef = useRef<ScrollView>(null);
+  const tabPress = useTabPressStore((state) => (state.section === 'home' ? state.ts : 0));
+  const isFirstTabPressRef = useRef(true);
+  useEffect(() => {
+    if (isFirstTabPressRef.current) {
+      isFirstTabPressRef.current = false;
+      return;
+    }
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    void loadPosts(true);
+  }, [tabPress, loadPosts]);
 
   const toggleLike = async (post: SocialPost) => {
     if (busyIds.includes(post.id)) return;
@@ -232,7 +258,12 @@ export default function PostsScreen() {
           options={tabs}
           selectedIndex={0}
           onChange={(index) => {
-            if (index === 1) router.push('/reels');
+            if (index === 1) {
+              router.push('/reels');
+              return;
+            }
+            scrollRef.current?.scrollTo({ y: 0, animated: true });
+            void loadPosts(true);
           }}
         />
       </View>
@@ -243,6 +274,7 @@ export default function PostsScreen() {
         </View>
       ) : (
         <ScrollView
+          ref={scrollRef}
           className="min-h-0 w-full max-w-[680px] flex-1 self-center"
           style={Platform.OS === 'web' ? webFeedScrollStyle : undefined}
           scrollEnabled

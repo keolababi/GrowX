@@ -26,6 +26,7 @@ import type { ChatUser, Conversation } from '@/types/chat';
 import { getApiError } from '@/utils/auth';
 import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useTabPressStore } from '@/store/tabPressStore';
 
 const lime = '#9AF000';
 const swipeForwardBackground = '#10251E';
@@ -196,7 +197,11 @@ export default function MessagesScreen() {
   const loadConversations = useCallback(async () => {
     try {
       const { data } = await api.get<{ conversations: Conversation[] }>('/conversations');
-      setConversations(data.conversations);
+      setConversations((current) =>
+        JSON.stringify(current) === JSON.stringify(data.conversations)
+          ? current
+          : data.conversations,
+      );
       setError('');
     } catch (value) {
       setError(getApiError(value, 'Chat жагсаалтыг авч чадсангүй.'));
@@ -216,7 +221,9 @@ export default function MessagesScreen() {
   const loadPresenceUsers = useCallback(async () => {
     try {
       const { data } = await api.get<{ users: ChatUser[] }>('/conversations/users');
-      setPresenceUsers(data.users);
+      setPresenceUsers((current) =>
+        JSON.stringify(current) === JSON.stringify(data.users) ? current : data.users,
+      );
     } catch {
       // Conversation list errors are displayed separately; presence is supplemental.
     }
@@ -233,6 +240,18 @@ export default function MessagesScreen() {
       return () => clearInterval(timer);
     }, [loadConversations, loadPresenceUsers]),
   );
+
+  const conversationsScrollRef = useRef<ScrollView>(null);
+  const tabPress = useTabPressStore((state) => (state.section === 'messages' ? state.ts : 0));
+  const isFirstTabPressRef = useRef(true);
+  useEffect(() => {
+    if (isFirstTabPressRef.current) {
+      isFirstTabPressRef.current = false;
+      return;
+    }
+    conversationsScrollRef.current?.scrollTo({ y: 0, animated: true });
+    void loadConversations();
+  }, [tabPress, loadConversations]);
 
   useEffect(() => {
     if (!newChatOpen) return;
@@ -419,6 +438,7 @@ export default function MessagesScreen() {
           <Loader size={32} style={styles.loader} />
         ) : (
           <ScrollView
+            ref={conversationsScrollRef}
             style={styles.scroll}
             contentContainerStyle={styles.list}
             maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
