@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import {
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { design } from '@/constants/design';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from './Icon';
@@ -79,10 +87,11 @@ function SkeletonBlock({ style }: { style?: ViewStyle | ViewStyle[] }) {
   const opacity = useRef(new Animated.Value(0.42)).current;
 
   useEffect(() => {
+    const useNativeDriver = Platform.OS !== 'web';
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 0.9, duration: 720, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.42, duration: 720, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.9, duration: 720, useNativeDriver }),
+        Animated.timing(opacity, { toValue: 0.42, duration: 720, useNativeDriver }),
       ]),
     );
     animation.start();

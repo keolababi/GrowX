@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, Stack } from 'expo-router';
+import { useTabPressStore } from '@/store/tabPressStore';
 import {
   Platform,
   Pressable,
@@ -182,20 +183,32 @@ export default function KnowledgeScreen() {
     void hydrate();
   }, [hydrate]);
 
-  useEffect(() => {
-    let active = true;
-    void api
+  const loadLessons = useCallback(() => {
+    return api
       .get<{ lessons: Lesson[] }>('/lessons')
       .then(({ data }) => {
-        if (active && data.lessons.length) setLessonCatalog(data.lessons);
+        if (data.lessons.length) setLessonCatalog(data.lessons);
       })
       .catch(() => {
         // Keep bundled lessons available when the API is temporarily offline.
       });
-    return () => {
-      active = false;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadLessons();
+  }, [loadLessons]);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const tabPress = useTabPressStore((state) => (state.section === 'knowledge' ? state.ts : 0));
+  const isFirstTabPressRef = useRef(true);
+  useEffect(() => {
+    if (isFirstTabPressRef.current) {
+      isFirstTabPressRef.current = false;
+      return;
+    }
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    void loadLessons();
+  }, [tabPress, loadLessons]);
 
   const completedCount = lessonCatalog.filter((lesson) => completedIds.has(lesson.id)).length;
   const progress = lessonCatalog.length
@@ -245,6 +258,7 @@ export default function KnowledgeScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
+        ref={scrollRef}
         style={[styles.scroll, Platform.OS === 'web' && webKnowledgeScrollStyle]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

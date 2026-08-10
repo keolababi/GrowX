@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import {
   Image,
@@ -41,8 +41,10 @@ export default function CommunityScreen() {
   const [error, setError] = useState('');
   const defaultCommunityId = communities.find((community) => community.joinedByMe)?.id;
 
+  const hasLoadedRef = useRef(false);
+
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedRef.current) setLoading(true);
     setError('');
     try {
       const [postResponse, communityResponse] = await Promise.all([
@@ -51,6 +53,7 @@ export default function CommunityScreen() {
       ]);
       setPosts(postResponse.data.posts);
       setCommunities(communityResponse.data.communities);
+      hasLoadedRef.current = true;
     } catch (value) {
       setError(getApiError(value, 'Community мэдээллийг ачаалж чадсангүй.'));
     } finally {

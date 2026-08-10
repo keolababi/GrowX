@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
@@ -56,13 +56,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     [setUser, signIn],
   );
 
-  return (
-    <UserContext.Provider
-      value={{ user, token, loading: isHydrating, saveSession, refreshUser, logout }}
-    >
-      {children}
-    </UserContext.Provider>
+  const value = useMemo(
+    () => ({ user, token, loading: isHydrating, saveSession, refreshUser, logout }),
+    [user, token, isHydrating, saveSession, refreshUser, logout],
   );
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
 export function useUser() {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import {
   Image,
@@ -288,9 +288,12 @@ export default function MentorScreen() {
   const [composerSending, setComposerSending] = useState(false);
   const [composerError, setComposerError] = useState('');
 
+  const hasLoadedUsersRef = useRef(false);
+  const hasLoadedRequestsRef = useRef(false);
+
   const loadUsers = useCallback(
     async (search = '') => {
-      setLoading(true);
+      if (!hasLoadedUsersRef.current) setLoading(true);
       setError('');
       try {
         const [usersResponse, followingResponse] = await Promise.all([
@@ -302,6 +305,7 @@ export default function MentorScreen() {
             : Promise.resolve(null),
         ]);
         setUsers(usersResponse.data.users);
+        hasLoadedUsersRef.current = true;
         if (followingResponse) {
           setFollowingIds(new Set(followingResponse.data.users.map((item) => item.id)));
         }
@@ -315,7 +319,7 @@ export default function MentorScreen() {
   );
 
   const loadRequests = useCallback(async () => {
-    setRequestsLoading(true);
+    if (!hasLoadedRequestsRef.current) setRequestsLoading(true);
     try {
       const [receivedResponse, sentResponse] = await Promise.all([
         api.get<{ requests: CollaborationRequest[] }>('/collaborations/received'),
@@ -323,6 +327,7 @@ export default function MentorScreen() {
       ]);
       setReceived(receivedResponse.data.requests);
       setSent(sentResponse.data.requests);
+      hasLoadedRequestsRef.current = true;
     } catch {
       // silently ignore; requests tab shows empty state
     } finally {
