@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import {
+  Alert,
+  Animated,
   Image,
+  Modal,
+  PanResponder,
   Platform,
   Pressable,
   RefreshControl,
@@ -24,6 +28,7 @@ import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
+const SWIPE_ACTIONS_WIDTH = 148;
 const webScreenStyle = {
   height: '100vh',
   minHeight: '100vh',
@@ -36,6 +41,78 @@ function displayName(user: ChatUser | null) {
 
 function isUserActive(user: ChatUser | null) {
   return Boolean(user?.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 60_000);
+}
+
+function fullDate(value: string) {
+  return new Date(value).toLocaleString([], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function SwipeableRow({
+  id,
+  openId,
+  onOpenChange,
+  actions,
+  children,
+}: {
+  id: string;
+  openId: string | null;
+  onOpenChange: (id: string | null) => void;
+  actions: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const isOpen = openId === id;
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(translateX, {
+      toValue: isOpen ? -SWIPE_ACTIONS_WIDTH : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isOpen, translateX]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_evt, gesture) =>
+          Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+        onPanResponderMove: (_evt, gesture) => {
+          const base = isOpen ? -SWIPE_ACTIONS_WIDTH : 0;
+          const next = Math.min(0, Math.max(-SWIPE_ACTIONS_WIDTH, base + gesture.dx));
+          translateX.setValue(next);
+        },
+        onPanResponderRelease: (_evt, gesture) => {
+          const base = isOpen ? -SWIPE_ACTIONS_WIDTH : 0;
+          const current = base + gesture.dx;
+          onOpenChange(current < -SWIPE_ACTIONS_WIDTH / 2 ? id : null);
+        },
+        onPanResponderTerminate: () => {
+          Animated.timing(translateX, {
+            toValue: isOpen ? -SWIPE_ACTIONS_WIDTH : 0,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        },
+      }),
+    [id, isOpen, onOpenChange, translateX],
+  );
+
+  return (
+    <View style={styles.swipeWrap}>
+      <Animated.View {...panResponder.panHandlers} style={{ transform: [{ translateX }] }}>
+        {children}
+      </Animated.View>
+      <View style={styles.swipeActions} pointerEvents="box-none">
+        {actions}
+      </View>
+    </View>
+  );
 }
 
 function UserAvatar({ user }: { user: ChatUser | null }) {
@@ -73,6 +150,12 @@ export default function MessagesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const [forwardTarget, setForwardTarget] = useState<Conversation | null>(null);
+  const [forwardQuery, setForwardQuery] = useState('');
+  const [forwardUsers, setForwardUsers] = useState<ChatUser[]>([]);
+  const [forwardingId, setForwardingId] = useState<string | null>(null);
+  const [forwardError, setForwardError] = useState('');
 
   const loadConversations = useCallback(async () => {
     try {
@@ -123,6 +206,17 @@ export default function MessagesScreen() {
     return () => clearTimeout(timer);
   }, [loadUsers, newChatOpen, query]);
 
+  useEffect(() => {
+    if (!forwardTarget) return;
+    const timer = setTimeout(() => {
+      api
+        .get<{ users: ChatUser[] }>('/conversations/users', { params: { q: forwardQuery } })
+        .then(({ data }) => setForwardUsers(data.users))
+        .catch(() => setForwardUsers([]));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [forwardTarget, forwardQuery]);
+
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     if (!normalized || newChatOpen) return conversations;
@@ -145,6 +239,63 @@ export default function MessagesScreen() {
       router.push(`/messages/${data.conversationId}`);
     } catch (value) {
       setError(getApiError(value, 'Chat эхлүүлж чадсангүй.'));
+    }
+  };
+
+  const deleteConversation = (conversation: Conversation) => {
+    const proceed = async () => {
+      setOpenRowId(null);
+      const previous = conversations;
+      setConversations((current) => current.filter((item) => item.id !== conversation.id));
+      try {
+        await api.delete(`/conversations/${conversation.id}`);
+      } catch (value) {
+        setConversations(previous);
+        setError(getApiError(value, 'Chat устгаж чадсангүй.'));
+      }
+    };
+    const message = `${displayName(conversation.otherUser)}-тэй хийсэн chat-ыг устгах уу?`;
+    if (Platform.OS === 'web') {
+      if (globalThis.confirm(message)) void proceed();
+      return;
+    }
+    Alert.alert('Chat устгах', message, [
+      { text: 'Болих', style: 'cancel' },
+      { text: 'Устгах', style: 'destructive', onPress: () => void proceed() },
+    ]);
+  };
+
+  const openForward = (conversation: Conversation) => {
+    setOpenRowId(null);
+    setForwardError('');
+    setForwardQuery('');
+    setForwardUsers([]);
+    setForwardTarget(conversation);
+  };
+
+  const closeForward = () => {
+    setForwardTarget(null);
+    setForwardQuery('');
+    setForwardUsers([]);
+    setForwardError('');
+  };
+
+  const sendForward = async (recipientId: string) => {
+    const content = forwardTarget?.lastMessage?.content;
+    if (!content || forwardingId) return;
+    setForwardingId(recipientId);
+    setForwardError('');
+    try {
+      const { data } = await api.post<{ conversationId: string }>('/conversations', {
+        recipientId,
+      });
+      await api.post(`/conversations/${data.conversationId}/messages`, { content });
+      closeForward();
+      router.push(`/messages/${data.conversationId}`);
+    } catch (value) {
+      setForwardError(getApiError(value, 'Мессежийг дамжуулж чадсангүй.'));
+    } finally {
+      setForwardingId(null);
     }
   };
 
@@ -234,6 +385,7 @@ export default function MessagesScreen() {
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.list}
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -267,47 +419,96 @@ export default function MessagesScreen() {
                     <Icon name="chevron-forward" size={21} color={colors.muted} />
                   </Pressable>
                 ))
-              : filtered.map((conversation) => (
-                  <Pressable
-                    key={conversation.id}
-                    onPress={() => router.push(`/messages/${conversation.id}`)}
-                    style={({ pressed }) => [
-                      styles.row,
-                      pressed && { backgroundColor: colors.surfaceRaised },
-                    ]}
-                  >
-                    <UserAvatar user={conversation.otherUser} />
-                    <View style={styles.rowCopy}>
-                      <View style={styles.nameRow}>
-                        <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
-                          {displayName(conversation.otherUser)}
-                        </Text>
-                      </View>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.preview,
-                          { color: colors.muted },
-                          conversation.unreadCount > 0 && { color: colors.textSecondary },
+              : filtered.map((conversation) => {
+                  const isOpen = openRowId === conversation.id;
+                  return (
+                    <SwipeableRow
+                      key={conversation.id}
+                      id={conversation.id}
+                      openId={openRowId}
+                      onOpenChange={setOpenRowId}
+                      actions={
+                        <>
+                          <Pressable
+                            accessibilityLabel="Дамжуулах"
+                            disabled={!conversation.lastMessage?.content}
+                            onPress={() => openForward(conversation)}
+                            style={[styles.swipeAction, { backgroundColor: colors.primary }]}
+                          >
+                            <Icon name="arrow-redo-outline" size={20} color={colors.ink} />
+                            <Text style={[styles.swipeActionText, { color: colors.ink }]}>
+                              Дамжуулах
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            accessibilityLabel="Устгах"
+                            onPress={() => deleteConversation(conversation)}
+                            style={[styles.swipeAction, { backgroundColor: colors.danger }]}
+                          >
+                            <Icon name="trash-outline" size={20} color="#FFFFFF" />
+                            <Text style={[styles.swipeActionText, { color: '#FFFFFF' }]}>
+                              Устгах
+                            </Text>
+                          </Pressable>
+                        </>
+                      }
+                    >
+                      <Pressable
+                        onPress={() => {
+                          if (openRowId) {
+                            setOpenRowId(null);
+                            return;
+                          }
+                          router.push(`/messages/${conversation.id}`);
+                        }}
+                        style={({ pressed }) => [
+                          styles.row,
+                          { backgroundColor: colors.background },
+                          pressed && { backgroundColor: colors.surfaceRaised },
                         ]}
                       >
-                        {conversation.lastMessage?.content || 'Шинэ chat'}
-                      </Text>
-                    </View>
-                    <View style={styles.rowMeta}>
-                      <Text style={[styles.time, { color: colors.muted }]}>
-                        {relativeTime(conversation.updatedAt)}
-                      </Text>
-                      {conversation.unreadCount > 0 && (
-                        <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
-                          <Text style={[styles.unreadText, { color: colors.ink }]}>
-                            {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                        <UserAvatar user={conversation.otherUser} />
+                        <View style={styles.rowCopy}>
+                          <View style={styles.nameRow}>
+                            <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
+                              {displayName(conversation.otherUser)}
+                            </Text>
+                          </View>
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.preview,
+                              { color: colors.muted },
+                              conversation.unreadCount > 0 && { color: colors.textSecondary },
+                            ]}
+                          >
+                            {conversation.lastMessage?.content || 'Шинэ chat'}
                           </Text>
                         </View>
-                      )}
-                    </View>
-                  </Pressable>
-                ))}
+                        <View style={styles.rowMeta}>
+                          <Text
+                            style={[
+                              styles.time,
+                              { color: colors.muted },
+                              isOpen && styles.timeOpen,
+                            ]}
+                          >
+                            {isOpen
+                              ? fullDate(conversation.updatedAt)
+                              : relativeTime(conversation.updatedAt)}
+                          </Text>
+                          {conversation.unreadCount > 0 && (
+                            <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+                              <Text style={[styles.unreadText, { color: colors.ink }]}>
+                                {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </Pressable>
+                    </SwipeableRow>
+                  );
+                })}
 
             {((newChatOpen && !users.length) || (!newChatOpen && !filtered.length)) && (
               <View
@@ -336,6 +537,81 @@ export default function MessagesScreen() {
           </ScrollView>
         )}
       </View>
+
+      <Modal
+        visible={Boolean(forwardTarget)}
+        transparent
+        animationType="fade"
+        onRequestClose={closeForward}
+      >
+        <View style={styles.forwardBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeForward} />
+          <View style={[styles.forwardSheet, { backgroundColor: colors.surface }]}>
+            <View style={styles.forwardHeader}>
+              <Text style={[styles.forwardTitle, { color: colors.text }]}>Дамжуулах</Text>
+              <Pressable accessibilityLabel="Хаах" onPress={closeForward} hitSlop={8}>
+                <Icon name="close" size={22} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            {!!forwardTarget?.lastMessage?.content && (
+              <Text numberOfLines={2} style={[styles.forwardPreview, { color: colors.muted }]}>
+                “{forwardTarget.lastMessage.content}”
+              </Text>
+            )}
+            <View
+              style={[
+                styles.search,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  marginHorizontal: 0,
+                },
+              ]}
+            >
+              <Icon name="search-outline" size={20} color={colors.muted} />
+              <TextInput
+                value={forwardQuery}
+                onChangeText={setForwardQuery}
+                autoCapitalize="none"
+                placeholder="Нэр эсвэл и-мэйлээр хайх"
+                placeholderTextColor={colors.muted}
+                cursorColor={colors.primary}
+                selectionColor={colors.primary}
+                style={[styles.searchInput, { color: colors.text }]}
+              />
+            </View>
+            {!!forwardError && (
+              <Text style={[styles.error, { color: colors.danger }]}>{forwardError}</Text>
+            )}
+            <ScrollView style={styles.forwardList} keyboardShouldPersistTaps="handled">
+              {forwardUsers.map((user) => (
+                <Pressable
+                  key={user.id}
+                  disabled={Boolean(forwardingId)}
+                  onPress={() => void sendForward(user.id)}
+                  style={({ pressed }) => [
+                    styles.row,
+                    pressed && { backgroundColor: colors.surfaceRaised },
+                  ]}
+                >
+                  <UserAvatar user={user} />
+                  <View style={styles.rowCopy}>
+                    <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
+                      {displayName(user)}
+                    </Text>
+                    <Text style={[styles.preview, { color: colors.muted }]}>{user.email}</Text>
+                  </View>
+                  {forwardingId === user.id ? (
+                    <Loader size={18} />
+                  ) : (
+                    <Icon name="arrow-redo-outline" size={20} color={colors.muted} />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <AppBottomNav />
     </SafeAreaView>
@@ -462,6 +738,44 @@ const styles = StyleSheet.create({
   unreadPreview: { color: '#DCE5E1', fontWeight: '700' },
   rowMeta: { alignItems: 'flex-end', gap: 7, marginLeft: 8 },
   time: { color: '#6F7D77', fontSize: 11 },
+  timeOpen: { fontSize: 10, fontWeight: '700' },
+  swipeWrap: { borderRadius: 19, overflow: 'hidden' },
+  swipeActions: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    borderRadius: 19,
+    overflow: 'hidden',
+  },
+  swipeAction: {
+    width: 74,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  swipeActionText: { fontSize: 10, fontWeight: '800' },
+  forwardBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  forwardSheet: {
+    maxHeight: '80%',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 24,
+  },
+  forwardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  forwardTitle: { fontSize: 18, fontWeight: '900' },
+  forwardPreview: { fontSize: 12, marginBottom: 14 },
+  forwardList: { marginTop: 10 },
   unreadBadge: {
     minWidth: 20,
     height: 20,

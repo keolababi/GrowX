@@ -63,3 +63,9 @@ export async function markRead(req: Request, res: Response): Promise<void> {
   const { conversationId } = conversationIdSchema.parse(req.params);
   res.status(200).json(await chatService.markRead(req.auth!.userId, conversationId));
 }
+
+export async function remove(req: Request, res: Response): Promise<void> {
+  const { conversationId } = conversationIdSchema.parse(req.params);
+  await chatService.deleteConversation(req.auth!.userId, conversationId);
+  res.status(204).send();
+}

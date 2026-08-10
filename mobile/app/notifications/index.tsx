@@ -83,21 +83,12 @@ export default function NotificationsScreen() {
             style={({ pressed }) => [
               styles.readAllButton,
               { backgroundColor: colors.primary },
-              !hasUnread && styles.readAllDisabled,
               pressed &&
                 hasUnread && [styles.readAllPressed, { backgroundColor: colors.primaryPressed }],
             ]}
           >
-            <Icon name="checkmark-done" size={16} color={hasUnread ? colors.ink : colors.muted} />
-            <Text
-              style={[
-                styles.readAll,
-                { color: hasUnread ? colors.ink : colors.muted },
-                !hasUnread && styles.readAllDisabled,
-              ]}
-            >
-              Уншсан болгох
-            </Text>
+            <Icon name="checkmark-done" size={16} color="#FFFFFF" />
+            <Text style={[styles.readAll, { color: '#FFFFFF' }]}>Уншсан болгох</Text>
           </Pressable>
         }
       />
@@ -217,7 +208,6 @@ const styles = StyleSheet.create({
     backgroundColor: design.colors.primary,
   },
   readAll: { color: design.colors.ink, fontSize: 11, fontWeight: '900' },
-  readAllDisabled: { opacity: 0.45 },
   readAllPressed: { backgroundColor: design.colors.primaryPressed },
   filterShell: { borderBottomWidth: 1, borderBottomColor: design.colors.border },
   filterInner: {

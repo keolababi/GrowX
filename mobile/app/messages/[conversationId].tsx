@@ -192,6 +192,12 @@ export default function ConversationScreen() {
     return () => clearTimeout(timer);
   }, [editingMessage]);
 
+  useEffect(() => {
+    if (loading) return;
+    const timer = setTimeout(() => inputRef.current?.focus(), 200);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   const deliverMessage = async (pending: DeliveryMessage) => {
     if (!conversationId || !pending.clientMessageId) return;
     setSending(true);
@@ -572,6 +578,17 @@ export default function ConversationScreen() {
               multiline
               maxLength={4000}
               scrollEnabled
+              onKeyPress={(event) => {
+                if (Platform.OS !== 'web') return;
+                const nativeEvent = event.nativeEvent as unknown as {
+                  key: string;
+                  shiftKey?: boolean;
+                };
+                if (nativeEvent.key === 'Enter' && !nativeEvent.shiftKey) {
+                  event.preventDefault();
+                  void (editingMessage ? saveEdit() : send());
+                }
+              }}
               style={[
                 styles.input,
                 {

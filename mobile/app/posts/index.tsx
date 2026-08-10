@@ -17,6 +17,7 @@ import {
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { GlobalSearchButton } from '@/components/GlobalSearchButton';
+import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
 import { PostCard, type PostCardAuthor } from '@/components/ui/PostCard';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -247,6 +248,7 @@ export default function PostsScreen() {
           scrollEnabled
           contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -289,7 +291,7 @@ export default function PostsScreen() {
               saved={savedIds.has(post.id)}
               onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
               onPressLike={() => void toggleLike(post)}
-              onPressComment={() => router.push(`/posts/${post.id}`)}
+              onPressComment={() => router.push(`/posts/${post.id}?focusComment=1`)}
               onPressShare={() => void sharePost(post)}
               onToggleFollow={() => void toggleFollowAuthor(post.authorId)}
               onToggleRepost={() => toggleRepost(post.id)}
@@ -318,8 +320,22 @@ export default function PostsScreen() {
                       className="h-11 flex-1 text-sm text-text-primary"
                       style={{ color: colors.text, backgroundColor: colors.surface }}
                     />
-                    <Pressable onPress={() => void addComment(post.id)} hitSlop={8}>
-                      <Text className="text-sm font-bold text-brand-primary">Илгээх</Text>
+                    <Pressable
+                      onPress={() => void addComment(post.id)}
+                      disabled={!(commentDrafts[post.id] ?? '').trim()}
+                      hitSlop={8}
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 17,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginLeft: 4,
+                        backgroundColor: colors.primary,
+                        opacity: (commentDrafts[post.id] ?? '').trim() ? 1 : 0.35,
+                      }}
+                    >
+                      <Icon name="send" size={16} color={colors.ink} />
                     </Pressable>
                   </View>
                 </View>

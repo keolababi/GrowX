@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Alert,
@@ -27,7 +28,10 @@ const lime = '#9AF000';
 export default function PostCommentsScreen() {
   const { colors } = useColorMode();
   const { user } = useUser();
-  const { postId } = useLocalSearchParams<{ postId: string }>();
+  const { postId, focusComment } = useLocalSearchParams<{
+    postId: string;
+    focusComment?: string;
+  }>();
   const [post, setPost] = useState<SocialPost | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [draft, setDraft] = useState('');
@@ -191,6 +195,7 @@ export default function PostCommentsScreen() {
             style={styles.scroll}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {!!post && (
               <View
@@ -424,6 +429,7 @@ export default function PostCommentsScreen() {
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={() => void send()}
+            autoFocus={focusComment === '1'}
             placeholder="Сэтгэгдэл бичих..."
             placeholderTextColor={colors.muted}
             cursorColor={colors.primary}
@@ -438,16 +444,20 @@ export default function PostCommentsScreen() {
               },
             ]}
           />
-          <Pressable disabled={!draft.trim() || sending} onPress={() => void send()}>
-            <Text
-              style={[
-                styles.send,
-                { color: colors.primary },
-                (!draft.trim() || sending) && [styles.sendDisabled, { color: colors.muted }],
-              ]}
-            >
-              {sending ? '...' : 'Илгээх'}
-            </Text>
+          <Pressable
+            disabled={!draft.trim() || sending}
+            onPress={() => void send()}
+            style={[
+              styles.sendButton,
+              { backgroundColor: colors.primary },
+              (!draft.trim() || sending) && styles.sendDisabled,
+            ]}
+          >
+            {sending ? (
+              <ActivityIndicator color={colors.ink} size="small" />
+            ) : (
+              <Icon name="send" size={18} color={colors.ink} />
+            )}
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -644,6 +654,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A1B1C',
     fontSize: 14,
   },
-  send: { color: lime, fontSize: 13, fontWeight: '900', marginLeft: 12 },
-  sendDisabled: { color: '#45633C' },
+  sendButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  sendDisabled: { opacity: 0.35 },
 });

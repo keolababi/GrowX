@@ -91,27 +91,42 @@ export async function listConversations(userId: string) {
 
   return {
     conversations: await Promise.all(
-      conversations.map(async (conversation) => {
-        const currentMember = conversation.members.find((member) => member.userId === userId)!;
-        const otherMember = conversation.members.find((member) => member.userId !== userId);
-        const unreadCount = await prisma.message.count({
-          where: {
-            conversationId: conversation.id,
-            senderId: { not: userId },
-            createdAt: { gt: currentMember.lastReadAt },
-            deletedAt: null,
-          },
-        });
-        return {
-          id: conversation.id,
-          updatedAt: conversation.updatedAt,
-          otherUser: otherMember ? serializeUser(otherMember.user) : null,
-          lastMessage: conversation.messages[0] ?? null,
-          unreadCount,
-        };
-      }),
+      conversations
+        .filter((conversation) => {
+          const currentMember = conversation.members.find((member) => member.userId === userId)!;
+          if (!currentMember.hiddenAt) return true;
+          return conversation.updatedAt > currentMember.hiddenAt;
+        })
+        .map(async (conversation) => {
+          const currentMember = conversation.members.find((member) => member.userId === userId)!;
+          const otherMember = conversation.members.find((member) => member.userId !== userId);
+          const unreadCount = await prisma.message.count({
+            where: {
+              conversationId: conversation.id,
+              senderId: { not: userId },
+              createdAt: { gt: currentMember.lastReadAt },
+              deletedAt: null,
+            },
+          });
+          return {
+            id: conversation.id,
+            updatedAt: conversation.updatedAt,
+            otherUser: otherMember ? serializeUser(otherMember.user) : null,
+            lastMessage: conversation.messages[0] ?? null,
+            unreadCount,
+          };
+        }),
     ),
   };
+}
+
+export async function deleteConversation(userId: string, conversationId: string) {
+  await requireMember(userId, conversationId);
+  await prisma.conversationMember.update({
+    where: { conversationId_userId: { conversationId, userId } },
+    data: { hiddenAt: new Date() },
+  });
+  return { deleted: true };
 }
 
 export async function getUnreadCount(userId: string) {

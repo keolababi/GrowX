@@ -8,6 +8,8 @@ type Props = {
   onChangeText: (text: string) => void;
   placeholder?: string;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoFocus?: boolean;
+  onSubmitEditing?: () => void;
 };
 
 export const SearchBar: React.FC<Props> = ({
@@ -15,6 +17,8 @@ export const SearchBar: React.FC<Props> = ({
   onChangeText,
   placeholder = 'Хайх',
   autoCapitalize = 'none',
+  autoFocus = false,
+  onSubmitEditing,
 }) => {
   const { colors } = useColorMode();
   return (
@@ -29,6 +33,9 @@ export const SearchBar: React.FC<Props> = ({
         selectionColor={colors.primary}
         style={{ color: colors.text }}
         autoCapitalize={autoCapitalize}
+        autoFocus={autoFocus}
+        returnKeyType="search"
+        onSubmitEditing={onSubmitEditing}
         className="ml-s h-full flex-1 text-sm text-text-primary"
       />
     </View>
