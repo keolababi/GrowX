@@ -19,6 +19,11 @@ type IconName = ComponentProps<typeof Icon>['name'];
 
 const menuItems: Array<{ icon: IconName; label: string; route?: Href }> = [
   { icon: 'person-outline', label: 'Хувийн мэдээлэл', route: '/profile/personal' as Href },
+  {
+    icon: 'shield-checkmark-outline',
+    label: 'Professional tools',
+    route: '/profile/professional' as Href,
+  },
   { icon: 'newspaper-outline', label: 'Миний контент', route: '/posts' as Href },
   {
     icon: 'bookmark-outline',

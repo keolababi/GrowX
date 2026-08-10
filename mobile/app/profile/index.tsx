@@ -416,7 +416,11 @@ export default function ProfileScreen() {
                         onPressComment={() => router.push(`/posts/${post.id}`)}
                         onToggleRepost={() => toggleRepost(post.id)}
                         onToggleSave={() => toggleSave(post.id)}
-                        onEdit={() => router.push(`/posts/${post.id}/edit`)}
+                        onEdit={
+                          post.authorId === user?.id
+                            ? () => router.push(`/posts/${post.id}/edit`)
+                            : undefined
+                        }
                         onDelete={
                           post.authorId === user?.id ? () => void deletePost(post.id) : undefined
                         }

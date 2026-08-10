@@ -28,6 +28,9 @@ import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
+const swipeForwardBackground = '#10251E';
+const swipeDeleteBackground = '#2A1116';
+const swipeDeleteForeground = '#FF6B73';
 const SWIPE_ACTIONS_WIDTH = 148;
 const webScreenStyle = {
   height: '100vh',
@@ -68,49 +71,82 @@ function SwipeableRow({
 }) {
   const isOpen = openId === id;
   const translateX = useRef(new Animated.Value(0)).current;
+  const dragPosition = useRef(0);
+  const [showActions, setShowActions] = useState(isOpen);
 
   useEffect(() => {
+    if (isOpen) setShowActions(true);
+    dragPosition.current = isOpen ? -SWIPE_ACTIONS_WIDTH : 0;
     Animated.timing(translateX, {
       toValue: isOpen ? -SWIPE_ACTIONS_WIDTH : 0,
       duration: 200,
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      if (finished && !isOpen) setShowActions(false);
+    });
   }, [isOpen, translateX]);
+
+  const settleSwipe = useCallback(
+    (shouldOpen: boolean) => {
+      dragPosition.current = shouldOpen ? -SWIPE_ACTIONS_WIDTH : 0;
+      Animated.timing(translateX, {
+        toValue: shouldOpen ? -SWIPE_ACTIONS_WIDTH : 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished && !shouldOpen) setShowActions(false);
+      });
+      onOpenChange(shouldOpen ? id : null);
+    },
+    [id, onOpenChange, translateX],
+  );
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_evt, gesture) =>
           Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+        onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
+          Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+        onPanResponderGrant: () => {
+          dragPosition.current = isOpen ? -SWIPE_ACTIONS_WIDTH : 0;
+          setShowActions(true);
+        },
+        onPanResponderTerminationRequest: () => false,
         onPanResponderMove: (_evt, gesture) => {
           const base = isOpen ? -SWIPE_ACTIONS_WIDTH : 0;
           const next = Math.min(0, Math.max(-SWIPE_ACTIONS_WIDTH, base + gesture.dx));
+          dragPosition.current = next;
           translateX.setValue(next);
         },
-        onPanResponderRelease: (_evt, gesture) => {
-          const base = isOpen ? -SWIPE_ACTIONS_WIDTH : 0;
-          const current = base + gesture.dx;
-          onOpenChange(current < -SWIPE_ACTIONS_WIDTH / 2 ? id : null);
+        onPanResponderRelease: () => {
+          const shouldOpen = isOpen ? dragPosition.current < -28 : dragPosition.current < -10;
+          settleSwipe(shouldOpen);
         },
         onPanResponderTerminate: () => {
-          Animated.timing(translateX, {
-            toValue: isOpen ? -SWIPE_ACTIONS_WIDTH : 0,
-            duration: 150,
-            useNativeDriver: true,
-          }).start();
+          const shouldOpen = isOpen ? dragPosition.current < -28 : dragPosition.current < -10;
+          settleSwipe(shouldOpen);
         },
       }),
-    [id, isOpen, onOpenChange, translateX],
+    [isOpen, settleSwipe, translateX],
   );
 
   return (
     <View style={styles.swipeWrap}>
-      <Animated.View {...panResponder.panHandlers} style={{ transform: [{ translateX }] }}>
+      {showActions && (
+        <View
+          style={[styles.swipeActions, isOpen && styles.swipeActionsOpen]}
+          pointerEvents="box-none"
+        >
+          {actions}
+        </View>
+      )}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[styles.swipeForeground, { transform: [{ translateX }] }]}
+      >
         {children}
       </Animated.View>
-      <View style={styles.swipeActions} pointerEvents="box-none">
-        {actions}
-      </View>
     </View>
   );
 }
@@ -433,20 +469,29 @@ export default function MessagesScreen() {
                             accessibilityLabel="Дамжуулах"
                             disabled={!conversation.lastMessage?.content}
                             onPress={() => openForward(conversation)}
-                            style={[styles.swipeAction, { backgroundColor: colors.primary }]}
+                            style={({ pressed }) => [
+                              styles.swipeAction,
+                              styles.forwardAction,
+                              !conversation.lastMessage?.content && styles.swipeActionDisabled,
+                              pressed && styles.swipeActionPressed,
+                            ]}
                           >
-                            <Icon name="arrow-redo-outline" size={20} color={colors.ink} />
-                            <Text style={[styles.swipeActionText, { color: colors.ink }]}>
+                            <Icon name="arrow-redo-outline" size={20} color={lime} />
+                            <Text style={[styles.swipeActionText, styles.forwardActionText]}>
                               Дамжуулах
                             </Text>
                           </Pressable>
                           <Pressable
                             accessibilityLabel="Устгах"
                             onPress={() => deleteConversation(conversation)}
-                            style={[styles.swipeAction, { backgroundColor: colors.danger }]}
+                            style={({ pressed }) => [
+                              styles.swipeAction,
+                              styles.deleteAction,
+                              pressed && styles.swipeActionPressed,
+                            ]}
                           >
-                            <Icon name="trash-outline" size={20} color="#FFFFFF" />
-                            <Text style={[styles.swipeActionText, { color: '#FFFFFF' }]}>
+                            <Icon name="trash-outline" size={20} color={swipeDeleteForeground} />
+                            <Text style={[styles.swipeActionText, styles.deleteActionText]}>
                               Устгах
                             </Text>
                           </Pressable>
@@ -740,6 +785,7 @@ const styles = StyleSheet.create({
   time: { color: '#6F7D77', fontSize: 11 },
   timeOpen: { fontSize: 10, fontWeight: '700' },
   swipeWrap: { borderRadius: 19, overflow: 'hidden' },
+  swipeForeground: { position: 'relative', zIndex: 1 },
   swipeActions: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: 'row',
@@ -747,12 +793,19 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     overflow: 'hidden',
   },
+  swipeActionsOpen: { zIndex: 2 },
   swipeAction: {
     width: 74,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
+  forwardAction: { backgroundColor: swipeForwardBackground },
+  forwardActionText: { color: lime },
+  deleteAction: { backgroundColor: swipeDeleteBackground },
+  deleteActionText: { color: swipeDeleteForeground },
+  swipeActionDisabled: { opacity: 0.45 },
+  swipeActionPressed: { opacity: 0.82 },
   swipeActionText: { fontSize: 10, fontWeight: '800' },
   forwardBackdrop: {
     flex: 1,
