@@ -15,12 +15,15 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { SocialPost } from '@/types/post';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useUser } from '@/providers/UserProvider';
+import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
 
 const lime = '#9AF000';
 
 export default function EditPostScreen() {
   const { colors } = useColorMode();
+  const { user } = useUser();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const [post, setPost] = useState<SocialPost | null>(null);
   const [content, setContent] = useState('');
@@ -29,9 +32,17 @@ export default function EditPostScreen() {
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (!postId) return;
+    if (!postId || !user?.id) return;
+    setLoading(true);
+    setError('');
     try {
       const { data } = await api.get<{ post: SocialPost }>(`/posts/${postId}`);
+      if (data.post.authorId !== user?.id) {
+        setPost(null);
+        setContent('');
+        setError('Зөвхөн өөрийн post-ийг засах боломжтой.');
+        return;
+      }
       setPost(data.post);
       setContent(data.post.content);
     } catch (value) {
@@ -39,14 +50,14 @@ export default function EditPostScreen() {
     } finally {
       setLoading(false);
     }
-  }, [postId]);
+  }, [postId, user?.id]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const save = async () => {
-    if (!postId || !content.trim() || saving) return;
+    if (!postId || !post || post.authorId !== user?.id || !content.trim() || saving) return;
     setSaving(true);
     setError('');
     try {
@@ -89,7 +100,7 @@ export default function EditPostScreen() {
           <View style={styles.center}>
             <Loader size={44} />
           </View>
-        ) : (
+        ) : post ? (
           <View style={styles.editor}>
             <TextInput
               autoFocus
@@ -114,6 +125,14 @@ export default function EditPostScreen() {
             <Text style={[styles.hint, { color: colors.muted }]}>Зураг хэвээр хадгалагдана.</Text>
             <Text style={[styles.counter, { color: colors.muted }]}>{content.length}/5000</Text>
             {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
+          </View>
+        ) : (
+          <View style={styles.center}>
+            <Icon name="lock-closed-outline" size={36} color={colors.muted} />
+            <Text style={[styles.unauthorized, { color: colors.text }]}>{error}</Text>
+            <Pressable onPress={() => router.replace(`/posts/${postId}`)}>
+              <Text style={[styles.backToPost, { color: colors.primary }]}>Post руу буцах</Text>
+            </Pressable>
           </View>
         )}
       </KeyboardAvoidingView>
@@ -154,4 +173,6 @@ const styles = StyleSheet.create({
   hint: { color: '#71807A', fontSize: 11, marginTop: 8 },
   counter: { color: '#71807A', fontSize: 11, textAlign: 'right', marginTop: 10 },
   error: { color: '#FF817B', fontSize: 13, marginTop: 14 },
+  unauthorized: { fontSize: 15, fontWeight: '800', marginTop: 14 },
+  backToPost: { fontSize: 13, fontWeight: '900', marginTop: 12 },
 });

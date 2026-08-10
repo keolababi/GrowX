@@ -16,6 +16,7 @@ import { feedbackRouter } from './routes/feedback.routes.js';
 import { collaborationRouter } from './routes/collaboration.routes.js';
 import { lessonRouter } from './routes/lesson.routes.js';
 import { searchRouter } from './routes/search.routes.js';
+import { professionalRouter } from './routes/professional.routes.js';
 
 export const app = express();
 
@@ -54,5 +55,6 @@ app.use('/api/feedback-forms', feedbackRouter);
 app.use('/api/collaborations', collaborationRouter);
 app.use('/api/lessons', lessonRouter);
 app.use('/api/search', searchRouter);
+app.use('/api/professional', professionalRouter);
 app.use(notFound);
 app.use(errorHandler);

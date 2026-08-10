@@ -14,8 +14,6 @@ type ProfileInput = {
   avatarUrl?: string | null;
   phone?: string | null;
   company?: string | null;
-  accountType?: AccountType;
-  isMentor?: boolean;
   coverUrl?: string | null;
   industry?: string | null;
   location?: string | null;

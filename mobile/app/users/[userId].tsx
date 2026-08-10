@@ -330,7 +330,7 @@ export default function PublicUserProfileScreen() {
                   isOwnPost={profile.isMe}
                   onPressLike={() => void toggleLike(post)}
                   onPressComment={() => router.push(`/posts/${post.id}`)}
-                  onEdit={() => router.push(`/posts/${post.id}/edit`)}
+                  onEdit={profile.isMe ? () => router.push(`/posts/${post.id}/edit`) : undefined}
                 />
               ))}
               {!posts.length && (

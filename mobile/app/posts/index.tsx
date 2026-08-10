@@ -297,8 +297,10 @@ export default function PostsScreen() {
               onToggleRepost={() => toggleRepost(post.id)}
               onToggleSave={() => toggleSave(post.id)}
               onPressMore={() => router.push(`/posts/${post.id}`)}
-              onEdit={() => router.push(`/posts/${post.id}/edit`)}
-              onDelete={() => void deletePost(post.id)}
+              onEdit={
+                post.authorId === user?.id ? () => router.push(`/posts/${post.id}/edit`) : undefined
+              }
+              onDelete={post.authorId === user?.id ? () => void deletePost(post.id) : undefined}
               footer={
                 <View className="mt-m flex-row items-center gap-s">
                   {!!user && <AuthorAvatar author={user} size={34} />}

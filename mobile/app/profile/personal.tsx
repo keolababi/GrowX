@@ -18,12 +18,9 @@ import { api } from '@/services/api';
 import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
 import { useUser } from '@/providers/UserProvider';
 import { getApiError } from '@/utils/auth';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Icon } from '@/components/ui/Icon';
 import type { User } from '@/types/auth';
 import { useColorMode } from '@/providers/ColorModeProvider';
-
-type AccountType = 'PERSONAL' | 'BUSINESS';
 
 const lime = '#9AF000';
 
@@ -34,13 +31,7 @@ export default function PersonalInformationScreen() {
   const [bio, setBio] = useState('');
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
-  const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
-  const [isMentor, setIsMentor] = useState(false);
-  const [industry, setIndustry] = useState('');
-  const [location, setLocation] = useState('');
-  const [services, setServices] = useState('');
   const [avatar, setAvatar] = useState<LocalUploadAsset | null>(null);
-  const [cover, setCover] = useState<LocalUploadAsset | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -50,11 +41,6 @@ export default function PersonalInformationScreen() {
     setBio(user?.bio ?? '');
     setPhone(user?.phone ?? '');
     setCompany(user?.company ?? '');
-    setAccountType(user?.accountType ?? 'PERSONAL');
-    setIsMentor(user?.isMentor ?? false);
-    setIndustry(user?.industry ?? '');
-    setLocation(user?.location ?? '');
-    setServices(user?.services ?? '');
   }, [user]);
 
   const pickAvatar = async () => {
@@ -75,24 +61,6 @@ export default function PersonalInformationScreen() {
     setSuccess('');
   };
 
-  const pickCover = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.85,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
-    setCover({
-      uri: asset.uri,
-      name: asset.fileName || `cover-${Date.now()}.jpg`,
-      mimeType: asset.mimeType || 'image/jpeg',
-      file: asset.file,
-    });
-    setSuccess('');
-  };
-
   const save = async () => {
     if (!displayName.trim()) {
       setError('Нэрээ оруулна уу.');
@@ -107,27 +75,15 @@ export default function PersonalInformationScreen() {
         const uploaded = await uploadMedia(avatar, 'image');
         avatarUrl = uploaded.url;
       }
-      let coverUrl = user?.coverUrl ?? null;
-      if (cover) {
-        const uploaded = await uploadMedia(cover, 'image');
-        coverUrl = uploaded.url;
-      }
       await api.patch<{ user: User }>('/auth/me', {
         displayName: displayName.trim(),
         bio: bio.trim() || null,
         phone: phone.trim() || null,
         company: company.trim() || null,
-        accountType,
-        isMentor: accountType === 'PERSONAL' ? isMentor : false,
-        coverUrl,
-        industry: accountType === 'BUSINESS' ? industry.trim() || null : null,
-        location: accountType === 'BUSINESS' ? location.trim() || null : null,
-        services: accountType === 'BUSINESS' ? services.trim() || null : null,
         avatarUrl,
       });
       await refreshUser();
       setAvatar(null);
-      setCover(null);
       setSuccess('Хувийн мэдээлэл хадгалагдлаа.');
     } catch (value) {
       setError(getApiError(value, 'Хувийн мэдээллийг хадгалж чадсангүй.'));
@@ -137,7 +93,6 @@ export default function PersonalInformationScreen() {
   };
 
   const avatarUri = avatar?.uri || user?.avatarUrl;
-  const coverUri = cover?.uri || user?.coverUrl;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -158,49 +113,6 @@ export default function PersonalInformationScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <SegmentedControl
-            options={['Хувийн профайл', 'Бизнес профайл']}
-            selectedIndex={accountType === 'BUSINESS' ? 1 : 0}
-            onChange={(index) => setAccountType(index === 1 ? 'BUSINESS' : 'PERSONAL')}
-          />
-
-          {accountType === 'PERSONAL' && (
-            <View
-              style={[
-                styles.badgeSection,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.badgeLabel, { color: colors.text }]}>Профайлын badge</Text>
-              <Text style={[styles.badgeHint, { color: colors.muted }]}>
-                Ментороор харагдах бол “Ментор”-ыг сонгоно уу.
-              </Text>
-              <SegmentedControl
-                options={['Энгийн хэрэглэгч', 'Ментор']}
-                selectedIndex={isMentor ? 1 : 0}
-                onChange={(index) => setIsMentor(index === 1)}
-              />
-            </View>
-          )}
-
-          {accountType === 'BUSINESS' && (
-            <Pressable
-              onPress={() => void pickCover()}
-              style={[
-                styles.coverCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              {coverUri ? (
-                <Image source={{ uri: coverUri }} style={styles.coverImage} />
-              ) : (
-                <View style={styles.coverPlaceholder}>
-                  <Text style={[styles.rowHint, { color: colors.muted }]}>Нүүр зураг нэмэх</Text>
-                </View>
-              )}
-            </Pressable>
-          )}
-
           <Pressable
             onPress={() => void pickAvatar()}
             style={[
@@ -263,42 +175,12 @@ export default function PersonalInformationScreen() {
           />
           <Field
             icon="business-outline"
-            label={accountType === 'BUSINESS' ? 'Бизнесийн нэр' : 'Хаана ажилладаг'}
+            label="Хаана ажилладаг"
             value={company}
             onChangeText={setCompany}
             placeholder="Жишээ: GrowX LLC"
             maxLength={120}
           />
-
-          {accountType === 'BUSINESS' && (
-            <>
-              <Field
-                icon="layers-outline"
-                label="Салбар"
-                value={industry}
-                onChangeText={setIndustry}
-                placeholder="Жишээ: Fintech"
-                maxLength={120}
-              />
-              <Field
-                icon="location-outline"
-                label="Байршил"
-                value={location}
-                onChangeText={setLocation}
-                placeholder="Жишээ: Улаанбаатар"
-                maxLength={120}
-              />
-              <Field
-                icon="list-outline"
-                label="Үйлчилгээ"
-                value={services}
-                onChangeText={setServices}
-                placeholder="Санал болгож буй үйлчилгээгээ бичнэ үү"
-                multiline
-                maxLength={2000}
-              />
-            </>
-          )}
 
           <View
             style={[

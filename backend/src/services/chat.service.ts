@@ -157,25 +157,36 @@ export async function createConversation(userId: string, recipientId: string) {
   });
   if (!recipient) throw new HttpError(404, 'Хэрэглэгч олдсонгүй.');
 
-  const memberships = await prisma.conversationMember.findMany({
-    where: { userId },
-    include: { conversation: { include: { members: { select: { userId: true } } } } },
-  });
-  const existing = memberships.find(
-    ({ conversation }) =>
-      conversation.members.length === 2 &&
-      conversation.members.some((member) => member.userId === recipientId),
-  );
-  if (existing) return { conversationId: existing.conversationId };
+  // Serialize concurrent create-or-find calls for the same pair (e.g. a double-tap) via a
+  // Postgres advisory lock, so two requests can't both pass the "no existing conversation"
+  // check and each create a duplicate conversation.
+  const [a, b] = [userId, recipientId].sort();
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${a}:${b}`}))`;
 
-  const conversation = await prisma.conversation.create({
-    data: {
-      members: {
-        create: [{ userId }, { userId: recipientId }],
-      },
+      const memberships = await tx.conversationMember.findMany({
+        where: { userId },
+        include: { conversation: { include: { members: { select: { userId: true } } } } },
+      });
+      const existing = memberships.find(
+        ({ conversation }) =>
+          conversation.members.length === 2 &&
+          conversation.members.some((member) => member.userId === recipientId),
+      );
+      if (existing) return { conversationId: existing.conversationId };
+
+      const conversation = await tx.conversation.create({
+        data: {
+          members: {
+            create: [{ userId }, { userId: recipientId }],
+          },
+        },
+      });
+      return { conversationId: conversation.id };
     },
-  });
-  return { conversationId: conversation.id };
+    { maxWait: 10_000, timeout: 10_000 },
+  );
 }
 
 export async function listMessages(userId: string, conversationId: string) {

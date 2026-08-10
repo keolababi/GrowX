@@ -124,6 +124,8 @@ export const PostCard: React.FC<Props> = ({
   footer,
 }) => {
   const { colors, iconAccent, isDark } = useColorMode();
+  const ownerAction = isOwnPost ? onEdit || onDelete : undefined;
+  const moreAction = onPressMore || ownerAction;
   return (
     <View
       className={
@@ -165,14 +167,16 @@ export const PostCard: React.FC<Props> = ({
             </Text>
           </Pressable>
         )}
-        <Pressable
-          accessibilityLabel="Post-ын дэлгэрэнгүй үйлдэл"
-          hitSlop={10}
-          onPress={onPressMore || onEdit || onDelete}
-          className="ml-m h-8 w-6 items-center justify-center"
-        >
-          <Icon name="ellipsis-horizontal" size={20} color={colors.text} />
-        </Pressable>
+        {!!moreAction && (
+          <Pressable
+            accessibilityLabel={isOwnPost ? 'Post-ын үйлдлүүд' : 'Post дэлгэрэнгүй'}
+            hitSlop={10}
+            onPress={moreAction}
+            className="ml-m h-8 w-6 items-center justify-center"
+          >
+            <Icon name="ellipsis-horizontal" size={20} color={colors.text} />
+          </Pressable>
+        )}
       </View>
 
       {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}

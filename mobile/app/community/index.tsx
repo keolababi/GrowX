@@ -265,7 +265,11 @@ export default function CommunityScreen() {
                     onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
                     onPressLike={() => void toggleLike(post)}
                     onPressComment={() => router.push(`/posts/${post.id}`)}
-                    onEdit={() => router.push(`/posts/${post.id}/edit`)}
+                    onEdit={
+                      post.authorId === user?.id
+                        ? () => router.push(`/posts/${post.id}/edit`)
+                        : undefined
+                    }
                   />
                 ))}
                 {!filteredPosts.length && (
