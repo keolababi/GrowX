@@ -7,6 +7,7 @@ export const feedbackRouter = Router();
 
 feedbackRouter.use(requireAuth);
 feedbackRouter.get('/', asyncHandler(feedbackController.listMyForms));
+feedbackRouter.get('/community', asyncHandler(feedbackController.listCommunityForms));
 feedbackRouter.post('/', asyncHandler(feedbackController.createForm));
 feedbackRouter.get('/:formId', asyncHandler(feedbackController.getForm));
 feedbackRouter.delete('/:formId', asyncHandler(feedbackController.deleteForm));

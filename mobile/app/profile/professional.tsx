@@ -36,6 +36,11 @@ const statusCopy: Record<VerificationStatus, string> = {
   REJECTED: 'Татгалзсан',
 };
 
+const normalizeUrl = (value: string) => {
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
 export default function ProfessionalToolsScreen() {
   const { colors, isDark } = useColorMode();
   const accent = isDark ? lime : colors.primary;
@@ -121,8 +126,8 @@ export default function ProfessionalToolsScreen() {
         registrationNumber: selectedType === 'BUSINESS' ? registrationNumber.trim() : undefined,
         expertise: selectedType === 'MENTOR' ? expertise.trim() : undefined,
         experience: selectedType === 'MENTOR' ? experience.trim() : undefined,
-        websiteUrl: websiteUrl.trim() || undefined,
-        evidenceUrl: evidenceUrl.trim(),
+        websiteUrl: websiteUrl.trim() ? normalizeUrl(websiteUrl) : undefined,
+        evidenceUrl: normalizeUrl(evidenceUrl),
       });
       await load();
       setSelectedType(null);

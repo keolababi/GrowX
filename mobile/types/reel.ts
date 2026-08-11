@@ -22,6 +22,7 @@ export type Reel = {
   author: ReelAuthor;
   likeCount: number;
   commentCount: number;
+  shareCount: number;
   likedByMe: boolean;
   comments: ReelComment[];
 };

@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import {
   ActivityIndicator,
-  Alert,
   Image,
-  Platform,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -22,6 +20,7 @@ import { relativeTime } from '@/utils/relativeTime';
 import { useColorMode, type AppModeColors } from '@/providers/ColorModeProvider';
 import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 
 type GroupTab = 'discussions' | 'articles' | 'members';
 
@@ -33,6 +32,7 @@ const tabs: Array<{ value: GroupTab; label: string }> = [
 
 export default function CommunityDetailScreen() {
   const { iconAccent, colors } = useColorMode();
+  const { confirm } = useAppDialog();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { communityId } = useLocalSearchParams<{ communityId: string }>();
   const [community, setCommunity] = useState<CommunityDetail | null>(null);
@@ -121,19 +121,18 @@ export default function CommunityDetailScreen() {
     }
   };
 
-  const handleMembership = () => {
+  const handleMembership = async () => {
     if (!community?.joinedByMe) {
       void changeMembership();
       return;
     }
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Энэ бүлгээс гарах уу?')) void changeMembership();
-      return;
-    }
-    Alert.alert('Бүлгээс гарах', 'Та энэ бүлгээс гарахдаа итгэлтэй байна уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Гарах', style: 'destructive', onPress: () => void changeMembership() },
-    ]);
+    const accepted = await confirm({
+      title: 'Бүлгээс гарах',
+      message: 'Та энэ бүлгээс гарахдаа итгэлтэй байна уу?',
+      confirmLabel: 'Гарах',
+      variant: 'danger',
+    });
+    if (accepted) await changeMembership();
   };
 
   const addMember = async (userId: string) => {
@@ -164,18 +163,15 @@ export default function CommunityDetailScreen() {
     }
   };
 
-  const confirmRemoveMember = (member: CommunityMember) => {
+  const confirmRemoveMember = async (member: CommunityMember) => {
     const memberName = member.displayName || member.email.split('@')[0];
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm(`${memberName}-г бүлгээс хасах уу?`)) {
-        void removeMemberNow(member);
-      }
-      return;
-    }
-    Alert.alert('Гишүүн хасах', `${memberName}-г бүлгээс хасах уу?`, [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Хасах', style: 'destructive', onPress: () => void removeMemberNow(member) },
-    ]);
+    const accepted = await confirm({
+      title: 'Гишүүн хасах',
+      message: `${memberName}-г бүлгээс хасах уу?`,
+      confirmLabel: 'Хасах',
+      variant: 'danger',
+    });
+    if (accepted) await removeMemberNow(member);
   };
 
   const deleteGroupNow = async () => {
@@ -191,17 +187,16 @@ export default function CommunityDetailScreen() {
     }
   };
 
-  const confirmDeleteGroup = () => {
+  const confirmDeleteGroup = async () => {
     if (!community?.isOwner) return;
     const message = `"${community.name}" бүлэг болон бүх post, хэлэлцүүлгийг бүр мөсөн устгах уу?`;
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm(message)) void deleteGroupNow();
-      return;
-    }
-    Alert.alert('Бүлэг устгах', message, [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Бүр мөсөн устгах', style: 'destructive', onPress: () => void deleteGroupNow() },
-    ]);
+    const accepted = await confirm({
+      title: 'Бүлэг устгах',
+      message,
+      confirmLabel: 'Бүр мөсөн устгах',
+      variant: 'danger',
+    });
+    if (accepted) await deleteGroupNow();
   };
 
   const toggleLike = async (post: SocialPost) => {

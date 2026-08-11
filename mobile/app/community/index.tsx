@@ -254,6 +254,7 @@ export default function CommunityScreen() {
                 {filteredPosts.map((post) => (
                   <PostCard
                     key={post.id}
+                    postId={post.id}
                     author={post.author}
                     timestamp={relativeTime(post.createdAt)}
                     content={post.content}
@@ -263,6 +264,7 @@ export default function CommunityScreen() {
                     }
                     likeCount={post.likeCount}
                     commentCount={post.commentCount}
+                    shareCount={post.shareCount}
                     likedByMe={post.likedByMe}
                     isOwnPost={post.authorId === user?.id}
                     onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}

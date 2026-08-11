@@ -2,14 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTabPressStore } from '@/store/tabPressStore';
 import {
-  Alert,
   Image,
   Platform,
   Pressable,
   RefreshControl,
   SafeAreaView,
   ScrollView,
-  Share,
   type ViewStyle,
   Text,
   TextInput,
@@ -29,6 +27,7 @@ import { useUser } from '@/providers/UserProvider';
 import { useEngagementStore } from '@/store/engagementStore';
 import type { PostComment, SocialPost } from '@/types/post';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 const tabs = ['Пост', 'Reel'];
 const webFeedScrollStyle = {
   height: 'calc(100vh - 229px)',
@@ -62,6 +61,7 @@ function AuthorAvatar({ author, size = 46 }: { author: PostCardAuthor; size?: nu
 
 export default function PostsScreen() {
   const { colors, iconAccent: accent } = useColorMode();
+  const { confirm } = useAppDialog();
   const { user } = useUser();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -186,14 +186,6 @@ export default function PostsScreen() {
     }
   };
 
-  const sharePost = async (post: SocialPost) => {
-    try {
-      await Share.share({ message: post.content });
-    } catch {
-      // User dismissed the native share sheet.
-    }
-  };
-
   const addComment = async (postId: string) => {
     const content = commentDrafts[postId]?.trim();
     if (!content || busyIds.includes(postId)) return;
@@ -230,14 +222,13 @@ export default function PostsScreen() {
         setError(getApiError(value, 'Post устгаж чадсангүй.'));
       }
     };
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Энэ post-ийг устгах уу?')) await remove();
-      return;
-    }
-    Alert.alert('Post устгах', 'Энэ post-ийг устгах уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
-    ]);
+    const accepted = await confirm({
+      title: 'Post устгах',
+      message: 'Энэ post-ийг устгах уу?',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await remove();
   };
 
   return (
@@ -309,6 +300,7 @@ export default function PostsScreen() {
           {posts.map((post) => (
             <PostCard
               key={post.id}
+              postId={post.id}
               author={post.author}
               timestamp={relativeTime(post.createdAt)}
               content={post.content}
@@ -316,6 +308,7 @@ export default function PostsScreen() {
               communityName={post.community?.name}
               likeCount={post.likeCount}
               commentCount={post.commentCount}
+              shareCount={post.shareCount}
               likedByMe={post.likedByMe}
               isOwnPost={post.authorId === user?.id}
               isFollowing={followingIds.has(post.authorId)}
@@ -324,7 +317,6 @@ export default function PostsScreen() {
               onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
               onPressLike={() => void toggleLike(post)}
               onPressComment={() => router.push(`/posts/${post.id}?focusComment=1`)}
-              onPressShare={() => void sharePost(post)}
               onToggleFollow={() => void toggleFollowAuthor(post.authorId)}
               onToggleRepost={() => toggleRepost(post.id)}
               onToggleSave={() => toggleSave(post.id)}

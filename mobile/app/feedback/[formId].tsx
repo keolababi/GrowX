@@ -1,16 +1,6 @@
 import { useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, Share, Text, TextInput, View } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
 import { AppPageHeader } from '@/components/AppPageHeader';
@@ -18,12 +8,14 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackAnswerInput, FeedbackFormDetail } from '@/types/feedback';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 
 const stars = [1, 2, 3, 4, 5];
 const scaleValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export default function FeedbackFormScreen() {
   const { colors, iconAccent: lime } = useColorMode();
+  const { confirm } = useAppDialog();
   const { formId } = useLocalSearchParams<{ formId: string }>();
   const [form, setForm] = useState<FeedbackFormDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +59,7 @@ export default function FeedbackFormScreen() {
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const message = 'Энэ асуулгыг устгах уу? Бүх хариултууд устна.';
     const remove = async () => {
       try {
@@ -77,14 +69,13 @@ export default function FeedbackFormScreen() {
         setError(getApiError(value, 'Устгаж чадсангүй.'));
       }
     };
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm(message)) void remove();
-      return;
-    }
-    Alert.alert('Устгах', message, [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
-    ]);
+    const accepted = await confirm({
+      title: 'Асуулга устгах',
+      message,
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await remove();
   };
 
   const submit = async () => {

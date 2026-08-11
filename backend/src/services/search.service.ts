@@ -47,7 +47,7 @@ export async function globalSearch(userId: string, query: string) {
       where: q
         ? { OR: textFilter(['name', 'description']) as Array<Record<string, unknown>> }
         : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ members: { _count: 'desc' } }, { createdAt: 'desc' }],
       take: LIMIT,
       include: { _count: { select: { members: true, posts: true } } },
     }),
@@ -109,7 +109,7 @@ export async function globalSearch(userId: string, query: string) {
             ],
           }
         : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ listens: { _count: 'desc' } }, { createdAt: 'desc' }],
       take: LIMIT,
       select: {
         id: true,

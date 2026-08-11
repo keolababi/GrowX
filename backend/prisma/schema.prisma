@@ -16,6 +16,11 @@ enum NotificationType {
   COLLABORATION_REQUEST
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
   id                            String                    @id @default(cuid())
   email                         String                    @unique
@@ -23,11 +28,12 @@ model User {
   resetCodeHash                 String?
   resetCodeExpiresAt            DateTime?
   lastSeenAt                    DateTime?
-  role                          String                    @default("USER")
+  role                          UserRole                  @default(USER)
   createdAt                     DateTime                  @default(now())
   updatedAt                     DateTime                  @updatedAt
   profile                       Profile?
   podcasts                      Podcast[]                 @relation("PodcastAuthor")
+  podcastListens                PodcastListen[]
   reels                         Reel[]                    @relation("ReelAuthor")
   communities                   Community[]               @relation("CommunityOwner")
   posts                         Post[]
@@ -110,19 +116,33 @@ model ProfessionalApplication {
 }
 
 model Podcast {
-  id          String    @id @default(cuid())
+  id          String          @id @default(cuid())
   title       String
-  description String?   @db.Text
+  description String?         @db.Text
   coverUrl    String?
   authorId    String
   publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  author      User      @relation("PodcastAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  author      User            @relation("PodcastAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   episodes    Episode[]
+  listens     PodcastListen[]
 
   @@index([authorId])
   @@index([publishedAt])
+}
+
+model PodcastListen {
+  id        String   @id @default(cuid())
+  podcastId String
+  userId    String
+  createdAt DateTime @default(now())
+  podcast   Podcast  @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([podcastId, userId])
+  @@index([podcastId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Episode {
@@ -157,15 +177,16 @@ model Lesson {
 }
 
 model Reel {
-  id        String        @id @default(cuid())
-  authorId  String
-  caption   String?       @db.VarChar(1000)
-  videoUrl  String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  author    User          @relation("ReelAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  likes     ReelLike[]
-  comments  ReelComment[]
+  id         String        @id @default(cuid())
+  authorId   String
+  caption    String?       @db.VarChar(1000)
+  videoUrl   String
+  shareCount Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  author     User          @relation("ReelAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  likes      ReelLike[]
+  comments   ReelComment[]
 
   @@index([authorId, createdAt])
 }
@@ -229,6 +250,7 @@ model Post {
   content           String         @db.Text
   imageUrl          String?
   videoUrl          String?
+  shareCount        Int            @default(0)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   author            User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -310,19 +332,27 @@ model ConversationMember {
 }
 
 model Message {
-  id              String       @id @default(cuid())
-  clientMessageId String?      @unique
+  id              String            @id @default(cuid())
+  clientMessageId String?           @unique
   conversationId  String
   senderId        String
-  content         String       @db.Text
-  createdAt       DateTime     @default(now())
+  content         String            @db.Text
+  mediaType       MessageMediaType?
+  mediaUrl        String?
+  createdAt       DateTime          @default(now())
   editedAt        DateTime?
   deletedAt       DateTime?
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender          User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+enum MessageMediaType {
+  IMAGE
+  VIDEO
+  AUDIO
 }
 
 model Follow {

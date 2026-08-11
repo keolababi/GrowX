@@ -8,7 +8,15 @@ type UploadKind = 'image' | 'video' | 'audio';
 const allowedTypes: Record<UploadKind, string[]> = {
   image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   video: ['video/mp4', 'video/quicktime', 'video/webm'],
-  audio: ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/x-m4a', 'audio/aac', 'audio/ogg'],
+  audio: [
+    'audio/mpeg',
+    'audio/mp4',
+    'audio/wav',
+    'audio/x-m4a',
+    'audio/aac',
+    'audio/ogg',
+    'audio/webm',
+  ],
 };
 
 function authenticateClientPayload(clientPayload: string | null | undefined) {

@@ -1,4 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: new URL('../.env.local', import.meta.url) });
+dotenv.config({ path: new URL('../.env', import.meta.url) });
 
 const prisma = new PrismaClient();
 
@@ -146,6 +151,28 @@ async function main() {
     });
   }
   console.log(`Seeded ${lessons.length} lessons.`);
+
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    if (adminPassword.length < 12) {
+      throw new Error('ADMIN_PASSWORD must be at least 12 characters.');
+    }
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      create: {
+        email: adminEmail,
+        passwordHash,
+        role: 'ADMIN',
+        profile: { create: { displayName: 'Admin' } },
+      },
+      update: { passwordHash, role: 'ADMIN' },
+    });
+    console.log(`Admin user is ready: ${adminEmail}`);
+  } else {
+    console.log('Admin user skipped. Set ADMIN_EMAIL and ADMIN_PASSWORD to create it.');
+  }
 }
 
 main()

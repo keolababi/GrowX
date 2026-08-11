@@ -6,13 +6,14 @@ import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
-import type { FeedbackFormSummary } from '@/types/feedback';
+import type { CommunityFeedbackFormSummary, FeedbackFormSummary } from '@/types/feedback';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 export default function FeedbackFormsScreen() {
   const { colors, iconAccent: lime } = useColorMode();
   const [forms, setForms] = useState<FeedbackFormSummary[]>([]);
+  const [communityForms, setCommunityForms] = useState<CommunityFeedbackFormSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,8 +21,12 @@ export default function FeedbackFormsScreen() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get<{ forms: FeedbackFormSummary[] }>('/feedback-forms');
+      const [{ data }, { data: communityData }] = await Promise.all([
+        api.get<{ forms: FeedbackFormSummary[] }>('/feedback-forms'),
+        api.get<{ forms: CommunityFeedbackFormSummary[] }>('/feedback-forms/community'),
+      ]);
       setForms(data.forms);
+      setCommunityForms(communityData.forms);
     } catch (value) {
       setError(getApiError(value, 'Асуулгуудыг ачаалж чадсангүй.'));
     } finally {
@@ -167,6 +172,86 @@ export default function FeedbackFormsScreen() {
                 <Icon name="chevron-forward" size={20} color={colors.muted} />
               </Pressable>
             ))}
+
+            <View className="mb-s mt-l flex-row items-center justify-between">
+              <View>
+                <Text className="text-lg font-extrabold text-text-primary">Бусдын асуулгууд</Text>
+                <Text className="mt-1 text-xs text-text-muted">
+                  GrowX хэрэглэгчдийн санал асуулгад оролцоорой
+                </Text>
+              </View>
+              {!!communityForms.length && (
+                <View className="rounded-avatar border border-border bg-background-paper px-s py-1">
+                  <Text className="text-[11px] font-bold text-text-secondary">
+                    {communityForms.length} асуулга
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {communityForms.map((form) => (
+              <Pressable
+                key={form.id}
+                onPress={() => router.push(`/feedback/${form.id}`)}
+                className="mb-s rounded-card border border-border bg-background-paper p-m active:border-brand-primary active:opacity-80"
+              >
+                <View className="flex-row items-start">
+                  <View className="mr-m h-12 w-12 shrink-0 items-center justify-center rounded-card bg-background-soft">
+                    <Icon name="chatbox-ellipses-outline" size={23} color={lime} />
+                  </View>
+                  <View className="min-w-0 flex-1">
+                    <View className="flex-row items-start justify-between gap-s">
+                      <Text
+                        numberOfLines={1}
+                        className="min-w-0 flex-1 text-base font-extrabold text-text-primary"
+                      >
+                        {form.title}
+                      </Text>
+                      {form.respondedByMe && (
+                        <View className="flex-row items-center gap-1 rounded-avatar bg-background-soft px-s py-1">
+                          <Icon name="checkmark" size={12} color={lime} />
+                          <Text className="text-[10px] font-extrabold text-brand-primary">
+                            Хариулсан
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      className="mt-1 text-xs font-semibold text-text-secondary"
+                    >
+                      {form.author.displayName || form.author.email.split('@')[0]}
+                    </Text>
+                    {!!form.description && (
+                      <Text numberOfLines={2} className="mt-1 text-xs leading-4 text-text-muted">
+                        {form.description}
+                      </Text>
+                    )}
+                    <View className="mt-s flex-row flex-wrap items-center gap-s">
+                      <Text className="text-[11px] text-text-muted">
+                        {form.questionCount} асуулт
+                      </Text>
+                      <Text className="text-[11px] text-text-muted">
+                        · {form.responseCount} хариулт
+                      </Text>
+                      <Text className="text-[11px] text-text-muted">
+                        · {relativeTime(form.createdAt)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Icon name="chevron-forward" size={20} color={colors.muted} />
+                </View>
+              </Pressable>
+            ))}
+
+            {!communityForms.length && !error && (
+              <View className="mb-l items-center rounded-card border border-dashed border-border bg-background-paper px-l py-l">
+                <Icon name="people-outline" size={28} color={colors.muted} />
+                <Text className="mt-s text-sm font-bold text-text-secondary">
+                  Бусдын асуулга одоогоор алга
+                </Text>
+              </View>
+            )}
 
             {!forms.length && !error && (
               <View className="items-center rounded-[24px] border border-dashed border-border bg-background-paper px-l py-12">

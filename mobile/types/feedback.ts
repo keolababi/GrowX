@@ -19,6 +19,11 @@ export type FeedbackFormSummary = {
   responseCount: number;
 };
 
+export type CommunityFeedbackFormSummary = FeedbackFormSummary & {
+  respondedByMe: boolean;
+  author: FeedbackFormAuthor;
+};
+
 export type FeedbackFormAuthor = {
   id: string;
   email: string;

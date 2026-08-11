@@ -1,8 +1,10 @@
-import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Pressable, Share, Text, View } from 'react-native';
 import { Icon } from './Icon';
 import { VideoPlayer } from './VideoPlayer';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { EngagementUsersSheet } from '@/components/EngagementUsersSheet';
+import { api } from '@/services/api';
 
 export type PostCardAuthor = {
   id: string;
@@ -15,6 +17,7 @@ export type PostCardAuthor = {
 export type PostCardMediaItem = { type: 'image' | 'video'; url: string };
 
 type Props = {
+  postId: string;
   author: PostCardAuthor;
   timestamp: string;
   content: string;
@@ -22,6 +25,7 @@ type Props = {
   communityName?: string | null;
   likeCount: number;
   commentCount: number;
+  shareCount: number;
   likedByMe: boolean;
   isOwnPost?: boolean;
   isFollowing?: boolean;
@@ -30,7 +34,7 @@ type Props = {
   onPressAuthor?: () => void;
   onPressLike?: () => void;
   onPressComment?: () => void;
-  onPressShare?: () => void;
+  onPressShare?: () => void | Promise<void>;
   onToggleFollow?: () => void;
   onToggleRepost?: () => void;
   onToggleSave?: () => void;
@@ -99,6 +103,7 @@ function MediaGrid({ media }: { media: PostCardMediaItem[] }) {
 }
 
 export const PostCard: React.FC<Props> = ({
+  postId,
   author,
   timestamp,
   content,
@@ -106,6 +111,7 @@ export const PostCard: React.FC<Props> = ({
   communityName,
   likeCount,
   commentCount,
+  shareCount,
   likedByMe,
   isOwnPost,
   isFollowing,
@@ -124,114 +130,147 @@ export const PostCard: React.FC<Props> = ({
   footer,
 }) => {
   const { colors, iconAccent, isDark } = useColorMode();
+  const [likesOpen, setLikesOpen] = useState(false);
+  const [currentShareCount, setCurrentShareCount] = useState(shareCount);
+  useEffect(() => setCurrentShareCount(shareCount), [shareCount]);
   const ownerAction = isOwnPost ? onEdit || onDelete : undefined;
   const moreAction = onPressMore || ownerAction;
+
+  const share = async () => {
+    if (onPressShare) await onPressShare();
+    else {
+      const result = await Share.share({ message: content });
+      if (result.action === Share.dismissedAction) return;
+    }
+    try {
+      const { data } = await api.post<{ shareCount: number }>(`/posts/${postId}/share`);
+      setCurrentShareCount(data.shareCount);
+    } catch {
+      // Sharing succeeded locally; the count will sync on the next feed refresh.
+    }
+  };
   return (
-    <View
-      className={
-        isDark
-          ? 'border-b border-border px-l py-l'
-          : 'border-b border-border bg-background-paper px-l py-m'
-      }
-    >
-      <View className="flex-row items-center">
-        <Pressable onPress={onPressAuthor} className="flex-1 flex-row items-center min-w-0">
-          <AuthorAvatar author={author} />
-          <View className="ml-s flex-1 min-w-0">
-            <View className="flex-row items-center">
-              <Text
-                numberOfLines={1}
-                className="flex-shrink text-base font-extrabold text-text-primary"
-              >
-                {author.displayName || author.email.split('@')[0]}
+    <>
+      <View
+        className={
+          isDark
+            ? 'border-b border-border px-l py-l'
+            : 'border-b border-border bg-background-paper px-l py-m'
+        }
+      >
+        <View className="flex-row items-center">
+          <Pressable onPress={onPressAuthor} className="flex-1 flex-row items-center min-w-0">
+            <AuthorAvatar author={author} />
+            <View className="ml-s flex-1 min-w-0">
+              <View className="flex-row items-center">
+                <Text
+                  numberOfLines={1}
+                  className="flex-shrink text-base font-extrabold text-text-primary"
+                >
+                  {author.displayName || author.email.split('@')[0]}
+                </Text>
+              </View>
+              <Text className="mt-[2px] text-xs text-text-muted">
+                {timestamp}
+                {communityName ? ` · ${communityName}` : ''}
               </Text>
             </View>
-            <Text className="mt-[2px] text-xs text-text-muted">
-              {timestamp}
-              {communityName ? ` · ${communityName}` : ''}
-            </Text>
-          </View>
-        </Pressable>
+          </Pressable>
 
-        {!isOwnPost && onToggleFollow && (
-          <Pressable
-            onPress={onToggleFollow}
-            className={`ml-s h-8 items-center justify-center rounded-avatar border px-s ${
-              isFollowing ? 'border-border bg-transparent' : 'border-brand-primary bg-brand-primary'
-            }`}
-          >
-            <Text
-              className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
+          {!isOwnPost && onToggleFollow && (
+            <Pressable
+              onPress={onToggleFollow}
+              className={`ml-s h-8 items-center justify-center rounded-avatar border px-s ${
+                isFollowing
+                  ? 'border-border bg-transparent'
+                  : 'border-brand-primary bg-brand-primary'
+              }`}
             >
-              {isFollowing ? 'Дагаж буй' : 'Дагах'}
-            </Text>
-          </Pressable>
-        )}
-        {!!moreAction && (
-          <Pressable
-            accessibilityLabel={isOwnPost ? 'Post-ын үйлдлүүд' : 'Post дэлгэрэнгүй'}
-            hitSlop={10}
-            onPress={moreAction}
-            className="ml-m h-8 w-6 items-center justify-center"
-          >
-            <Icon name="ellipsis-horizontal" size={20} color={colors.text} />
-          </Pressable>
-        )}
-      </View>
-
-      {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}
-      <MediaGrid media={media} />
-
-      <View className="mt-m flex-row items-center justify-between gap-l">
-        <Pressable onPress={onPressLike} className="flex-row items-center gap-1">
-          <Icon
-            name={likedByMe ? 'heart' : 'heart-outline'}
-            size={22}
-            color={likedByMe ? colors.danger : colors.textSecondary}
-          />
-          {likeCount > 0 && (
-            <Text className={`text-xs font-bold ${likedByMe ? 'text-danger' : 'text-text-muted'}`}>
-              {likeCount}
-            </Text>
+              <Text
+                className={`text-xs font-bold ${isFollowing ? 'text-text-secondary' : 'text-background-app'}`}
+              >
+                {isFollowing ? 'Дагаж буй' : 'Дагах'}
+              </Text>
+            </Pressable>
           )}
-        </Pressable>
-        {onPressComment ? (
-          <Pressable onPress={onPressComment} className="flex-row items-center gap-1">
-            <Icon name="chatbubble-outline" size={21} color={colors.textSecondary} />
-            {commentCount > 0 && (
-              <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
-            )}
-          </Pressable>
-        ) : (
+          {!!moreAction && (
+            <Pressable
+              accessibilityLabel={isOwnPost ? 'Post-ын үйлдлүүд' : 'Post дэлгэрэнгүй'}
+              hitSlop={10}
+              onPress={moreAction}
+              className="ml-m h-8 w-6 items-center justify-center"
+            >
+              <Icon name="ellipsis-horizontal" size={20} color={colors.text} />
+            </Pressable>
+          )}
+        </View>
+
+        {!!content && <Text className="mt-s text-base leading-6 text-text-primary">{content}</Text>}
+        <MediaGrid media={media} />
+
+        <View className="mt-m flex-row items-center justify-between gap-l">
           <View className="flex-row items-center gap-1">
-            <Icon name="chatbubble-outline" size={21} color={colors.textSecondary} />
-            {commentCount > 0 && (
-              <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
+            <Pressable onPress={onPressLike} hitSlop={6}>
+              <Icon
+                name={likedByMe ? 'heart' : 'heart-outline'}
+                size={22}
+                color={likedByMe ? colors.danger : colors.textSecondary}
+              />
+            </Pressable>
+            {likeCount > 0 && (
+              <Pressable onPress={() => setLikesOpen(true)} hitSlop={6}>
+                <Text
+                  className={`text-xs font-bold ${likedByMe ? 'text-danger' : 'text-text-muted'}`}
+                >
+                  {likeCount}
+                </Text>
+              </Pressable>
             )}
           </View>
-        )}
-        {onToggleRepost && (
-          <Pressable onPress={onToggleRepost}>
-            <Icon name="repeat" size={22} color={reposted ? iconAccent : colors.textSecondary} />
-          </Pressable>
-        )}
-        {onPressShare && (
-          <Pressable onPress={onPressShare}>
+          {onPressComment ? (
+            <Pressable onPress={onPressComment} className="flex-row items-center gap-1">
+              <Icon name="chatbubble-outline" size={21} color={colors.textSecondary} />
+              {commentCount > 0 && (
+                <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
+              )}
+            </Pressable>
+          ) : (
+            <View className="flex-row items-center gap-1">
+              <Icon name="chatbubble-outline" size={21} color={colors.textSecondary} />
+              {commentCount > 0 && (
+                <Text className="text-xs font-bold text-text-muted">{commentCount}</Text>
+              )}
+            </View>
+          )}
+          {onToggleRepost && (
+            <Pressable onPress={onToggleRepost}>
+              <Icon name="repeat" size={22} color={reposted ? iconAccent : colors.textSecondary} />
+            </Pressable>
+          )}
+          <Pressable onPress={() => void share()} className="flex-row items-center gap-1">
             <Icon name="share-social-outline" size={22} color={colors.textSecondary} />
+            {currentShareCount > 0 && (
+              <Text className="text-xs font-bold text-text-muted">{currentShareCount}</Text>
+            )}
           </Pressable>
-        )}
-        {onToggleSave && (
-          <Pressable onPress={onToggleSave} className="ml-auto">
-            <Icon
-              name={saved ? 'bookmark' : 'bookmark-outline'}
-              size={21}
-              color={saved ? iconAccent : colors.textSecondary}
-            />
-          </Pressable>
-        )}
-      </View>
+          {onToggleSave && (
+            <Pressable onPress={onToggleSave} className="ml-auto">
+              <Icon
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={21}
+                color={saved ? iconAccent : colors.textSecondary}
+              />
+            </Pressable>
+          )}
+        </View>
 
-      {footer}
-    </View>
+        {footer}
+      </View>
+      <EngagementUsersSheet
+        visible={likesOpen}
+        onClose={() => setLikesOpen(false)}
+        endpoint={`/posts/${postId}/likes`}
+      />
+    </>
   );
 };

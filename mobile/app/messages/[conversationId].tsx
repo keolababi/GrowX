@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import Slider from '@react-native-community/slider';
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
+  useAudioRecorderState,
+} from 'expo-audio';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -24,13 +34,20 @@ import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
 import { getSocket } from '@/services/socket';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useAppDialog } from '@/providers/AppDialogProvider';
+import { uploadMedia, type LocalUploadAsset } from '@/services/blob';
+import { VideoPlayer } from '@/components/ui/VideoPlayer';
+import { GrowXMark } from '@/components/GrowXLogo';
 
 const lime = '#9AF000';
 const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
+const GROWX_WELCOME_EMAIL = 'welcome@growx.mn';
 
 type DeliveryMessage = ChatMessage & {
   deliveryStatus?: 'sending' | 'failed';
 };
+
+type SelectedMedia = LocalUploadAsset & { type: 'image' | 'video' | 'audio' };
 
 type SendAck = { ok: boolean; message?: ChatMessage; error?: string };
 
@@ -46,19 +63,98 @@ function canModifyMessage(message: ChatMessage) {
   return Date.now() - new Date(message.createdAt).getTime() <= MESSAGE_ACTION_WINDOW_MS;
 }
 
+function audioTime(value: number) {
+  const safeValue = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+  return `${Math.floor(safeValue / 60)}:${String(safeValue % 60).padStart(2, '0')}`;
+}
+
+function VoiceMessage({ source, mine }: { source: string; mine: boolean }) {
+  const { colors } = useColorMode();
+  const player = useAudioPlayer(source, { updateInterval: 200 });
+  const status = useAudioPlayerStatus(player);
+  const duration = Number.isFinite(status.duration) ? status.duration : 0;
+  const currentTime = Number.isFinite(status.currentTime) ? status.currentTime : 0;
+  const [seeking, setSeeking] = useState(false);
+  const [seekTime, setSeekTime] = useState(0);
+  const displayedTime = seeking ? seekTime : currentTime;
+
+  const togglePlayback = () => {
+    if (status.playing) {
+      player.pause();
+      return;
+    }
+    if (duration > 0 && currentTime >= duration - 0.1) void player.seekTo(0);
+    player.play();
+  };
+
+  return (
+    <View style={styles.voiceMessage}>
+      <Pressable
+        accessibilityLabel={status.playing ? 'Дуут мессежийг түр зогсоох' : 'Дуут мессеж тоглуулах'}
+        onPress={togglePlayback}
+        style={[
+          styles.voicePlayButton,
+          { backgroundColor: mine ? 'rgba(3, 15, 10, 0.16)' : colors.surfaceSoft },
+        ]}
+      >
+        <Icon name={status.playing ? 'pause' : 'play'} size={18} color={mine ? colors.ink : lime} />
+      </Pressable>
+      <View style={styles.voiceProgressArea}>
+        <Slider
+          accessibilityLabel="Дуут мессежийн хугацааг урагш, хойшлуулах"
+          disabled={duration <= 0}
+          maximumTrackTintColor={mine ? 'rgba(3, 15, 10, 0.2)' : colors.borderStrong}
+          maximumValue={Math.max(duration, 1)}
+          minimumTrackTintColor={mine ? colors.ink : lime}
+          minimumValue={0}
+          onSlidingComplete={(value) => {
+            setSeekTime(value);
+            void player
+              .seekTo(value)
+              .catch(() => undefined)
+              .finally(() => setSeeking(false));
+          }}
+          onSlidingStart={() => {
+            setSeekTime(currentTime);
+            setSeeking(true);
+          }}
+          onValueChange={setSeekTime}
+          step={0.1}
+          style={styles.voiceSlider}
+          thumbTintColor={mine ? colors.ink : lime}
+          value={Math.min(displayedTime, Math.max(duration, 1))}
+        />
+        <Text style={[styles.voiceDuration, { color: mine ? colors.ink : colors.muted }]}>
+          {audioTime(displayedTime)} / {audioTime(duration)}
+        </Text>
+      </View>
+      <Icon name="mic" size={17} color={mine ? colors.ink : lime} />
+    </View>
+  );
+}
+
 export default function ConversationScreen() {
   const { iconAccent, colors, isDark } = useColorMode();
+  const { confirm } = useAppDialog();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useUser();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder, 200);
+  const recordingBusyRef = useRef(false);
   const [otherUser, setOtherUser] = useState<ChatUser | null>(null);
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
   const [messages, setMessages] = useState<DeliveryMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [attachment, setAttachment] = useState<SelectedMedia | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingPaused, setRecordingPaused] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const [menuAnchor, setMenuAnchor] = useState({ x: 0, y: 0 });
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
@@ -66,17 +162,15 @@ export default function ConversationScreen() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [unsendingId, setUnsendingId] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const lastSeenMessageId = useMemo(() => {
-    if (!otherLastReadAt || !user?.id) return null;
-    const readAt = new Date(otherLastReadAt).getTime();
-    return (
-      [...messages]
-        .reverse()
-        .find(
-          (message) =>
-            message.senderId === user.id && new Date(message.createdAt).getTime() <= readAt,
-        )?.id ?? null
-    );
+  const latestOutgoingStatus = useMemo(() => {
+    if (!user?.id) return null;
+    const message = [...messages].reverse().find((item) => item.senderId === user.id);
+    if (!message) return null;
+    const readAt = otherLastReadAt ? new Date(otherLastReadAt).getTime() : 0;
+    return {
+      messageId: message.id,
+      read: new Date(message.createdAt).getTime() <= readAt,
+    };
   }, [messages, otherLastReadAt, user?.id]);
 
   const loadMessages = useCallback(
@@ -224,6 +318,8 @@ export default function ConversationScreen() {
               conversationId,
               content: pending.content,
               clientMessageId: pending.clientMessageId,
+              mediaType: pending.mediaType ?? undefined,
+              mediaUrl: pending.mediaUrl ?? undefined,
             },
             (timeoutError: Error | null, response: SendAck) => {
               if (timeoutError) reject(timeoutError);
@@ -236,7 +332,12 @@ export default function ConversationScreen() {
       } catch {
         const { data } = await api.post<{ message: ChatMessage }>(
           `/conversations/${conversationId}/messages`,
-          { content: pending.content, clientMessageId: pending.clientMessageId },
+          {
+            content: pending.content,
+            clientMessageId: pending.clientMessageId,
+            mediaType: pending.mediaType ?? undefined,
+            mediaUrl: pending.mediaUrl ?? undefined,
+          },
         );
         delivered = data.message;
       }
@@ -259,9 +360,39 @@ export default function ConversationScreen() {
     }
   };
 
-  const send = async () => {
+  const send = async (selectedAttachment: SelectedMedia | null = attachment) => {
     const content = draft.trim();
-    if (!content || sending || !conversationId || !user) return;
+    if ((!content && !selectedAttachment) || sending || uploading || !conversationId || !user)
+      return;
+
+    let mediaUrl: string | null = null;
+    let mediaType: ChatMessage['mediaType'] = null;
+    if (selectedAttachment) {
+      setUploading(true);
+      setUploadProgress(0);
+      setError('');
+      try {
+        const blob = await uploadMedia(
+          selectedAttachment,
+          selectedAttachment.type,
+          setUploadProgress,
+        );
+        mediaUrl = blob.url;
+        mediaType =
+          selectedAttachment.type === 'video'
+            ? 'VIDEO'
+            : selectedAttachment.type === 'audio'
+              ? 'AUDIO'
+              : 'IMAGE';
+      } catch (value) {
+        setAttachment(selectedAttachment);
+        setError(getApiError(value, 'Файл байршуулж чадсангүй. Дахин оролдоно уу.'));
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
     const clientMessageId = `gx-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const pending: DeliveryMessage = {
       id: `pending:${clientMessageId}`,
@@ -269,6 +400,8 @@ export default function ConversationScreen() {
       conversationId,
       senderId: user.id,
       content,
+      mediaType,
+      mediaUrl,
       createdAt: new Date().toISOString(),
       editedAt: null,
       deletedAt: null,
@@ -282,9 +415,145 @@ export default function ConversationScreen() {
       deliveryStatus: 'sending',
     };
     setDraft('');
+    setAttachment(null);
+    setUploadProgress(0);
     setMessages((items) => [...items, pending]);
     await deliverMessage(pending);
   };
+
+  const pickAttachment = async () => {
+    if (sending || uploading || editingMessage || isRecording) return;
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setError('Зураг, видео сонгохын тулд gallery хандах эрх өгнө үү.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        quality: 0.9,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      const type: SelectedMedia['type'] =
+        asset.type === 'video' || asset.mimeType?.startsWith('video/') ? 'video' : 'image';
+      const unsupportedWebVideo =
+        Platform.OS === 'web' &&
+        type === 'video' &&
+        (asset.mimeType === 'video/quicktime' || /\.mov$/i.test(asset.fileName || asset.uri));
+      if (unsupportedWebVideo) {
+        setError('Chrome дээр MOV видео тоглохгүй. MP4 (H.264) эсвэл WebM файл сонгоно уу.');
+        return;
+      }
+      setAttachment({
+        type,
+        uri: asset.uri,
+        name: asset.fileName || `message-${Date.now()}.${type === 'video' ? 'mp4' : 'jpg'}`,
+        mimeType: asset.mimeType || (type === 'video' ? 'video/mp4' : 'image/jpeg'),
+        file: asset.file,
+      });
+      setUploadProgress(0);
+      setError('');
+    } catch (value) {
+      setError(getApiError(value, 'Зураг, видео сонгож чадсангүй.'));
+    }
+  };
+
+  const finishRecording = useCallback(
+    async (discard = false, keepPreview = true): Promise<SelectedMedia | null> => {
+      if (recordingBusyRef.current) return null;
+      recordingBusyRef.current = true;
+      let recordedMedia: SelectedMedia | null = null;
+      try {
+        if (recorder.isRecording || recordingPaused) await recorder.stop();
+        const status = recorder.getStatus();
+        const uri = recorder.uri ?? status.url;
+        if (!discard && uri) {
+          const webRecording = Platform.OS === 'web';
+          recordedMedia = {
+            type: 'audio',
+            uri,
+            name: `voice-${Date.now()}.${webRecording ? 'webm' : 'm4a'}`,
+            mimeType: webRecording ? 'audio/webm' : 'audio/mp4',
+          };
+          if (keepPreview) setAttachment(recordedMedia);
+          setUploadProgress(0);
+          setError('');
+        } else if (!discard) {
+          setError('Дуут бичлэг хадгалагдсангүй. Дахин бичнэ үү.');
+        }
+      } catch (value) {
+        if (!discard) setError(getApiError(value, 'Дуут бичлэгийг хадгалж чадсангүй.'));
+      } finally {
+        setIsRecording(false);
+        setRecordingPaused(false);
+        recordingBusyRef.current = false;
+        void setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+      }
+      return recordedMedia;
+    },
+    [recorder, recordingPaused],
+  );
+
+  const startRecording = async () => {
+    if (sending || uploading || editingMessage || isRecording || recordingBusyRef.current) return;
+    recordingBusyRef.current = true;
+    setError('');
+    try {
+      const permission = await requestRecordingPermissionsAsync();
+      if (!permission.granted) {
+        setError('Дуут мессеж бичихийн тулд микрофоны эрх өгнө үү.');
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      setAttachment(null);
+      setUploadProgress(0);
+      recorder.record({ forDuration: 30 });
+      setIsRecording(true);
+      setRecordingPaused(false);
+    } catch (value) {
+      setError(getApiError(value, 'Дуут бичлэг эхлүүлж чадсангүй.'));
+      void setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+    } finally {
+      recordingBusyRef.current = false;
+    }
+  };
+
+  const toggleRecordingPause = () => {
+    if (!isRecording || recordingBusyRef.current) return;
+    if (recordingPaused) {
+      const remainingSeconds = Math.max(1, (30_000 - recorderState.durationMillis) / 1000);
+      recorder.record({ forDuration: remainingSeconds });
+      setRecordingPaused(false);
+      return;
+    }
+    recorder.pause();
+    setRecordingPaused(true);
+  };
+
+  const sendRecording = async () => {
+    const recordedMedia = await finishRecording(false, false);
+    if (recordedMedia) await send(recordedMedia);
+  };
+
+  useEffect(() => {
+    if (!isRecording || recordingPaused) return;
+    const remainingMs = Math.max(0, 30_000 - recorderState.durationMillis);
+    if (remainingMs === 0) {
+      void finishRecording();
+      return;
+    }
+    const timer = setTimeout(() => void finishRecording(), remainingMs + 100);
+    return () => clearTimeout(timer);
+  }, [finishRecording, isRecording, recorderState.durationMillis, recordingPaused]);
+
+  useEffect(
+    () => () => {
+      if (recorder.isRecording) void recorder.stop();
+    },
+    [recorder],
+  );
 
   const unsend = async (messageId: string) => {
     if (!conversationId || unsendingId) return;
@@ -302,24 +571,19 @@ export default function ConversationScreen() {
     }
   };
 
-  const confirmUnsend = (messageId: string) => {
+  const confirmUnsend = async (messageId: string) => {
     const message = 'Энэ мессежийг хүн бүрийн чатаас устгах уу?';
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm(message)) void unsend(messageId);
-      return;
-    }
-    Alert.alert('Илгээснийг буцаах', message, [
-      { text: 'Болих', style: 'cancel' },
-      {
-        text: 'Илгээснийг буцаах',
-        style: 'destructive',
-        onPress: () => void unsend(messageId),
-      },
-    ]);
+    const accepted = await confirm({
+      title: 'Илгээснийг буцаах',
+      message,
+      confirmLabel: 'Буцаах',
+      variant: 'danger',
+    });
+    if (accepted) await unsend(messageId);
   };
 
   const beginEdit = (message: ChatMessage) => {
-    if (!canModifyMessage(message)) return;
+    if (!canModifyMessage(message) || !message.content.trim()) return;
     setSelectedMessage(null);
     setEditingMessage(message);
     setEditDraft(message.content);
@@ -369,6 +633,10 @@ export default function ConversationScreen() {
     setEditDraft('');
   };
 
+  const sendDisabled = editingMessage
+    ? !editDraft.trim() || savingEdit
+    : (!draft.trim() && !attachment) || sending || uploading;
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
@@ -393,10 +661,24 @@ export default function ConversationScreen() {
           </Pressable>
           <Pressable
             disabled={!otherUser}
-            onPress={() => otherUser && router.push(`/users/${otherUser.id}` as Href)}
+            onPress={() =>
+              otherUser?.email !== GROWX_WELCOME_EMAIL &&
+              otherUser &&
+              router.push(`/users/${otherUser.id}` as Href)
+            }
             style={styles.profileLink}
           >
-            {otherUser?.avatarUrl ? (
+            {otherUser?.email === GROWX_WELCOME_EMAIL ? (
+              <View
+                style={[
+                  styles.headerAvatar,
+                  styles.growxHeaderAvatar,
+                  { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+                ]}
+              >
+                <GrowXMark size={38} />
+              </View>
+            ) : otherUser?.avatarUrl ? (
               <Image
                 source={{ uri: otherUser.avatarUrl }}
                 style={[styles.headerAvatar, { borderColor: colors.borderStrong }]}
@@ -493,6 +775,11 @@ export default function ConversationScreen() {
                       onLongPress={(event) => actionAvailable && openMessageMenu(message, event)}
                       style={[
                         styles.bubble,
+                        message.mediaUrl && {
+                          width: Math.min(310, windowWidth * 0.7),
+                          paddingHorizontal: 6,
+                          paddingTop: 6,
+                        },
                         mine
                           ? [styles.mineBubble, { backgroundColor: colors.primary }]
                           : [
@@ -504,11 +791,34 @@ export default function ConversationScreen() {
                             ],
                       ]}
                     >
-                      <Text
-                        style={[styles.messageText, { color: mine ? colors.ink : colors.text }]}
-                      >
-                        {message.content}
-                      </Text>
+                      {message.mediaUrl && message.mediaType === 'AUDIO' ? (
+                        <VoiceMessage source={message.mediaUrl} mine={mine} />
+                      ) : message.mediaUrl && message.mediaType === 'VIDEO' ? (
+                        <View style={styles.messageMedia}>
+                          <VideoPlayer
+                            source={message.mediaUrl}
+                            aspectRatio={16 / 9}
+                            loop={false}
+                          />
+                        </View>
+                      ) : message.mediaUrl ? (
+                        <Image
+                          source={{ uri: message.mediaUrl }}
+                          resizeMode="cover"
+                          style={styles.messageMedia}
+                        />
+                      ) : null}
+                      {!!message.content && (
+                        <Text
+                          style={[
+                            styles.messageText,
+                            message.mediaUrl && styles.messageCaption,
+                            { color: mine ? colors.ink : colors.text },
+                          ]}
+                        >
+                          {message.content}
+                        </Text>
+                      )}
                       <Text
                         style={[styles.messageTime, { color: mine ? colors.ink : colors.muted }]}
                       >
@@ -517,9 +827,18 @@ export default function ConversationScreen() {
                       </Text>
                     </Pressable>
                   </View>
-                  {mine && message.id === lastSeenMessageId && (
-                    <Text style={[styles.seenText, { color: iconAccent }]}>Уншсан</Text>
-                  )}
+                  {mine &&
+                    !message.deliveryStatus &&
+                    message.id === latestOutgoingStatus?.messageId && (
+                      <Text
+                        style={[
+                          styles.seenText,
+                          { color: latestOutgoingStatus.read ? iconAccent : colors.muted },
+                        ]}
+                      >
+                        {latestOutgoingStatus.read ? 'Уншсан' : 'Уншаагүй'}
+                      </Text>
+                    )}
                   {mine && message.deliveryStatus === 'sending' && (
                     <Text style={[styles.deliverySending, { color: colors.muted }]}>
                       Илгээж байна…
@@ -565,66 +884,205 @@ export default function ConversationScreen() {
               </Pressable>
             </View>
           )}
+          {!editingMessage && attachment && (
+            <View style={[styles.attachmentPreview, { borderBottomColor: colors.border }]}>
+              {attachment.type === 'audio' ? (
+                <View style={styles.attachmentVoicePreview}>
+                  <VoiceMessage source={attachment.uri} mine={false} />
+                </View>
+              ) : attachment.type === 'video' ? (
+                <View style={styles.attachmentThumbnail}>
+                  <VideoPlayer source={attachment.uri} aspectRatio={16 / 9} loop={false} />
+                </View>
+              ) : (
+                <Image
+                  source={{ uri: attachment.uri }}
+                  resizeMode="cover"
+                  style={styles.attachmentThumbnail}
+                />
+              )}
+              <View style={styles.attachmentCopy}>
+                <Text numberOfLines={1} style={[styles.attachmentName, { color: colors.text }]}>
+                  {attachment.name}
+                </Text>
+                <Text style={[styles.attachmentKind, { color: colors.muted }]}>
+                  {uploading
+                    ? `Байршуулж байна ${Math.round(uploadProgress)}%`
+                    : attachment.type === 'audio'
+                      ? 'Дуут мессеж · 30 сек хүртэл'
+                      : attachment.type === 'video'
+                        ? 'Видео'
+                        : 'Зураг'}
+                </Text>
+                {uploading && (
+                  <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSoft }]}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        { backgroundColor: colors.primary, width: `${uploadProgress}%` },
+                      ]}
+                    />
+                  </View>
+                )}
+              </View>
+              <Pressable
+                accessibilityLabel="Сонгосон файлыг хасах"
+                disabled={uploading}
+                onPress={() => setAttachment(null)}
+                style={[styles.removeAttachment, { backgroundColor: colors.surfaceSoft }]}
+              >
+                <Icon name="close" size={19} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+          )}
           <View
             style={[
               styles.composer,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <TextInput
-              ref={inputRef}
-              value={editingMessage ? editDraft : draft}
-              onChangeText={editingMessage ? setEditDraft : setDraft}
-              placeholder="Мессеж бичих..."
-              placeholderTextColor={colors.muted}
-              keyboardAppearance={isDark ? 'dark' : 'light'}
-              selectionColor={iconAccent}
-              cursorColor={iconAccent}
-              multiline
-              maxLength={4000}
-              scrollEnabled
-              onKeyPress={(event) => {
-                if (Platform.OS !== 'web') return;
-                const nativeEvent = event.nativeEvent as unknown as {
-                  key: string;
-                  shiftKey?: boolean;
-                };
-                if (nativeEvent.key === 'Enter' && !nativeEvent.shiftKey) {
-                  event.preventDefault();
-                  void (editingMessage ? saveEdit() : send());
+            {!editingMessage && !isRecording && (
+              <Pressable
+                accessibilityLabel="Зураг эсвэл видео сонгох"
+                disabled={sending || uploading}
+                onPress={() => void pickAttachment()}
+                style={({ pressed }) => [
+                  styles.attachmentButton,
+                  { backgroundColor: colors.surfaceRaised, borderColor: colors.borderStrong },
+                  pressed && styles.attachmentButtonPressed,
+                  (sending || uploading) && styles.sendDisabled,
+                ]}
+              >
+                <Icon name="image-outline" size={22} color={iconAccent} />
+              </Pressable>
+            )}
+            {isRecording ? (
+              <View
+                style={[
+                  styles.recordingStatus,
+                  { backgroundColor: colors.surfaceRaised, borderColor: colors.danger },
+                ]}
+              >
+                <View style={[styles.recordingDot, { backgroundColor: colors.danger }]} />
+                <Text style={[styles.recordingTime, { color: colors.text }]}>
+                  {recordingPaused ? 'Pause · ' : ''}
+                  {audioTime(Math.min(recorderState.durationMillis, 30_000) / 1000)} / 0:30
+                </Text>
+                <Pressable
+                  accessibilityLabel="Дуут бичлэгийг цуцлах"
+                  onPress={() => void finishRecording(true)}
+                  hitSlop={8}
+                >
+                  <Icon name="trash-outline" size={19} color={colors.danger} />
+                </Pressable>
+              </View>
+            ) : (
+              <TextInput
+                ref={inputRef}
+                value={editingMessage ? editDraft : draft}
+                onChangeText={editingMessage ? setEditDraft : setDraft}
+                placeholder="Мессеж бичих..."
+                placeholderTextColor={colors.muted}
+                keyboardAppearance={isDark ? 'dark' : 'light'}
+                selectionColor={iconAccent}
+                cursorColor={iconAccent}
+                multiline
+                maxLength={4000}
+                scrollEnabled
+                onKeyPress={(event) => {
+                  if (Platform.OS !== 'web') return;
+                  const nativeEvent = event.nativeEvent as unknown as {
+                    key: string;
+                    shiftKey?: boolean;
+                  };
+                  if (nativeEvent.key === 'Enter' && !nativeEvent.shiftKey) {
+                    event.preventDefault();
+                    void (editingMessage ? saveEdit() : send());
+                  }
+                }}
+                style={[
+                  styles.input,
+                  {
+                    color: colors.text,
+                    backgroundColor: colors.surfaceRaised,
+                    borderColor: colors.borderStrong,
+                  },
+                  Platform.OS === 'web' &&
+                    ({
+                      outlineStyle: 'none',
+                      outlineWidth: 0,
+                      resize: 'none',
+                    } as never),
+                ]}
+              />
+            )}
+            {!editingMessage && (
+              <Pressable
+                accessibilityLabel={
+                  isRecording
+                    ? recordingPaused
+                      ? 'Дуут бичлэгийг үргэлжлүүлэх'
+                      : 'Дуут бичлэгийг түр зогсоох'
+                    : 'Дуут мессеж бичих'
                 }
-              }}
-              style={[
-                styles.input,
-                {
-                  color: colors.text,
-                  backgroundColor: colors.surfaceRaised,
-                  borderColor: colors.borderStrong,
-                },
-                Platform.OS === 'web' &&
-                  ({
-                    outlineStyle: 'none',
-                    outlineWidth: 0,
-                    resize: 'none',
-                  } as never),
-              ]}
-            />
-            <Pressable
-              disabled={editingMessage ? !editDraft.trim() || savingEdit : !draft.trim() || sending}
-              onPress={() => void (editingMessage ? saveEdit() : send())}
-              style={[
-                styles.sendButton,
-                { backgroundColor: colors.primary },
-                (editingMessage ? !editDraft.trim() || savingEdit : !draft.trim() || sending) &&
-                  styles.sendDisabled,
-              ]}
-            >
-              {savingEdit ? (
-                <ActivityIndicator color={colors.ink} size="small" />
-              ) : (
-                <Icon name="send" size={22} color={colors.ink} />
-              )}
-            </Pressable>
+                disabled={sending || uploading}
+                onPress={() => void (isRecording ? toggleRecordingPause() : startRecording())}
+                style={[
+                  styles.voiceRecordButton,
+                  {
+                    backgroundColor: colors.surfaceRaised,
+                    borderColor: isRecording ? colors.danger : colors.borderStrong,
+                  },
+                  (sending || uploading) && styles.sendDisabled,
+                ]}
+              >
+                <Icon
+                  name={isRecording ? (recordingPaused ? 'play' : 'pause') : 'mic-outline'}
+                  size={21}
+                  color={isRecording ? colors.danger : iconAccent}
+                />
+              </Pressable>
+            )}
+            {isRecording && (
+              <Pressable
+                accessibilityLabel="Дуут бичлэгийг зогсоох"
+                disabled={recordingBusyRef.current}
+                onPress={() => void finishRecording()}
+                style={[
+                  styles.recordingStopButton,
+                  { backgroundColor: colors.danger, borderColor: colors.danger },
+                ]}
+              >
+                <Icon name="stop" size={19} color="#FFFFFF" />
+              </Pressable>
+            )}
+            {isRecording && (
+              <Pressable
+                accessibilityLabel="Дуут бичлэгийг илгээх"
+                disabled={sending || uploading || recordingBusyRef.current}
+                onPress={() => void sendRecording()}
+                style={[styles.recordingSendButton, { backgroundColor: colors.primary }]}
+              >
+                <Icon name="send" size={20} color={colors.ink} />
+              </Pressable>
+            )}
+            {!isRecording && (
+              <Pressable
+                disabled={sendDisabled}
+                onPress={() => void (editingMessage ? saveEdit() : send())}
+                style={[
+                  styles.sendButton,
+                  { backgroundColor: colors.primary },
+                  sendDisabled && styles.sendDisabled,
+                ]}
+              >
+                {savingEdit || uploading ? (
+                  <ActivityIndicator color={colors.ink} size="small" />
+                ) : (
+                  <Icon name="send" size={22} color={colors.ink} />
+                )}
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -656,16 +1114,18 @@ export default function ConversationScreen() {
                   {messageTime(selectedMessage.createdAt)}
                 </Text>
                 <View style={[styles.popoverDivider, { backgroundColor: colors.border }]} />
-                <Pressable
-                  onPress={() => beginEdit(selectedMessage)}
-                  style={({ pressed }) => [
-                    styles.popoverItem,
-                    pressed && { backgroundColor: colors.surfaceRaised },
-                  ]}
-                >
-                  <Icon name="create-outline" size={17} color={iconAccent} />
-                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Засах</Text>
-                </Pressable>
+                {!!selectedMessage.content.trim() && (
+                  <Pressable
+                    onPress={() => beginEdit(selectedMessage)}
+                    style={({ pressed }) => [
+                      styles.popoverItem,
+                      pressed && { backgroundColor: colors.surfaceRaised },
+                    ]}
+                  >
+                    <Icon name="create-outline" size={17} color={iconAccent} />
+                    <Text style={[styles.popoverItemText, { color: colors.text }]}>Засах</Text>
+                  </Pressable>
+                )}
                 <Pressable
                   disabled={Boolean(unsendingId)}
                   onPress={() => confirmUnsend(selectedMessage.id)}
@@ -721,6 +1181,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerAvatarText: { color: lime, fontSize: 17, fontWeight: '900' },
+  growxHeaderAvatar: { overflow: 'hidden' },
   headerCopy: { flex: 1, marginLeft: 11 },
   profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   name: { color: '#F5F8F6', fontSize: 16, fontWeight: '900', letterSpacing: -0.2 },
@@ -830,6 +1291,26 @@ const styles = StyleSheet.create({
   },
   mineBubble: { backgroundColor: lime, borderBottomRightRadius: 6 },
   messageText: { color: '#EAF0ED', fontSize: 14, lineHeight: 20 },
+  messageCaption: { paddingHorizontal: 8, paddingTop: 8 },
+  messageMedia: { width: '100%', aspectRatio: 16 / 9, borderRadius: 15, overflow: 'hidden' },
+  voiceMessage: {
+    minHeight: 50,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 6,
+  },
+  voicePlayButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceProgressArea: { flex: 1, minWidth: 0 },
+  voiceSlider: { width: '100%', height: 24 },
+  voiceDuration: { fontSize: 9, fontWeight: '700', marginTop: 5 },
   mineText: { color: '#142000' },
   messageTime: { color: '#77877F', fontSize: 9, marginTop: 4, alignSelf: 'flex-end' },
   mineTime: { color: '#446016' },
@@ -867,6 +1348,34 @@ const styles = StyleSheet.create({
   editingCopy: { flex: 1, minWidth: 0 },
   editingLabel: { color: lime, fontSize: 12, fontWeight: '900' },
   editingPreview: { color: '#7D8B85', fontSize: 10, marginTop: 3 },
+  attachmentPreview: {
+    minHeight: 86,
+    paddingHorizontal: 15,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    borderBottomWidth: 1,
+  },
+  attachmentThumbnail: {
+    width: 104,
+    aspectRatio: 16 / 9,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  attachmentVoicePreview: { width: 150 },
+  attachmentCopy: { flex: 1, minWidth: 0 },
+  attachmentName: { fontSize: 12, fontWeight: '800' },
+  attachmentKind: { fontSize: 10, marginTop: 4 },
+  progressTrack: { height: 3, borderRadius: 2, overflow: 'hidden', marginTop: 7 },
+  progressFill: { height: '100%', borderRadius: 2 },
+  removeAttachment: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cancelEditingButton: {
     width: 34,
     height: 34,
@@ -885,6 +1394,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 9,
   },
+  attachmentButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  attachmentButtonPressed: { opacity: 0.7 },
+  voiceRecordButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  recordingStopButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  recordingSendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordingStatus: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 14,
+    borderRadius: 25,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  recordingDot: { width: 9, height: 9, borderRadius: 5 },
+  recordingTime: { flex: 1, fontSize: 13, fontWeight: '800' },
   input: {
     flex: 1,
     height: 50,

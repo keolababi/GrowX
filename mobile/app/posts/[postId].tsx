@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Image,
   KeyboardAvoidingView,
-  Alert,
   Platform,
   Pressable,
   SafeAreaView,
@@ -22,11 +21,13 @@ import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 
 const lime = '#9AF000';
 
 export default function PostCommentsScreen() {
   const { colors } = useColorMode();
+  const { confirm } = useAppDialog();
   const { user } = useUser();
   const { postId, focusComment } = useLocalSearchParams<{
     postId: string;
@@ -101,14 +102,13 @@ export default function PostCommentsScreen() {
         setError(getApiError(value, 'Сэтгэгдэл устгаж чадсангүй.'));
       }
     };
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Сэтгэгдлээ устгах уу?')) await remove();
-      return;
-    }
-    Alert.alert('Сэтгэгдэл устгах', 'Сэтгэгдлээ устгах уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
-    ]);
+    const accepted = await confirm({
+      title: 'Сэтгэгдэл устгах',
+      message: 'Сэтгэгдлээ устгах уу?',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await remove();
   };
 
   const deletePost = async () => {
@@ -124,14 +124,13 @@ export default function PostCommentsScreen() {
       }
     };
 
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Post-оо устгах уу?')) await remove();
-      return;
-    }
-    Alert.alert('Post устгах', 'Post-оо устгах уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
-    ]);
+    const accepted = await confirm({
+      title: 'Post устгах',
+      message: 'Post-оо устгах уу?',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await remove();
   };
 
   const startEditingComment = (comment: PostComment) => {
