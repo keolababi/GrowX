@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
-import type { AccountType } from '@prisma/client';
+import type { AccountType, UserRole } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 import { HttpError } from '../utils/http-error.js';
 import { signAccessToken } from '../utils/jwt.js';
@@ -23,6 +23,7 @@ type ProfileInput = {
 function serializeUser(user: {
   id: string;
   email: string;
+  role: UserRole;
   profile: {
     displayName: string | null;
     bio: string | null;
@@ -40,6 +41,7 @@ function serializeUser(user: {
   return {
     id: user.id,
     email: user.email,
+    role: user.role,
     displayName: user.profile?.displayName ?? null,
     bio: user.profile?.bio ?? null,
     avatarUrl: user.profile?.avatarUrl ?? null,

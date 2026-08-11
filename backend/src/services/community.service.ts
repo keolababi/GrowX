@@ -15,7 +15,7 @@ async function requireCommunityOwner(userId: string, communityId: string) {
 
 export async function listCommunities(userId: string) {
   const communities = await prisma.community.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ members: { _count: 'desc' } }, { createdAt: 'desc' }],
     include: {
       _count: { select: { members: true, posts: true } },
       members: { where: { userId }, select: { id: true }, take: 1 },

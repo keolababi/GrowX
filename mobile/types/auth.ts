@@ -1,6 +1,7 @@
 export type User = {
   id: string;
   email: string;
+  role: 'USER' | 'ADMIN';
   displayName: string | null;
   bio: string | null;
   avatarUrl: string | null;

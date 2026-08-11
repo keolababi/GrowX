@@ -41,6 +41,10 @@ export async function listMyForms(req: Request, res: Response): Promise<void> {
   res.status(200).json(await feedbackService.listMyForms(req.auth!.userId));
 }
 
+export async function listCommunityForms(req: Request, res: Response): Promise<void> {
+  res.status(200).json(await feedbackService.listCommunityForms(req.auth!.userId));
+}
+
 export async function createForm(req: Request, res: Response): Promise<void> {
   res
     .status(201)

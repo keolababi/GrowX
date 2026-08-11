@@ -24,7 +24,9 @@ export function AppBottomNav() {
   const pressActiveTab = useTabPressStore((state) => state.pressActiveTab);
 
   const goToTab = (section: NavSection, path: '/posts' | '/medlege' | '/messages' | '/profile') => {
-    if (active === section) {
+    const targetSegment = path.slice(1);
+    const isAtTabRoot = segments[0] === targetSegment && segments.length === 1;
+    if (isAtTabRoot) {
       pressActiveTab(section);
       return;
     }

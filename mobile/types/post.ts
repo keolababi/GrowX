@@ -26,6 +26,7 @@ export type SocialPost = {
   communityPostType: 'DISCUSSION' | 'ARTICLE' | null;
   likeCount: number;
   commentCount: number;
+  shareCount: number;
   likedByMe: boolean;
   comments: PostComment[];
 };

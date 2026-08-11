@@ -1,8 +1,12 @@
-import type { AccountType } from '@prisma/client';
+import type { AccountType, MessageMediaType } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 import { HttpError } from '../utils/http-error.js';
 
 const MESSAGE_ACTION_WINDOW_MS = 10 * 60 * 1000;
+const GROWX_WELCOME_EMAIL = 'welcome@growx.mn';
+const GROWX_SYSTEM_PASSWORD_HASH = '$2b$12$lzTijn.A1hsqAft0mKMYYOKZ2uVWEuw6q348qDRk8OYtZDCWhu3ka';
+const GROWX_WELCOME_MESSAGE =
+  'GrowX-д тавтай морил! 🚀\n\nЭнд та бизнесийн мэдлэг авч, ментор болон бусад бизнес эрхлэгчидтэй холбогдож, санаагаа бодит өсөлт болгох боломжтой. GrowX-ийн боломжуудыг сонирхоод эхлээрэй.';
 
 const userSelect = {
   id: true,
@@ -57,10 +61,68 @@ async function requireMember(userId: string, conversationId: string) {
   return member;
 }
 
+async function ensureWelcomeConversation(userId: string) {
+  const hasMessage = await prisma.message.findFirst({
+    where: {
+      deletedAt: null,
+      conversation: { members: { some: { userId } } },
+    },
+    select: { id: true },
+  });
+  if (hasMessage) return;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`growx-welcome:${userId}`}))`;
+    const existingMessage = await tx.message.findFirst({
+      where: {
+        deletedAt: null,
+        conversation: { members: { some: { userId } } },
+      },
+      select: { id: true },
+    });
+    if (existingMessage) return;
+
+    const growxUser = await tx.user.upsert({
+      where: { email: GROWX_WELCOME_EMAIL },
+      update: {
+        profile: {
+          upsert: {
+            create: { displayName: 'GrowX', bio: 'Grow smarter. Together.' },
+            update: { displayName: 'GrowX', bio: 'Grow smarter. Together.' },
+          },
+        },
+      },
+      create: {
+        email: GROWX_WELCOME_EMAIL,
+        passwordHash: GROWX_SYSTEM_PASSWORD_HASH,
+        profile: { create: { displayName: 'GrowX', bio: 'Grow smarter. Together.' } },
+      },
+      select: { id: true },
+    });
+
+    const conversation = await tx.conversation.create({
+      data: {
+        members: {
+          create: [{ userId, lastReadAt: new Date(0) }, { userId: growxUser.id }],
+        },
+      },
+      select: { id: true },
+    });
+    await tx.message.create({
+      data: {
+        conversationId: conversation.id,
+        senderId: growxUser.id,
+        content: GROWX_WELCOME_MESSAGE,
+      },
+    });
+  });
+}
+
 export async function searchUsers(userId: string, query: string, includeSelf = false) {
   const normalized = query.trim();
   const users = await prisma.user.findMany({
     where: {
+      email: { not: GROWX_WELCOME_EMAIL },
       ...(includeSelf ? {} : { id: { not: userId } }),
       ...(normalized
         ? {
@@ -79,6 +141,7 @@ export async function searchUsers(userId: string, query: string, includeSelf = f
 }
 
 export async function listConversations(userId: string) {
+  await ensureWelcomeConversation(userId);
   const conversations = await prisma.conversation.findMany({
     where: { members: { some: { userId } } },
     orderBy: { updatedAt: 'desc' },
@@ -222,13 +285,17 @@ export async function listMessages(userId: string, conversationId: string) {
 export async function sendMessage(
   userId: string,
   conversationId: string,
-  content: string,
-  clientMessageId?: string,
+  input: {
+    content: string;
+    clientMessageId?: string;
+    mediaType?: MessageMediaType;
+    mediaUrl?: string;
+  },
 ) {
   await requireMember(userId, conversationId);
-  if (clientMessageId) {
+  if (input.clientMessageId) {
     const existing = await prisma.message.findUnique({
-      where: { clientMessageId },
+      where: { clientMessageId: input.clientMessageId },
       include: { sender: { select: userSelect } },
     });
     if (existing) {
@@ -240,7 +307,14 @@ export async function sendMessage(
   }
   const message = await prisma.$transaction(async (tx) => {
     const created = await tx.message.create({
-      data: { conversationId, senderId: userId, content, clientMessageId },
+      data: {
+        conversationId,
+        senderId: userId,
+        content: input.content,
+        clientMessageId: input.clientMessageId,
+        mediaType: input.mediaType,
+        mediaUrl: input.mediaUrl,
+      },
       include: { sender: { select: userSelect } },
     });
     await tx.conversation.update({

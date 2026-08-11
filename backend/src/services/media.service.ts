@@ -1,23 +1,44 @@
 import { prisma } from '../config/prisma.js';
 import { HttpError } from '../utils/http-error.js';
 
-export async function listPodcasts() {
+export async function listPodcasts(userId: string) {
   const podcasts = await prisma.podcast.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ listens: { _count: 'desc' } }, { createdAt: 'desc' }],
     include: {
       author: { include: { profile: { select: { displayName: true, avatarUrl: true } } } },
       episodes: { orderBy: { createdAt: 'desc' } },
+      _count: { select: { listens: true } },
+      listens: { where: { userId }, select: { id: true }, take: 1 },
     },
   });
   return {
-    podcasts: podcasts.map((podcast) => ({
+    podcasts: podcasts.map(({ _count, listens, ...podcast }) => ({
       ...podcast,
       author: {
         id: podcast.author.id,
         displayName: podcast.author.profile?.displayName ?? null,
         avatarUrl: podcast.author.profile?.avatarUrl ?? null,
       },
+      listenCount: _count.listens,
+      listenedByMe: listens.length > 0,
     })),
+  };
+}
+
+export async function recordPodcastListen(userId: string, podcastId: string) {
+  const podcast = await prisma.podcast.findUnique({
+    where: { id: podcastId },
+    select: { id: true },
+  });
+  if (!podcast) throw new HttpError(404, 'Podcast олдсонгүй.');
+  await prisma.podcastListen.upsert({
+    where: { podcastId_userId: { podcastId, userId } },
+    update: {},
+    create: { podcastId, userId },
+  });
+  return {
+    listened: true,
+    listenCount: await prisma.podcastListen.count({ where: { podcastId } }),
   };
 }
 
@@ -66,7 +87,7 @@ const reelInclude = (viewerId: string) =>
     likes: { where: { userId: viewerId }, select: { id: true }, take: 1 },
     comments: {
       orderBy: { createdAt: 'asc' as const },
-      take: 3,
+      take: 100,
       include: { user: { select: reelAuthorSelect } },
     },
   }) as const;
@@ -76,6 +97,7 @@ function serializeReel(reel: {
   authorId: string;
   caption: string | null;
   videoUrl: string;
+  shareCount: number;
   createdAt: Date;
   updatedAt: Date;
   author: {
@@ -101,6 +123,7 @@ function serializeReel(reel: {
     authorId: reel.authorId,
     caption: reel.caption,
     videoUrl: reel.videoUrl,
+    shareCount: reel.shareCount,
     createdAt: reel.createdAt,
     updatedAt: reel.updatedAt,
     author: {
@@ -145,7 +168,7 @@ export async function listReels(viewerId: string) {
         : reel.authorId === viewerId
           ? 90
           : 0;
-      const engagement = reel._count.likes * 3 + reel._count.comments * 5;
+      const engagement = reel._count.likes * 3 + reel._count.comments * 5 + reel.shareCount * 4;
       return relationshipBoost + engagement + Math.max(0, 72 - ageHours);
     };
     return score(b) - score(a) || b.createdAt.getTime() - a.createdAt.getTime();
@@ -188,6 +211,33 @@ export async function toggleReelLike(userId: string, reelId: string) {
   }
   const likeCount = await prisma.reelLike.count({ where: { reelId } });
   return { liked: !existing, likeCount };
+}
+
+export async function listReelLikes(reelId: string) {
+  await requireReel(reelId);
+  const likes = await prisma.reelLike.findMany({
+    where: { reelId },
+    orderBy: { createdAt: 'desc' },
+    include: { user: { select: reelAuthorSelect } },
+  });
+  return {
+    users: likes.map((like) => ({
+      id: like.user.id,
+      email: like.user.email,
+      displayName: like.user.profile?.displayName ?? null,
+      avatarUrl: like.user.profile?.avatarUrl ?? null,
+    })),
+  };
+}
+
+export async function recordReelShare(reelId: string) {
+  await requireReel(reelId);
+  const reel = await prisma.reel.update({
+    where: { id: reelId },
+    data: { shareCount: { increment: 1 } },
+    select: { shareCount: true },
+  });
+  return { shareCount: reel.shareCount };
 }
 
 export async function addReelComment(userId: string, reelId: string, content: string) {

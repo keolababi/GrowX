@@ -4,7 +4,6 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import Slider from '@react-native-community/slider';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -30,6 +29,8 @@ import type { Reel, ReelComment } from '@/types/reel';
 import { useEngagementStore } from '@/store/engagementStore';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { useUser } from '@/providers/UserProvider';
+import { useAppDialog } from '@/providers/AppDialogProvider';
+import { EngagementUsersSheet } from '@/components/EngagementUsersSheet';
 
 const controlAccent = '#FFFFFF';
 
@@ -345,9 +346,12 @@ function ReelCard({
   videoHeight: number;
 }) {
   const { user } = useUser();
+  const { confirm } = useAppDialog();
   const { colors } = useColorMode();
   const { height: windowHeight } = useWindowDimensions();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [likesOpen, setLikesOpen] = useState(false);
+  const [shareCount, setShareCount] = useState(reel.shareCount);
   const commentInputRef = useRef<TextInput>(null);
   const [commentDraft, setCommentDraft] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
@@ -357,9 +361,22 @@ function ReelCard({
   const [savingCommentEdit, setSavingCommentEdit] = useState(false);
   const [commentEditError, setCommentEditError] = useState('');
 
+  useEffect(() => setShareCount(reel.shareCount), [reel.shareCount]);
+
+  const openAuthorProfile = () => {
+    if (reel.author.id === user?.id) {
+      router.push('/profile');
+      return;
+    }
+    router.push(`/users/${reel.author.id}` as Href);
+  };
+
   const share = async () => {
     try {
-      await Share.share({ message: reel.caption || 'GrowX reel' });
+      const result = await Share.share({ message: reel.caption || 'GrowX reel' });
+      if (result.action === Share.dismissedAction) return;
+      const { data } = await api.post<{ shareCount: number }>(`/media/reels/${reel.id}/share`);
+      setShareCount(data.shareCount);
     } catch {
       // User dismissed the native share sheet.
     }
@@ -418,14 +435,13 @@ function ReelCard({
       }
     };
 
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Сэтгэгдлээ устгах уу?')) await remove();
-      return;
-    }
-    Alert.alert('Сэтгэгдэл устгах', 'Сэтгэгдлээ устгах уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
-    ]);
+    const accepted = await confirm({
+      title: 'Сэтгэгдэл устгах',
+      message: 'Сэтгэгдлээ устгах уу?',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await remove();
   };
 
   useEffect(() => {
@@ -446,10 +462,17 @@ function ReelCard({
     <View className="overflow-hidden rounded-card border border-border bg-background-paper">
       <View className="relative w-full overflow-hidden bg-black" style={{ height: videoHeight }}>
         <ReelVideo videoUrl={reel.videoUrl} />
-        <View className="absolute bottom-16 left-0 right-0 bg-gradient-to-t from-black/80 px-m pb-s pr-20 pt-l">
+        <View
+          pointerEvents="box-none"
+          className="absolute bottom-16 left-0 right-0 bg-gradient-to-t from-black/80 px-m pb-s pr-20 pt-l"
+          style={{ zIndex: 20, elevation: 20 }}
+        >
           <Pressable
-            onPress={() => router.push(`/users/${reel.author.id}` as Href)}
+            accessibilityRole="button"
+            accessibilityLabel={`${reel.author.displayName || reel.author.email.split('@')[0]} профайл нээх`}
+            onPress={openAuthorProfile}
             className="flex-row items-center gap-s"
+            style={{ alignSelf: 'flex-start', zIndex: 21 }}
           >
             {reel.author.avatarUrl ? (
               <Image source={{ uri: reel.author.avatarUrl }} className="h-8 w-8 rounded-avatar" />
@@ -472,17 +495,24 @@ function ReelCard({
           )}
         </View>
 
-        <View className="absolute bottom-32 right-m items-center gap-s">
-          <Pressable onPress={onToggleLike} className="items-center gap-1 outline-none">
-            <View className="h-9 w-9 items-center justify-center rounded-avatar bg-black/70">
-              <Icon
-                name={reel.likedByMe ? 'heart' : 'heart-outline'}
-                size={22}
-                color={reel.likedByMe ? '#EF4444' : '#FFFFFF'}
-              />
-            </View>
-            <Text className="text-[11px] font-extrabold text-white">{reel.likeCount}</Text>
-          </Pressable>
+        <View
+          className="absolute bottom-32 right-m items-center gap-s"
+          style={{ zIndex: 22, elevation: 22 }}
+        >
+          <View className="items-center gap-1">
+            <Pressable onPress={onToggleLike} className="outline-none">
+              <View className="h-9 w-9 items-center justify-center rounded-avatar bg-black/70">
+                <Icon
+                  name={reel.likedByMe ? 'heart' : 'heart-outline'}
+                  size={22}
+                  color={reel.likedByMe ? '#EF4444' : '#FFFFFF'}
+                />
+              </View>
+            </Pressable>
+            <Pressable onPress={() => reel.likeCount > 0 && setLikesOpen(true)}>
+              <Text className="text-[11px] font-extrabold text-white">{reel.likeCount}</Text>
+            </Pressable>
+          </View>
           <Pressable
             onPress={() => setCommentsOpen((open) => !open)}
             className="items-center gap-1 outline-none"
@@ -496,7 +526,9 @@ function ReelCard({
             <View className="h-9 w-9 items-center justify-center rounded-avatar bg-black/70">
               <Icon name="share-social-outline" size={21} color="#FFFFFF" />
             </View>
-            <Text className="text-[10px] font-bold text-white">Хуваалцах</Text>
+            <Text className="text-[10px] font-bold text-white">
+              {shareCount > 0 ? shareCount : 'Хуваалцах'}
+            </Text>
           </Pressable>
           <Pressable onPress={onToggleSave} className="items-center gap-1 outline-none">
             <View className="h-9 w-9 items-center justify-center rounded-avatar bg-black/70">
@@ -680,6 +712,11 @@ function ReelCard({
           </View>
         </KeyboardAvoidingView>
       </BottomSheet>
+      <EngagementUsersSheet
+        visible={likesOpen}
+        onClose={() => setLikesOpen(false)}
+        endpoint={`/media/reels/${reel.id}/likes`}
+      />
     </View>
   );
 }

@@ -47,6 +47,16 @@ export async function toggleLike(req: Request, res: Response): Promise<void> {
   res.status(200).json(await postService.toggleLike(req.auth!.userId, postId));
 }
 
+export async function listLikes(req: Request, res: Response): Promise<void> {
+  const { postId } = postIdSchema.parse(req.params);
+  res.status(200).json(await postService.listLikes(req.auth!.userId, postId));
+}
+
+export async function share(req: Request, res: Response): Promise<void> {
+  const { postId } = postIdSchema.parse(req.params);
+  res.status(200).json(await postService.recordShare(req.auth!.userId, postId));
+}
+
 export async function listComments(req: Request, res: Response): Promise<void> {
   const { postId } = postIdSchema.parse(req.params);
   res.status(200).json(await postService.listComments(req.auth!.userId, postId));

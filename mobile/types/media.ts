@@ -14,6 +14,8 @@ export type Podcast = {
   description: string | null;
   coverUrl: string | null;
   createdAt: string;
+  listenCount: number;
+  listenedByMe: boolean;
   author: { id: string; displayName: string | null; avatarUrl: string | null };
   episodes: PodcastEpisode[];
 };

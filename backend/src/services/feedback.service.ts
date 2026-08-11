@@ -45,6 +45,35 @@ export async function listMyForms(userId: string) {
   };
 }
 
+export async function listCommunityForms(userId: string) {
+  const forms = await prisma.feedbackForm.findMany({
+    where: { authorId: { not: userId } },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      author: { select: authorSelect },
+      responses: {
+        where: { respondentId: userId },
+        select: { id: true },
+        take: 1,
+      },
+      _count: { select: { questions: true, responses: true } },
+    },
+  });
+
+  return {
+    forms: forms.map((form) => ({
+      id: form.id,
+      title: form.title,
+      description: form.description,
+      createdAt: form.createdAt,
+      questionCount: form._count.questions,
+      responseCount: form._count.responses,
+      respondedByMe: form.responses.length > 0,
+      author: serializeAuthor(form.author),
+    })),
+  };
+}
+
 export async function createForm(
   userId: string,
   input: { title: string; description?: string; questions: QuestionInput[] },

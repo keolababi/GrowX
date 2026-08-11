@@ -17,8 +17,13 @@ const reelIdSchema = z.object({ reelId: z.string().min(1) });
 const reelCommentIdSchema = reelIdSchema.extend({ commentId: z.string().min(1) });
 const reelCommentSchema = z.object({ content: z.string().trim().min(1).max(1000) });
 
-export async function listPodcasts(_req: Request, res: Response): Promise<void> {
-  res.status(200).json(await mediaService.listPodcasts());
+export async function listPodcasts(req: Request, res: Response): Promise<void> {
+  res.status(200).json(await mediaService.listPodcasts(req.auth!.userId));
+}
+
+export async function listenPodcast(req: Request, res: Response): Promise<void> {
+  const podcastId = z.string().min(1).parse(req.params.podcastId);
+  res.status(200).json(await mediaService.recordPodcastListen(req.auth!.userId, podcastId));
 }
 
 export async function createPodcast(req: Request, res: Response): Promise<void> {
@@ -42,6 +47,16 @@ export async function createReel(req: Request, res: Response): Promise<void> {
 export async function toggleReelLike(req: Request, res: Response): Promise<void> {
   const { reelId } = reelIdSchema.parse(req.params);
   res.status(200).json(await mediaService.toggleReelLike(req.auth!.userId, reelId));
+}
+
+export async function listReelLikes(req: Request, res: Response): Promise<void> {
+  const { reelId } = reelIdSchema.parse(req.params);
+  res.status(200).json(await mediaService.listReelLikes(reelId));
+}
+
+export async function shareReel(req: Request, res: Response): Promise<void> {
+  const { reelId } = reelIdSchema.parse(req.params);
+  res.status(200).json(await mediaService.recordReelShare(reelId));
 }
 
 export async function addReelComment(req: Request, res: Response): Promise<void> {

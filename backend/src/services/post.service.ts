@@ -40,6 +40,7 @@ function serializePost(post: {
   content: string;
   imageUrl: string | null;
   videoUrl: string | null;
+  shareCount: number;
   createdAt: Date;
   updatedAt: Date;
   author: Parameters<typeof serializeAuthor>[0];
@@ -60,6 +61,7 @@ function serializePost(post: {
     content: post.content,
     imageUrl: post.imageUrl,
     videoUrl: post.videoUrl,
+    shareCount: post.shareCount,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     author: serializeAuthor(post.author),
@@ -117,7 +119,7 @@ export async function listPosts(userId: string) {
         : post.authorId === userId
           ? 90
           : 0;
-      const engagement = post._count.likes * 3 + post._count.comments * 5;
+      const engagement = post._count.likes * 3 + post._count.comments * 5 + post.shareCount * 4;
       return relationshipBoost + engagement + Math.max(0, 72 - ageHours);
     };
     return score(b) - score(a) || b.createdAt.getTime() - a.createdAt.getTime();
@@ -230,6 +232,28 @@ export async function toggleLike(userId: string, postId: string) {
     const likeCount = await tx.like.count({ where: { postId } });
     return { liked: !existing, likeCount };
   });
+}
+
+export async function listLikes(userId: string, postId: string) {
+  await requirePostAccess(userId, postId);
+  const likes = await prisma.like.findMany({
+    where: { postId },
+    orderBy: { createdAt: 'desc' },
+    include: { user: { select: authorSelect } },
+  });
+  return {
+    users: likes.map((like) => serializeAuthor(like.user)),
+  };
+}
+
+export async function recordShare(userId: string, postId: string) {
+  await requirePostAccess(userId, postId);
+  const post = await prisma.post.update({
+    where: { id: postId },
+    data: { shareCount: { increment: 1 } },
+    select: { shareCount: true },
+  });
+  return { shareCount: post.shareCount };
 }
 
 export async function addComment(userId: string, postId: string, content: string) {

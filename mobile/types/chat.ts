@@ -12,6 +12,8 @@ export type ChatMessage = {
   conversationId: string;
   senderId: string;
   content: string;
+  mediaType: 'IMAGE' | 'VIDEO' | 'AUDIO' | null;
+  mediaUrl: string | null;
   createdAt: string;
   editedAt: string | null;
   deletedAt: string | null;

@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useTabPressStore } from '@/store/tabPressStore';
-import {
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppPageHeader } from '@/components/AppPageHeader';
@@ -31,6 +21,7 @@ import type { SocialProfile } from '@/types/social';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 
 const profileTabs = ['Пост', 'Reel', 'Дахин', 'Хадгалсан'];
 
@@ -38,6 +29,7 @@ const lime = '#9AF000';
 
 export default function ProfileScreen() {
   const { iconAccent, colors } = useColorMode();
+  const { confirm } = useAppDialog();
   const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useUser();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
@@ -128,14 +120,13 @@ export default function ProfileScreen() {
         setError(getApiError(value, 'Post устгаж чадсангүй.'));
       }
     };
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Энэ post-ийг устгах уу?')) await remove();
-      return;
-    }
-    Alert.alert('Post устгах', 'Энэ post-ийг устгах уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void remove() },
-    ]);
+    const accepted = await confirm({
+      title: 'Post устгах',
+      message: 'Энэ post-ийг устгах уу?',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await remove();
   };
 
   const tabPosts =
@@ -415,6 +406,7 @@ export default function ProfileScreen() {
                     {tabPosts.map((post) => (
                       <PostCard
                         key={post.id}
+                        postId={post.id}
                         author={post.author}
                         timestamp={relativeTime(post.createdAt)}
                         content={post.content}
@@ -422,6 +414,7 @@ export default function ProfileScreen() {
                         communityName={post.community?.name}
                         likeCount={post.likeCount}
                         commentCount={post.commentCount}
+                        shareCount={post.shareCount}
                         likedByMe={post.likedByMe}
                         isOwnPost={post.authorId === user?.id}
                         reposted={repostedIds.has(post.id)}

@@ -1,10 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import {
-  Alert,
   Image,
   Linking,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -21,11 +19,13 @@ import type { SocialPost } from '@/types/post';
 import { getApiError } from '@/utils/auth';
 import { relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 
 const lime = '#9AF000';
 
 export default function PublicUserProfileScreen() {
   const { colors } = useColorMode();
+  const { alert } = useAppDialog();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -97,12 +97,11 @@ export default function PublicUserProfileScreen() {
     router.push(`/messages/${data.conversationId}` as Href);
   };
 
-  const contactAuthor = () => {
+  const contactAuthor = async () => {
     const phone = profile?.user.phone;
     if (!phone) {
       const message = 'Энэ хэрэглэгч утасны дугаараа оруулаагүй байна.';
-      if (Platform.OS === 'web') globalThis.alert(message);
-      else Alert.alert('Холбоо барих', message);
+      await alert({ title: 'Холбоо барих', message, variant: 'info' });
       return;
     }
     void Linking.openURL(`tel:${phone}`);
@@ -319,6 +318,7 @@ export default function PublicUserProfileScreen() {
               {posts.map((post) => (
                 <PostCard
                   key={post.id}
+                  postId={post.id}
                   author={profile.user}
                   timestamp={relativeTime(post.createdAt)}
                   content={post.content}
@@ -326,6 +326,7 @@ export default function PublicUserProfileScreen() {
                   communityName={post.community?.name}
                   likeCount={post.likeCount}
                   commentCount={post.commentCount}
+                  shareCount={post.shareCount}
                   likedByMe={post.likedByMe}
                   isOwnPost={profile.isMe}
                   onPressLike={() => void toggleLike(post)}

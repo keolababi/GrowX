@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { useTabPressStore } from '@/store/tabPressStore';
 import {
@@ -21,25 +21,10 @@ import { Icon } from '@/components/ui/Icon';
 import { lessons as fallbackLessons } from '@/data/lessons';
 import { api } from '@/services/api';
 import { useLearningStore } from '@/store/learningStore';
-import type { Lesson, LessonCategory } from '@/types/learning';
+import type { Lesson } from '@/types/learning';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
-const categories: (LessonCategory | 'Бүгд')[] = [
-  'Бүгд',
-  'Стартап',
-  'Бизнес',
-  'Маркетинг',
-  'Борлуулалт',
-  'Санхүү',
-  'Татвар',
-  'Хууль',
-  'Бүтээгдэхүүн',
-  'Хөрөнгө оруулалт',
-  'Манлайлал',
-  'Багийн менежмент',
-];
-
 const webKnowledgeScrollStyle = {
   height: 'calc(100vh - 85px)',
   flexGrow: 0,
@@ -77,103 +62,10 @@ function SectionHeader({
   );
 }
 
-function LessonCard({
-  lesson,
-  completed,
-  started,
-  featured = false,
-  compact = false,
-}: {
-  lesson: Lesson;
-  completed: boolean;
-  started: boolean;
-  featured?: boolean;
-  compact?: boolean;
-}) {
-  const { colors } = useColorMode();
-  return (
-    <Pressable
-      onPress={() => router.push(`/medlege/${lesson.id}`)}
-      style={({ pressed }) => [
-        featured ? styles.featuredLesson : styles.lessonCard,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-        featured && compact && styles.featuredLessonCompact,
-        pressed && styles.cardPressed,
-      ]}
-    >
-      {featured && (
-        <View
-          style={[
-            styles.lessonArtwork,
-            { backgroundColor: colors.surfaceSoft },
-            compact && styles.lessonArtworkCompact,
-          ]}
-        >
-          <View style={[styles.targetMiddle, { borderColor: colors.primary }]}>
-            <Icon name="trending-up" size={35} color={colors.primary} />
-          </View>
-        </View>
-      )}
-      <View style={styles.lessonCopy}>
-        <View style={styles.lessonBadges}>
-          <View style={[styles.categoryBadge, { backgroundColor: colors.surfaceSoft }]}>
-            <Text style={[styles.categoryBadgeText, { color: colors.primary }]}>
-              {lesson.category}
-            </Text>
-          </View>
-          <View style={[styles.difficultyBadge, { backgroundColor: colors.surfaceRaised }]}>
-            <Text style={[styles.difficultyBadgeText, { color: colors.muted }]}>
-              {lesson.difficulty}
-            </Text>
-          </View>
-          {completed && (
-            <View style={[styles.completedBadge, { backgroundColor: colors.primary }]}>
-              <Icon name="checkmark" size={12} color={colors.ink} />
-              <Text style={[styles.completedBadgeText, { color: colors.ink }]}>Дууссан</Text>
-            </View>
-          )}
-        </View>
-        <Text
-          numberOfLines={featured ? 2 : 1}
-          style={[featured ? styles.featuredTitle : styles.lessonTitle, { color: colors.text }]}
-        >
-          {lesson.title}
-        </Text>
-        <Text numberOfLines={2} style={[styles.lessonDescription, { color: colors.muted }]}>
-          {lesson.description}
-        </Text>
-        <View style={styles.lessonMeta}>
-          <Icon name="time-outline" size={15} color={colors.muted} />
-          <Text style={[styles.lessonMetaText, { color: colors.muted }]}>
-            {lesson.durationMin} мин
-          </Text>
-          {started && !completed && (
-            <Text style={[styles.startedText, { color: colors.primary }]}>· Үргэлжлүүлэх</Text>
-          )}
-        </View>
-      </View>
-      <View
-        style={[
-          featured ? styles.featuredPlay : styles.lessonArrow,
-          { backgroundColor: colors.primary },
-          featured && compact && styles.featuredPlayCompact,
-        ]}
-      >
-        <Icon
-          name={completed ? 'checkmark' : started ? 'play' : 'arrow-forward'}
-          size={featured ? 22 : 18}
-          color={colors.ink}
-        />
-      </View>
-    </Pressable>
-  );
-}
-
 export default function KnowledgeScreen() {
   const { iconAccent, colors } = useColorMode();
   const { width } = useWindowDimensions();
   const compact = width < 680;
-  const [category, setCategory] = useState<(typeof categories)[number]>('Бүгд');
   const [lessonCatalog, setLessonCatalog] = useState<Lesson[]>(fallbackLessons);
   const completedIds = useLearningStore((state) => state.completedIds);
   const startedIds = useLearningStore((state) => state.startedIds);
@@ -219,18 +111,11 @@ export default function KnowledgeScreen() {
     lessonCatalog.find((lesson) => !completedIds.has(lesson.id)) ??
     lessonCatalog[0];
 
-  const visibleLessons = useMemo(
-    () => lessonCatalog.filter((lesson) => category === 'Бүгд' || lesson.category === category),
-    [category, lessonCatalog],
-  );
-  const recommendedLesson =
-    visibleLessons.find((lesson) => !completedIds.has(lesson.id)) ?? visibleLessons[0];
-
   const shortcuts: Shortcut[] = [
     {
       label: 'Хичээл',
       icon: 'book-outline',
-      onPress: () => nextLesson && router.push(`/medlege/${nextLesson.id}`),
+      onPress: () => router.push('/medlege/lessons'),
     },
     {
       label: 'Podcast',
@@ -347,57 +232,6 @@ export default function KnowledgeScreen() {
             ))}
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryList}
-          >
-            {categories.map((item) => {
-              const selected = category === item;
-              return (
-                <Pressable
-                  key={item}
-                  onPress={() => setCategory(item)}
-                  style={[
-                    styles.categoryChip,
-                    !selected && { backgroundColor: colors.surface, borderColor: colors.border },
-                    selected && [
-                      styles.categoryChipSelected,
-                      { backgroundColor: colors.primary, borderColor: colors.primary },
-                    ],
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      !selected && { color: colors.textSecondary },
-                      selected && [styles.categoryTextSelected, { color: colors.ink }],
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          {!!recommendedLesson && (
-            <>
-              <SectionHeader
-                title="Танд санал болгох хичээл"
-                action="Бүгдийг харах"
-                onAction={() => setCategory('Бүгд')}
-              />
-              <LessonCard
-                lesson={recommendedLesson}
-                completed={completedIds.has(recommendedLesson.id)}
-                started={startedIds.has(recommendedLesson.id)}
-                featured
-                compact={compact}
-              />
-            </>
-          )}
-
           <SectionHeader
             title="Сонсож эхлэх"
             action="Бүгдийг харах"
@@ -462,32 +296,6 @@ export default function KnowledgeScreen() {
               <Text style={[styles.profileButtonText, { color: colors.ink }]}>Профайл харах</Text>
             </View>
           </Pressable>
-
-          <SectionHeader title={category === 'Бүгд' ? 'Бүх хичээл' : `${category} хичээлүүд`} />
-          <View style={styles.lessonList}>
-            {visibleLessons.map((lesson) => (
-              <LessonCard
-                key={lesson.id}
-                lesson={lesson}
-                completed={completedIds.has(lesson.id)}
-                started={startedIds.has(lesson.id)}
-              />
-            ))}
-            {!visibleLessons.length && (
-              <View
-                style={[
-                  styles.emptyCard,
-                  { backgroundColor: colors.surface, borderColor: colors.borderStrong },
-                ]}
-              >
-                <Icon name="book-outline" size={29} color={iconAccent} />
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Хичээл олдсонгүй</Text>
-                <Text style={[styles.emptyCopy, { color: colors.muted }]}>
-                  Өөр ангилал сонгоод дахин үзээрэй.
-                </Text>
-              </View>
-            )}
-          </View>
         </View>
       </ScrollView>
       <AppBottomNav />

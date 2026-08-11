@@ -9,10 +9,24 @@ const conversationSchema = z.object({
   conversationId: z.string().min(1),
 });
 
-const messageSchema = conversationSchema.extend({
-  content: z.string().trim().min(1).max(4000),
-  clientMessageId: z.string().min(8).max(120).optional(),
-});
+const messageSchema = conversationSchema
+  .extend({
+    content: z.string().trim().max(4000).optional().default(''),
+    clientMessageId: z.string().min(8).max(120).optional(),
+    mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO']).optional(),
+    mediaUrl: z.string().url().max(2048).optional(),
+  })
+  .superRefine((value, context) => {
+    if (!value.content && !value.mediaUrl) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'Мессеж эсвэл файл оруулна уу.' });
+    }
+    if (Boolean(value.mediaType) !== Boolean(value.mediaUrl)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Файлын төрөл болон холбоос хамт байх ёстой.',
+      });
+    }
+  });
 
 type AccessTokenPayload = {
   userId?: string;
@@ -84,13 +98,8 @@ export function registerChatSocket(io: Server): void {
 
     socket.on('message:send', async (payload, callback) => {
       try {
-        const { conversationId, content, clientMessageId } = messageSchema.parse(payload);
-        const { message } = await chatService.sendMessage(
-          userId,
-          conversationId,
-          content,
-          clientMessageId,
-        );
+        const { conversationId, ...input } = messageSchema.parse(payload);
+        const { message } = await chatService.sendMessage(userId, conversationId, input);
 
         io.to(`conversation:${conversationId}`).emit('message:new', message);
         const members = await prisma.conversationMember.findMany({

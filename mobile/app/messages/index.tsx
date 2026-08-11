@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  Alert,
   Animated,
   Image,
   Modal,
@@ -27,12 +26,15 @@ import { getApiError } from '@/utils/auth';
 import { relativeTimeCompact as relativeTime } from '@/utils/relativeTime';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { useTabPressStore } from '@/store/tabPressStore';
+import { useAppDialog } from '@/providers/AppDialogProvider';
+import { GrowXMark } from '@/components/GrowXLogo';
 
 const lime = '#9AF000';
 const swipeForwardBackground = '#10251E';
 const swipeDeleteBackground = '#2A1116';
 const swipeDeleteForeground = '#FF6B73';
 const SWIPE_ACTIONS_WIDTH = 148;
+const GROWX_WELCOME_EMAIL = 'welcome@growx.mn';
 const webScreenStyle = {
   height: '100vh',
   minHeight: '100vh',
@@ -47,6 +49,10 @@ function isUserActive(user: ChatUser | null) {
   return Boolean(user?.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() < 60_000);
 }
 
+function isGrowXWelcomeUser(user: ChatUser | null) {
+  return user?.email === GROWX_WELCOME_EMAIL;
+}
+
 function fullDate(value: string) {
   return new Date(value).toLocaleString([], {
     year: 'numeric',
@@ -55,6 +61,14 @@ function fullDate(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function messagePreview(message: Conversation['lastMessage']) {
+  if (!message) return 'Шинэ chat';
+  if (message.content) return message.content;
+  if (message.mediaType === 'VIDEO') return '🎬 Видео';
+  if (message.mediaType === 'AUDIO') return '🎤 Дуут мессеж';
+  return '🖼️ Зураг';
 }
 
 function SwipeableRow({
@@ -155,9 +169,20 @@ function SwipeableRow({
 function UserAvatar({ user }: { user: ChatUser | null }) {
   const { colors } = useColorMode();
   const active = isUserActive(user);
+  const isGrowX = isGrowXWelcomeUser(user);
   return (
     <View style={styles.avatarWrap}>
-      {user?.avatarUrl ? (
+      {isGrowX ? (
+        <View
+          style={[
+            styles.avatar,
+            styles.growxAvatar,
+            { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
+          ]}
+        >
+          <GrowXMark size={44} />
+        </View>
+      ) : user?.avatarUrl ? (
         <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
       ) : (
         <View style={[styles.avatar, { backgroundColor: colors.surfaceSoft }]}>
@@ -166,19 +191,22 @@ function UserAvatar({ user }: { user: ChatUser | null }) {
           </Text>
         </View>
       )}
-      <View
-        style={[
-          styles.avatarPresence,
-          { borderColor: colors.surface },
-          active ? { backgroundColor: colors.primary } : styles.offlineDot,
-        ]}
-      />
+      {!isGrowX && (
+        <View
+          style={[
+            styles.avatarPresence,
+            { borderColor: colors.surface },
+            active ? { backgroundColor: colors.primary } : styles.offlineDot,
+          ]}
+        />
+      )}
     </View>
   );
 }
 
 export default function MessagesScreen() {
   const { iconAccent, colors } = useColorMode();
+  const { confirm } = useAppDialog();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [presenceUsers, setPresenceUsers] = useState<ChatUser[]>([]);
@@ -297,7 +325,7 @@ export default function MessagesScreen() {
     }
   };
 
-  const deleteConversation = (conversation: Conversation) => {
+  const deleteConversation = async (conversation: Conversation) => {
     const proceed = async () => {
       setOpenRowId(null);
       const previous = conversations;
@@ -310,14 +338,13 @@ export default function MessagesScreen() {
       }
     };
     const message = `${displayName(conversation.otherUser)}-тэй хийсэн chat-ыг устгах уу?`;
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm(message)) void proceed();
-      return;
-    }
-    Alert.alert('Chat устгах', message, [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Устгах', style: 'destructive', onPress: () => void proceed() },
-    ]);
+    const accepted = await confirm({
+      title: 'Chat устгах',
+      message,
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await proceed();
   };
 
   const openForward = (conversation: Conversation) => {
@@ -336,15 +363,19 @@ export default function MessagesScreen() {
   };
 
   const sendForward = async (recipientId: string) => {
-    const content = forwardTarget?.lastMessage?.content;
-    if (!content || forwardingId) return;
+    const message = forwardTarget?.lastMessage;
+    if (!message || (!message.content && !message.mediaUrl) || forwardingId) return;
     setForwardingId(recipientId);
     setForwardError('');
     try {
       const { data } = await api.post<{ conversationId: string }>('/conversations', {
         recipientId,
       });
-      await api.post(`/conversations/${data.conversationId}/messages`, { content });
+      await api.post(`/conversations/${data.conversationId}/messages`, {
+        content: message.content,
+        mediaType: message.mediaType ?? undefined,
+        mediaUrl: message.mediaUrl ?? undefined,
+      });
       closeForward();
       router.push(`/messages/${data.conversationId}`);
     } catch (value) {
@@ -487,12 +518,17 @@ export default function MessagesScreen() {
                         <>
                           <Pressable
                             accessibilityLabel="Дамжуулах"
-                            disabled={!conversation.lastMessage?.content}
+                            disabled={
+                              !conversation.lastMessage?.content &&
+                              !conversation.lastMessage?.mediaUrl
+                            }
                             onPress={() => openForward(conversation)}
                             style={({ pressed }) => [
                               styles.swipeAction,
                               styles.forwardAction,
-                              !conversation.lastMessage?.content && styles.swipeActionDisabled,
+                              !conversation.lastMessage?.content &&
+                                !conversation.lastMessage?.mediaUrl &&
+                                styles.swipeActionDisabled,
                               pressed && styles.swipeActionPressed,
                             ]}
                           >
@@ -547,7 +583,7 @@ export default function MessagesScreen() {
                               conversation.unreadCount > 0 && { color: colors.textSecondary },
                             ]}
                           >
-                            {conversation.lastMessage?.content || 'Шинэ chat'}
+                            {messagePreview(conversation.lastMessage)}
                           </Text>
                         </View>
                         <View style={styles.rowMeta}>
@@ -618,9 +654,9 @@ export default function MessagesScreen() {
                 <Icon name="close" size={22} color={colors.textSecondary} />
               </Pressable>
             </View>
-            {!!forwardTarget?.lastMessage?.content && (
+            {!!forwardTarget?.lastMessage && (
               <Text numberOfLines={2} style={[styles.forwardPreview, { color: colors.muted }]}>
-                “{forwardTarget.lastMessage.content}”
+                “{messagePreview(forwardTarget.lastMessage)}”
               </Text>
             )}
             <View
@@ -784,6 +820,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: lime, fontSize: 20, fontWeight: '900' },
+  growxAvatar: { overflow: 'hidden' },
   avatarPresence: {
     position: 'absolute',
     right: 1,

@@ -1,19 +1,10 @@
 import type { ComponentProps } from 'react';
 import { router, type Href } from 'expo-router';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useUser } from '@/providers/UserProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from '@/components/ui/Icon';
+import { useAppDialog } from '@/providers/AppDialogProvider';
 
 type IconName = ComponentProps<typeof Icon>['name'];
 
@@ -36,7 +27,8 @@ const menuItems: Array<{ icon: IconName; label: string; route?: Href }> = [
 ];
 
 export default function ProfileSettingsScreen() {
-  const { logout } = useUser();
+  const { logout, user } = useUser();
+  const { confirm } = useAppDialog();
   const { colors, isDark, toggleMode } = useColorMode();
   const styles = createStyles(isDark);
 
@@ -45,15 +37,14 @@ export default function ProfileSettingsScreen() {
     router.replace('/login');
   };
 
-  const confirmSignOut = () => {
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Бүртгэлээс гарах уу?')) void signOut();
-      return;
-    }
-    Alert.alert('Бүртгэлээс гарах', 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?', [
-      { text: 'Болих', style: 'cancel' },
-      { text: 'Гарах', style: 'destructive', onPress: () => void signOut() },
-    ]);
+  const confirmSignOut = async () => {
+    const accepted = await confirm({
+      title: 'Бүртгэлээс гарах',
+      message: 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?',
+      confirmLabel: 'Гарах',
+      variant: 'danger',
+    });
+    if (accepted) await signOut();
   };
 
   return (
@@ -85,6 +76,18 @@ export default function ProfileSettingsScreen() {
             thumbColor={isDark ? '#9AF000' : '#FFFFFF'}
           />
         </View>
+        {user?.role === 'ADMIN' && (
+          <Pressable
+            onPress={() => router.push('/admin' as Href)}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+          >
+            <View style={styles.iconWrap}>
+              <Icon name="shield-outline" size={22} color={colors.primary} />
+            </View>
+            <Text style={[styles.label, { color: colors.primary }]}>Admin удирдлага</Text>
+            <Icon name="chevron-forward" size={20} color={colors.primary} />
+          </Pressable>
+        )}
         {menuItems.map((item) => (
           <Pressable
             key={item.label}

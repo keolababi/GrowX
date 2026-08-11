@@ -16,7 +16,12 @@
         }
       ],
       "expo-document-picker",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "GrowX-д дуут мессеж бичихийн тулд микрофонд хандана."
+        }
+      ],
       "expo-video"
     ],
     "experiments": {

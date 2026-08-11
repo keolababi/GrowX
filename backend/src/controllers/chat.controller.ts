@@ -5,10 +5,25 @@ import * as chatService from '../services/chat.service.js';
 const conversationIdSchema = z.object({ conversationId: z.string().min(1) });
 const messageIdSchema = conversationIdSchema.extend({ messageId: z.string().min(1) });
 const createSchema = z.object({ recipientId: z.string().min(1) });
-const messageSchema = z.object({
-  content: z.string().trim().min(1).max(4000),
-  clientMessageId: z.string().min(8).max(120).optional(),
-});
+const sendMessageSchema = z
+  .object({
+    content: z.string().trim().max(4000).optional().default(''),
+    clientMessageId: z.string().min(8).max(120).optional(),
+    mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO']).optional(),
+    mediaUrl: z.string().url().max(2048).optional(),
+  })
+  .superRefine((value, context) => {
+    if (!value.content && !value.mediaUrl) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'Мессеж эсвэл файл оруулна уу.' });
+    }
+    if (Boolean(value.mediaType) !== Boolean(value.mediaUrl)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Файлын төрөл болон холбоос хамт байх ёстой.',
+      });
+    }
+  });
+const editMessageSchema = z.object({ content: z.string().trim().min(1).max(4000) });
 
 export async function searchUsers(req: Request, res: Response): Promise<void> {
   const query = z.string().max(100).catch('').parse(req.query.q);
@@ -37,12 +52,8 @@ export async function messages(req: Request, res: Response): Promise<void> {
 
 export async function send(req: Request, res: Response): Promise<void> {
   const { conversationId } = conversationIdSchema.parse(req.params);
-  const { content, clientMessageId } = messageSchema.parse(req.body);
-  res
-    .status(201)
-    .json(
-      await chatService.sendMessage(req.auth!.userId, conversationId, content, clientMessageId),
-    );
+  const input = sendMessageSchema.parse(req.body);
+  res.status(201).json(await chatService.sendMessage(req.auth!.userId, conversationId, input));
 }
 
 export async function unsend(req: Request, res: Response): Promise<void> {
@@ -53,7 +64,7 @@ export async function unsend(req: Request, res: Response): Promise<void> {
 
 export async function edit(req: Request, res: Response): Promise<void> {
   const { conversationId, messageId } = messageIdSchema.parse(req.params);
-  const { content } = messageSchema.parse(req.body);
+  const { content } = editMessageSchema.parse(req.body);
   res
     .status(200)
     .json(await chatService.editMessage(req.auth!.userId, conversationId, messageId, content));

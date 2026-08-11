@@ -2,31 +2,71 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import * as professionalService from '../services/professional.service.js';
 
+const normalizeUrl = (value: unknown) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+const optionalUrlSchema = z.preprocess(
+  normalizeUrl,
+  z.string().url('Зөв холбоос оруулна уу.').max(2048).optional(),
+);
+const requiredUrlSchema = z.preprocess(
+  normalizeUrl,
+  z
+    .string({ required_error: 'Баталгаажуулах материалын холбоос оруулна уу.' })
+    .url('Баталгаажуулах материалын зөв холбоос оруулна уу.')
+    .max(2048),
+);
+
 const applicationSchema = z
   .object({
     type: z.enum(['BUSINESS', 'MENTOR']),
     organizationName: z.string().trim().min(2).max(160).optional(),
     registrationNumber: z.string().trim().min(2).max(80).optional(),
-    websiteUrl: z.string().trim().url().max(2048).optional(),
+    websiteUrl: optionalUrlSchema,
     expertise: z.string().trim().min(2).max(160).optional(),
-    experience: z.string().trim().min(20).max(3000).optional(),
-    evidenceUrl: z.string().trim().url().max(2048),
+    experience: z
+      .string()
+      .trim()
+      .min(20, 'Туршлагаа хамгийн багадаа 20 тэмдэгтээр бичнэ үү.')
+      .max(3000)
+      .optional(),
+    evidenceUrl: requiredUrlSchema,
   })
   .superRefine((value, context) => {
     if (value.type === 'BUSINESS') {
       if (!value.organizationName) {
-        context.addIssue({ code: 'custom', path: ['organizationName'], message: 'required' });
+        context.addIssue({
+          code: 'custom',
+          path: ['organizationName'],
+          message: 'Байгууллагын нэр оруулна уу.',
+        });
       }
       if (!value.registrationNumber) {
-        context.addIssue({ code: 'custom', path: ['registrationNumber'], message: 'required' });
+        context.addIssue({
+          code: 'custom',
+          path: ['registrationNumber'],
+          message: 'Регистрийн дугаар оруулна уу.',
+        });
       }
     }
     if (value.type === 'MENTOR') {
       if (!value.expertise) {
-        context.addIssue({ code: 'custom', path: ['expertise'], message: 'required' });
+        context.addIssue({
+          code: 'custom',
+          path: ['expertise'],
+          message: 'Мэргэшсэн чиглэлээ оруулна уу.',
+        });
       }
       if (!value.experience) {
-        context.addIssue({ code: 'custom', path: ['experience'], message: 'required' });
+        context.addIssue({
+          code: 'custom',
+          path: ['experience'],
+          message: 'Ажлын туршлагаа оруулна уу.',
+        });
       }
     }
   });

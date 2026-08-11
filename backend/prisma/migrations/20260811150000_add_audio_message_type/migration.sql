@@ -1,0 +1,1 @@
+ALTER TYPE "MessageMediaType" ADD VALUE 'AUDIO';

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import Slider from '@react-native-community/slider';
 import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import {
   Image,
-  type LayoutChangeEvent,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -25,6 +25,14 @@ import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
 
+function rankPodcasts(items: Podcast[]) {
+  return [...items].sort(
+    (a, b) =>
+      (b.listenCount ?? 0) - (a.listenCount ?? 0) ||
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
+
 function formatTime(value: number) {
   if (!Number.isFinite(value) || value < 0) return '0:00';
   const minutes = Math.floor(value / 60);
@@ -38,12 +46,14 @@ function PodcastRow({
   onToggleFollowHost,
   activeEpisodeId,
   onActivateEpisode,
+  onListen,
 }: {
   podcast: Podcast;
   isFollowingHost: boolean;
   onToggleFollowHost: () => void;
   activeEpisodeId: string | null;
   onActivateEpisode: (episodeId: string) => void;
+  onListen: () => void;
 }) {
   const { iconAccent, colors } = useColorMode();
   const episode = podcast.episodes[0];
@@ -52,7 +62,8 @@ function PodcastRow({
   const status = useAudioPlayerStatus(player);
   const isPlaying = status.playing;
   const activationPendingRef = useRef(false);
-  const [progressWidth, setProgressWidth] = useState(0);
+  const [seeking, setSeeking] = useState(false);
+  const [seekTime, setSeekTime] = useState(0);
   const savedEpisodeIds = usePodcastStore((state) => state.savedEpisodeIds);
   const toggleSaved = usePodcastStore((state) => state.toggleSaved);
 
@@ -84,7 +95,7 @@ function PodcastRow({
   const saved = savedEpisodeIds.has(episode.id);
   const duration = Number.isFinite(status.duration) && status.duration > 0 ? status.duration : 0;
   const currentTime = Number.isFinite(status.currentTime) ? status.currentTime : 0;
-  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
+  const displayedTime = seeking ? seekTime : currentTime;
 
   const togglePlayback = () => {
     if (isPlaying) {
@@ -93,6 +104,7 @@ function PodcastRow({
     }
     activationPendingRef.current = true;
     onActivateEpisode(episode.id);
+    onListen();
     player.play();
   };
 
@@ -106,16 +118,6 @@ function PodcastRow({
         : knownCurrentTime + seconds,
     );
     if (Number.isFinite(nextTime)) void player.seekTo(nextTime);
-  };
-
-  const seekFromPress = (locationX: number) => {
-    if (progressWidth <= 0 || duration <= 0) return;
-    const nextTime = Math.max(0, Math.min(locationX / progressWidth, 1)) * duration;
-    if (Number.isFinite(nextTime)) void player.seekTo(nextTime);
-  };
-
-  const captureProgressWidth = (event: LayoutChangeEvent) => {
-    setProgressWidth(event.nativeEvent.layout.width);
   };
 
   return (
@@ -167,32 +169,34 @@ function PodcastRow({
           { backgroundColor: colors.surface, borderBottomColor: colors.border },
         ]}
       >
-        <Pressable
-          accessibilityRole="adjustable"
-          onLayout={captureProgressWidth}
-          onPress={(event) => seekFromPress(event.nativeEvent.locationX)}
-          style={styles.progressTrack}
-        >
-          <View style={[styles.progressRail, { backgroundColor: colors.surfaceSoft }]} />
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${progress * 100}%`, backgroundColor: colors.primary },
-            ]}
-          />
-          <View
-            style={[
-              styles.progressThumb,
-              {
-                left: `${progress * 100}%`,
-                backgroundColor: colors.primary,
-                borderColor: colors.surface,
-              },
-            ]}
-          />
-        </Pressable>
+        <Slider
+          accessibilityLabel="Podcast-ын хугацааг урагш, хойшлуулах"
+          disabled={duration <= 0}
+          maximumTrackTintColor={colors.surfaceSoft}
+          maximumValue={Math.max(duration, 1)}
+          minimumTrackTintColor={colors.primary}
+          minimumValue={0}
+          onSlidingComplete={(value) => {
+            setSeekTime(value);
+            void player
+              .seekTo(value)
+              .catch(() => undefined)
+              .finally(() => setSeeking(false));
+          }}
+          onSlidingStart={() => {
+            setSeekTime(currentTime);
+            setSeeking(true);
+          }}
+          onValueChange={setSeekTime}
+          step={0.1}
+          style={styles.progressSlider}
+          thumbTintColor={colors.primary}
+          value={Math.min(displayedTime, Math.max(duration, 1))}
+        />
         <View style={styles.controlRow}>
-          <Text style={[styles.timeText, { color: colors.muted }]}>{formatTime(currentTime)}</Text>
+          <Text style={[styles.timeText, { color: colors.muted }]}>
+            {formatTime(displayedTime)}
+          </Text>
           <View style={styles.transportControls}>
             <Pressable
               accessibilityLabel="5 секунд ухраах"
@@ -249,7 +253,15 @@ function PodcastRow({
               {podcast.author.displayName || 'GrowX хэрэглэгч'}
             </Text>
           </Pressable>
-          <Text style={[styles.episodeNumber, { color: colors.primary }]}>ШИНЭ ДУГААР</Text>
+          <View style={styles.episodeMeta}>
+            <View style={styles.listenMetric}>
+              <Icon name="headset-outline" size={15} color={colors.muted} />
+              <Text style={[styles.listenMetricText, { color: colors.muted }]}>
+                {podcast.listenCount ?? 0} сонссон
+              </Text>
+            </View>
+            <Text style={[styles.episodeNumber, { color: colors.primary }]}>ШИНЭ ДУГААР</Text>
+          </View>
         </View>
         <Text
           numberOfLines={2}
@@ -318,6 +330,7 @@ export default function PodcastScreen() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [activeEpisodeId, setActiveEpisodeId] = useState<string | null>(null);
+  const listenedIdsRef = useRef<Set<string>>(new Set());
   const hydrateStore = usePodcastStore((state) => state.hydrate);
 
   const load = useCallback(async () => {
@@ -328,7 +341,10 @@ export default function PodcastScreen() {
           ? api.get<{ users: { id: string }[] }>(`/users/${user.id}/following`)
           : Promise.resolve(null),
       ]);
-      setPodcasts(data.podcasts);
+      listenedIdsRef.current = new Set(
+        data.podcasts.filter((podcast) => podcast.listenedByMe).map((podcast) => podcast.id),
+      );
+      setPodcasts(rankPodcasts(data.podcasts));
       if (followingResponse) {
         setFollowingIds(new Set(followingResponse.data.users.map((item) => item.id)));
       }
@@ -369,6 +385,35 @@ export default function PodcastScreen() {
     }
   };
 
+  const recordListen = async (podcastId: string) => {
+    if (listenedIdsRef.current.has(podcastId)) return;
+    listenedIdsRef.current.add(podcastId);
+    setPodcasts((items) =>
+      rankPodcasts(
+        items.map((podcast) =>
+          podcast.id === podcastId
+            ? { ...podcast, listenedByMe: true, listenCount: (podcast.listenCount ?? 0) + 1 }
+            : podcast,
+        ),
+      ),
+    );
+    try {
+      const { data } = await api.post<{ listened: boolean; listenCount: number }>(
+        `/media/podcasts/${podcastId}/listen`,
+      );
+      setPodcasts((items) =>
+        rankPodcasts(
+          items.map((podcast) =>
+            podcast.id === podcastId ? { ...podcast, listenCount: data.listenCount } : podcast,
+          ),
+        ),
+      );
+    } catch {
+      listenedIdsRef.current.delete(podcastId);
+      void load();
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -402,7 +447,7 @@ export default function PodcastScreen() {
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={[styles.allTitle, { color: colors.text }]}>Сүүлийн дугаарууд</Text>
+            <Text style={[styles.allTitle, { color: colors.text }]}>Хамгийн их сонссон</Text>
             <View style={[styles.countBadge, { backgroundColor: colors.surfaceSoft }]}>
               <Text style={[styles.countBadgeText, { color: colors.primary }]}>
                 {podcasts.length}
@@ -418,6 +463,7 @@ export default function PodcastScreen() {
                 onToggleFollowHost={() => void toggleFollowHost(podcast.author.id)}
                 activeEpisodeId={activeEpisodeId}
                 onActivateEpisode={setActiveEpisodeId}
+                onListen={() => void recordListen(podcast.id)}
               />
             ))}
             {!podcasts.length && (
@@ -593,36 +639,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1D3D30',
   },
-  progressTrack: {
-    width: '100%',
-    height: 18,
-    justifyContent: 'center',
-  },
-  progressRail: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#315043',
-  },
-  progressFill: {
-    position: 'absolute',
-    left: 0,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: lime,
-  },
-  progressThumb: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    marginLeft: -6,
-    borderRadius: 6,
-    backgroundColor: lime,
-    borderWidth: 2,
-    borderColor: '#0A251C',
-  },
+  progressSlider: { width: '100%', height: 30 },
   controlRow: {
     minHeight: 48,
     flexDirection: 'row',
@@ -667,6 +684,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: lime },
+  episodeMeta: { alignItems: 'flex-end', gap: 5 },
+  listenMetric: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  listenMetricText: { fontSize: 10, fontWeight: '800' },
   episodeNumber: { color: lime, fontSize: 9, fontWeight: '900', letterSpacing: 1.1 },
   videoFooter: {
     marginTop: 15,

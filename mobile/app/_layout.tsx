@@ -7,6 +7,7 @@ import { PresenceHeartbeat } from '@/components/PresenceHeartbeat';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { ColorModeProvider } from '@/providers/ColorModeProvider';
 import { useColorMode } from '@/providers/ColorModeProvider';
+import { AppDialogProvider } from '@/providers/AppDialogProvider';
 
 const publicRoutes = [
   '',
@@ -33,16 +34,18 @@ const routesWithOwnBottomNav = new Set([
 export default function RootLayout() {
   return (
     <ColorModeProvider>
-      <UserProvider>
-        <AppNavigator />
-      </UserProvider>
+      <AppDialogProvider>
+        <UserProvider>
+          <AppNavigator />
+        </UserProvider>
+      </AppDialogProvider>
     </ColorModeProvider>
   );
 }
 
 function AppNavigator() {
   const { colors } = useColorMode();
-  const { token, loading } = useUser();
+  const { token, loading, user } = useUser();
   const segments = useSegments();
   const first = segments[0];
   const isPublic = publicRoutes.includes(first);
@@ -53,7 +56,9 @@ function AppNavigator() {
     if (loading) return;
     if (!token && !isPublic) router.replace('/login');
     if (token && ['login', 'register', 'onboard'].includes(first ?? '')) router.replace('/posts');
-  }, [first, isPublic, loading, token]);
+    if (token && String(first) === 'admin' && user && user.role !== 'ADMIN')
+      router.replace('/posts');
+  }, [first, isPublic, loading, token, user]);
 
   return (
     <View style={[styles.shell, { backgroundColor: colors.background }]}>
