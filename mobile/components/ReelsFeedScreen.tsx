@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import Slider from '@react-native-community/slider';
 import {
   ActivityIndicator,
   FlatList,
   Image,
   KeyboardAvoidingView,
   Linking,
+  PanResponder,
   Platform,
   Pressable,
   SafeAreaView,
@@ -39,68 +39,100 @@ function initials(name: string | null, email: string) {
   return (name?.trim() || email).slice(0, 2).toUpperCase();
 }
 
-function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds)) return '0:00';
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${Math.floor(seconds % 60)
-    .toString()
-    .padStart(2, '0')}`;
-}
-
-function PlayerControls({
-  playing,
-  muted,
+// A thin, non-intrusive progress line -- the short-form-video convention
+// (TikTok/Reels/Shorts) -- instead of a full opaque control bar with a
+// scrubber, timestamp and transport buttons, which read as a legacy web
+// video-player chrome rather than part of the reel itself. It's still
+// touch-and-drag scrubbable like Instagram's, just via a generous invisible
+// hit area around the thin visual line rather than a bulky slider control.
+function ProgressBar({
   currentTime,
   duration,
-  onTogglePlay,
-  onToggleMute,
   onSeek,
 }: {
-  playing: boolean;
-  muted: boolean;
   currentTime: number;
   duration: number;
-  onTogglePlay: () => void;
-  onToggleMute: () => void;
   onSeek: (seconds: number) => void;
 }) {
+  const { colors } = useColorMode();
+  const [trackWidth, setTrackWidth] = useState(0);
+  const [dragRatio, setDragRatio] = useState<number | null>(null);
+  const trackWidthRef = useRef(0);
+  const durationRef = useRef(0);
+  trackWidthRef.current = trackWidth;
+  durationRef.current = duration;
+
+  const seekToLocationX = (locationX: number) => {
+    if (trackWidthRef.current <= 0) return;
+    const ratio = Math.min(1, Math.max(0, locationX / trackWidthRef.current));
+    setDragRatio(ratio);
+    if (durationRef.current > 0) onSeek(ratio * durationRef.current);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (event) => seekToLocationX(event.nativeEvent.locationX),
+      onPanResponderMove: (event) => seekToLocationX(event.nativeEvent.locationX),
+      onPanResponderRelease: () => setDragRatio(null),
+      onPanResponderTerminate: () => setDragRatio(null),
+    }),
+  ).current;
+
+  const dragging = dragRatio !== null;
+  const progress = dragRatio ?? (duration > 0 ? Math.min(1, currentTime / duration) : 0);
+
   return (
-    <View className="absolute bottom-0 left-0 right-0 min-h-[56px] bg-black/80 px-s pb-2 pt-1">
-      <Slider
-        value={currentTime}
-        minimumValue={0}
-        maximumValue={Math.max(duration, 1)}
-        onSlidingComplete={onSeek}
-        minimumTrackTintColor={controlAccent}
-        maximumTrackTintColor="rgba(255,255,255,0.4)"
-        thumbTintColor={controlAccent}
-        style={{ width: '100%', height: 20 }}
-      />
-      <View className="flex-row items-center justify-between px-1">
-        <View className="flex-row items-center gap-s">
-          <Pressable onPress={onTogglePlay} hitSlop={8} className="outline-none">
-            <Icon name={playing ? 'pause' : 'play'} size={20} color="#FFFFFF" />
-          </Pressable>
-          <Text className="text-[11px] font-semibold text-white">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </Text>
-        </View>
-        <Pressable onPress={onToggleMute} hitSlop={8} className="outline-none">
-          <Icon name={muted ? 'volume-mute' : 'volume-high'} size={20} color="#FFFFFF" />
-        </Pressable>
+    <View
+      style={feedStyles.progressHit}
+      onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+      {...panResponder.panHandlers}
+    >
+      <View style={[feedStyles.progressTrack, dragging && feedStyles.progressTrackActive]}>
+        <View
+          style={[
+            feedStyles.progressFill,
+            { width: `${progress * 100}%`, backgroundColor: colors.primary },
+          ]}
+        />
       </View>
+      {dragging && (
+        <View
+          pointerEvents="none"
+          style={[
+            feedStyles.progressThumb,
+            { left: `${progress * 100}%`, backgroundColor: colors.primary },
+          ]}
+        />
+      )}
     </View>
   );
 }
 
-function NativeReelVideo({ videoUrl }: { videoUrl: string }) {
+function MuteButton({ muted, onPress }: { muted: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityLabel={muted ? 'Дуу асаах' : 'Дуу хаах'}
+      onPress={onPress}
+      hitSlop={8}
+      className={Platform.OS === 'web' ? 'outline-none' : undefined}
+      style={feedStyles.muteButton}
+    >
+      <Icon name={muted ? 'volume-mute' : 'volume-high'} size={16} color="#FFFFFF" />
+    </Pressable>
+  );
+}
+
+function NativeReelVideo({ videoUrl, isActive }: { videoUrl: string; isActive: boolean }) {
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const player = useVideoPlayer(videoUrl, (instance) => {
     instance.loop = false;
+    instance.muted = true;
   });
   useEffect(() => {
     const timer = setInterval(() => {
@@ -111,6 +143,18 @@ function NativeReelVideo({ videoUrl }: { videoUrl: string }) {
     }, 250);
     return () => clearInterval(timer);
   }, [player]);
+  // Autoplay: start this reel from the top the moment it becomes the one
+  // centered in the feed, pause it the moment it scrolls out of view.
+  useEffect(() => {
+    if (isActive) {
+      player.currentTime = 0;
+      setCurrentTime(0);
+      setEnded(false);
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isActive, player]);
   const toggle = () => {
     if (ended) {
       player.currentTime = 0;
@@ -124,49 +168,55 @@ function NativeReelVideo({ videoUrl }: { videoUrl: string }) {
     player.muted = !player.muted;
     setMuted(player.muted);
   };
+  const seek = (seconds: number) => {
+    player.currentTime = seconds;
+    setCurrentTime(seconds);
+    if (seconds < player.duration) setEnded(false);
+  };
   return (
-    <View className="relative flex-1">
-      <VideoView player={player} style={{ flex: 1 }} nativeControls={false} contentFit="contain" />
-      <CenterPlayButton
-        playing={playing}
-        ended={ended}
-        onPress={toggle}
-        onBack={() => {
-          player.currentTime = Math.max(0, player.currentTime - 10);
-          setEnded(false);
-        }}
-        onForward={() => {
-          player.currentTime = Math.min(
-            player.duration || player.currentTime + 10,
-            player.currentTime + 10,
-          );
-        }}
+    <Pressable
+      style={feedStyles.videoRoot}
+      onPress={toggle}
+      accessibilityLabel={playing ? 'Түр зогсоох' : 'Тоглуулах'}
+    >
+      <VideoView
+        player={player}
+        style={feedStyles.videoView}
+        nativeControls={false}
+        contentFit="contain"
+        pointerEvents="none"
       />
-      <PlayerControls
-        playing={playing}
-        muted={muted}
-        currentTime={currentTime}
-        duration={duration}
-        onTogglePlay={toggle}
-        onToggleMute={toggleMute}
-        onSeek={(seconds) => {
-          player.currentTime = seconds;
-          setCurrentTime(seconds);
-          if (seconds < player.duration) setEnded(false);
-        }}
-      />
-    </View>
+      <CenterPlayButton playing={playing} ended={ended} />
+      <MuteButton muted={muted} onPress={toggleMute} />
+      <ProgressBar currentTime={currentTime} duration={duration} onSeek={seek} />
+    </Pressable>
   );
 }
 
-function ReelVideo({ videoUrl }: { videoUrl: string }) {
+function ReelVideo({ videoUrl, isActive }: { videoUrl: string; isActive: boolean }) {
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
-  const [muted, setMuted] = useState(false);
+  // Muted by default: browsers only allow programmatic/autoplay of video
+  // with sound after a user gesture, so an unmuted autoplay would silently
+  // fail to play at all on web.
+  const [muted, setMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const video = videoRef.current;
+    if (!video) return;
+    if (isActive) {
+      video.currentTime = 0;
+      setCurrentTime(0);
+      setEnded(false);
+      void video.play();
+    } else {
+      video.pause();
+    }
+  }, [isActive]);
   if (Platform.OS === 'web') {
     if (failed) {
       return (
@@ -198,7 +248,7 @@ function ReelVideo({ videoUrl }: { videoUrl: string }) {
       else video.pause();
     };
     return (
-      <View className="relative flex-1">
+      <View style={feedStyles.videoRoot}>
         {React.createElement('video', {
           ref: videoRef,
           src: videoUrl,
@@ -220,6 +270,7 @@ function ReelVideo({ videoUrl }: { videoUrl: string }) {
             setDuration(event.currentTarget.duration);
           },
           onError: () => setFailed(true),
+          muted,
           style: {
             width: '100%',
             height: '100%',
@@ -229,38 +280,19 @@ function ReelVideo({ videoUrl }: { videoUrl: string }) {
             cursor: 'pointer',
           },
         })}
-        <CenterPlayButton
-          playing={playing}
-          ended={ended}
-          onPress={toggle}
-          onBack={() => {
-            const video = videoRef.current;
-            if (video) {
-              video.currentTime = Math.max(0, video.currentTime - 10);
-              setEnded(false);
-            }
-          }}
-          onForward={() => {
-            const video = videoRef.current;
-            if (video)
-              video.currentTime = Math.min(
-                video.duration || video.currentTime + 10,
-                video.currentTime + 10,
-              );
-          }}
-        />
-        <PlayerControls
-          playing={playing}
+        <CenterPlayButton playing={playing} ended={ended} />
+        <MuteButton
           muted={muted}
-          currentTime={currentTime}
-          duration={duration}
-          onTogglePlay={toggle}
-          onToggleMute={() => {
+          onPress={() => {
             const video = videoRef.current;
             if (!video) return;
             video.muted = !video.muted;
             setMuted(video.muted);
           }}
+        />
+        <ProgressBar
+          currentTime={currentTime}
+          duration={duration}
           onSeek={(seconds) => {
             const video = videoRef.current;
             if (!video) return;
@@ -272,58 +304,29 @@ function ReelVideo({ videoUrl }: { videoUrl: string }) {
       </View>
     );
   }
-  return <NativeReelVideo videoUrl={videoUrl} />;
+  return <NativeReelVideo videoUrl={videoUrl} isActive={isActive} />;
 }
 
-function CenterPlayButton({
-  playing,
-  ended,
-  onPress,
-  onBack,
-  onForward,
-}: {
-  playing: boolean;
-  ended: boolean;
-  onPress: () => void;
-  onBack: () => void;
-  onForward: () => void;
-}) {
+// Purely a visual flash of the play/pause state -- tapping anywhere on the
+// video (handled by the Pressable/onClick wrapping it) is what toggles
+// playback now, so this no longer needs to be its own hit target, and the
+// old back/forward-10s buttons are gone entirely: short-form vertical video
+// (TikTok/Reels/Shorts) doesn't offer scrubbing, only play/pause and swipe
+// to the next clip.
+function CenterPlayButton({ playing, ended }: { playing: boolean; ended: boolean }) {
   return (
     <View
-      className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-row items-center gap-m ${playing && !ended ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}
+      className={
+        Platform.OS === 'web' ? (playing && !ended ? 'opacity-0' : 'opacity-100') : undefined
+      }
+      style={[
+        feedStyles.centerControls,
+        Platform.OS !== 'web' && { opacity: playing && !ended ? 0 : 1 },
+      ]}
+      pointerEvents="none"
     >
-      <SeekTenButton direction="back" onPress={onBack} />
-      <Pressable
-        accessibilityLabel={ended ? 'Дахин тоглуулах' : playing ? 'Түр зогсоох' : 'Тоглуулах'}
-        onPress={onPress}
-        className="h-14 w-14 items-center justify-center rounded-avatar bg-black/65 outline-none"
-      >
-        <Icon name={ended ? 'refresh' : playing ? 'pause' : 'play'} size={27} color="#FFFFFF" />
-      </Pressable>
-      <SeekTenButton direction="forward" onPress={onForward} />
+      <Icon name={ended ? 'refresh' : playing ? 'pause' : 'play'} size={24} color="#FFFFFF" />
     </View>
-  );
-}
-
-function SeekTenButton({
-  direction,
-  onPress,
-}: {
-  direction: 'back' | 'forward';
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityLabel={direction === 'back' ? '10 секунд ухраах' : '10 секунд урагшлуулах'}
-      onPress={onPress}
-      className="h-14 w-14 items-center justify-center rounded-avatar bg-black/65 outline-none"
-    >
-      <Icon
-        name={direction === 'back' ? 'play-back-circle-outline' : 'play-forward-circle-outline'}
-        size={40}
-        color="#FFFFFF"
-      />
-    </Pressable>
   );
 }
 
@@ -337,6 +340,7 @@ function ReelCard({
   saved,
   onToggleSave,
   videoHeight,
+  isActive,
 }: {
   reel: Reel;
   onToggleLike: () => void;
@@ -347,6 +351,7 @@ function ReelCard({
   saved: boolean;
   onToggleSave: () => void;
   videoHeight: number;
+  isActive: boolean;
 }) {
   const { user } = useUser();
   const { confirm, alert } = useAppDialog();
@@ -483,9 +488,11 @@ function ReelCard({
   };
 
   return (
-    <View className="overflow-hidden rounded-card border border-border bg-background-paper">
-      <View className="relative w-full overflow-hidden bg-black" style={{ height: videoHeight }}>
-        <ReelVideo videoUrl={reel.videoUrl} />
+    <View
+      style={[feedStyles.reelCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    >
+      <View style={[feedStyles.videoShell, { height: videoHeight }]}>
+        <ReelVideo videoUrl={reel.videoUrl} isActive={isActive} />
         {reel.author.id === user?.id && (
           <View className="absolute right-m top-m" style={{ zIndex: 30, elevation: 30 }}>
             <Pressable
@@ -520,7 +527,7 @@ function ReelCard({
         )}
         <View
           pointerEvents="box-none"
-          className="absolute bottom-16 left-0 right-0 bg-gradient-to-t from-black/80 px-m pb-s pr-20 pt-l"
+          className="absolute bottom-6 left-0 right-0 bg-gradient-to-t from-black/80 px-m pb-s pr-20 pt-l"
           style={{ zIndex: 20, elevation: 20 }}
         >
           <Pressable
@@ -785,6 +792,7 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [activeReelId, setActiveReelId] = useState<string | null>(null);
   const savedReelIds = useEngagementStore((state) => state.savedReelIds);
   const toggleSaveReel = useEngagementStore((state) => state.toggleSaveReel);
   const feedViewportHeight = Math.max(300, measuredFeedHeight || height - 168);
@@ -813,8 +821,26 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
   useFocusEffect(
     useCallback(() => {
       void load();
+      // Pause every reel the moment this screen is no longer focused
+      // (navigated away from) -- resumes once viewability re-fires below.
+      return () => setActiveReelId(null);
     }, [load]),
   );
+
+  // Autoplay the reel that's actually visible: fall back to the first one
+  // as soon as the list loads, in case the viewability callback below
+  // hasn't fired yet (e.g. before the list has measured its layout).
+  useEffect(() => {
+    if (!activeReelId && reels.length > 0) setActiveReelId(reels[0].id);
+  }, [reels, activeReelId]);
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: Array<{ item: Reel; isViewable: boolean }> }) => {
+      const visible = viewableItems.find((entry) => entry.isViewable);
+      if (visible) setActiveReelId(visible.item.id);
+    },
+  ).current;
 
   const toggleLike = async (reel: Reel) => {
     setReels((current) =>
@@ -923,7 +949,7 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
         }}
       >
         {loading ? (
-          <View style={feedStyles.centerState}>
+          <View style={[feedStyles.centerState, feedStyles.loadingOverlay]}>
             <Loader size={32} />
             <Text className="text-sm text-text-muted">Reel-үүдийг ачаалж байна...</Text>
           </View>
@@ -967,9 +993,12 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
                   saved={savedReelIds.has(reel.id)}
                   onToggleSave={() => toggleSaveReel(reel.id)}
                   videoHeight={reelVideoHeight}
+                  isActive={reel.id === activeReelId}
                 />
               </View>
             )}
+            viewabilityConfig={viewabilityConfig}
+            onViewableItemsChanged={onViewableItemsChanged}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             decelerationRate="fast"
@@ -1035,12 +1064,83 @@ const feedStyles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   viewport: { flex: 1, minHeight: 0, width: '100%' },
+  loadingOverlay: { ...StyleSheet.absoluteFillObject },
   centerState: {
     flex: 1,
     minHeight: 0,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
     paddingHorizontal: 20,
   },
+  centerControls: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 52,
+    height: 52,
+    marginLeft: -26,
+    marginTop: -26,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  muteButton: {
+    position: 'absolute',
+    top: 14,
+    left: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  progressHit: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 22,
+    justifyContent: 'flex-end',
+  },
+  progressTrack: {
+    width: '100%',
+    height: 2.5,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  progressTrackActive: { height: 4 },
+  progressFill: { height: '100%', borderRadius: 2 },
+  progressThumb: {
+    position: 'absolute',
+    bottom: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginLeft: -6,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  reelCard: {
+    width: '100%',
+    overflow: 'hidden',
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  videoShell: {
+    position: 'relative',
+    width: '100%',
+    overflow: 'hidden',
+    backgroundColor: '#000000',
+  },
+  videoRoot: {
+    position: 'relative',
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000000',
+  },
+  videoView: { width: '100%', height: '100%', backgroundColor: '#000000' },
 });

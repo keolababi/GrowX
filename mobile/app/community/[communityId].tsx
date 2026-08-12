@@ -443,10 +443,7 @@ export default function CommunityDetailScreen() {
                     <Pressable
                       key={member.id}
                       onPress={() => router.push(`/users/${member.id}` as Href)}
-                      style={({ pressed }) => [
-                        styles.memberRow,
-                        pressed && styles.memberRowPressed,
-                      ]}
+                      style={styles.memberRow}
                     >
                       {member.avatarUrl ? (
                         <Image source={{ uri: member.avatarUrl }} style={styles.memberAvatar} />
@@ -581,8 +578,8 @@ function Empty({ title, copy }: { title: string; copy: string }) {
 
 const createStyles = (colors: AppModeColors) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: colors.background },
-    loader: { flex: 1 },
+    safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: colors.background },
+    loader: { flex: 1, minHeight: 0 },
     header: {
       height: 68,
       paddingHorizontal: 12,
@@ -600,7 +597,7 @@ const createStyles = (colors: AppModeColors) =>
       textAlign: 'center',
     },
     headerSpacer: { width: 46 },
-    scroll: { flex: 1 },
+    scroll: { flex: 1, minHeight: 0 },
     content: { width: '100%', maxWidth: 650, alignSelf: 'center', padding: 20, paddingBottom: 110 },
     error: { color: colors.danger, marginBottom: 12 },
     cover: {

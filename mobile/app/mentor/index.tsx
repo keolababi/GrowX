@@ -6,6 +6,7 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   Text,
   View,
   type ViewStyle,
@@ -37,6 +38,29 @@ const webScreenStyle = {
   minHeight: '100vh',
   maxHeight: '100vh',
 } as unknown as ViewStyle;
+
+// NativeWind's `flex-1`/`min-h-0`/`shrink-0` classes don't reliably collapse
+// nested Yoga containers to their remaining space on native -- the same issue
+// fixed elsewhere in the app (profile, messages, posts, reels). Explicit
+// styles on this vertical flex chain (SafeAreaView -> tab body -> ScrollView)
+// keep the screen from rendering collapsed/overlapping on device.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' },
+  container: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
+  heroCard: { flexShrink: 0 },
+  segmentedWrap: { flexShrink: 0 },
+  tabBody: { flex: 1, minHeight: 0 },
+  searchWrap: { flexShrink: 0 },
+  tagsScroll: { maxHeight: 48, flexShrink: 0 },
+  centerState: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center' },
+  listScroll: { flex: 1, minHeight: 0 },
+});
 
 function initials(name: string | null, email: string) {
   return (name?.trim() || email).slice(0, 2).toUpperCase();
@@ -269,7 +293,7 @@ function RequestRow({
 
 export default function MentorScreen() {
   const { user } = useUser();
-  const { iconAccent: lime } = useColorMode();
+  const { colors, iconAccent: lime } = useColorMode();
   const [section, setSection] = useState(0);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Бүгд');
@@ -428,13 +452,19 @@ export default function MentorScreen() {
 
   return (
     <SafeAreaView
-      className="min-h-0 flex-1 overflow-hidden bg-background-app"
-      style={Platform.OS === 'web' ? webScreenStyle : undefined}
+      style={[
+        styles.safeArea,
+        { backgroundColor: colors.background },
+        Platform.OS === 'web' ? webScreenStyle : undefined,
+      ]}
     >
-      <View className="min-h-0 w-full max-w-[900px] flex-1 self-center">
+      <View style={styles.container}>
         <AppPageHeader maxWidth={900} back backFallback="/medlege" actions={<NotificationBell />} />
 
-        <View className="mx-l mb-m mt-m shrink-0 overflow-hidden rounded-[24px] border border-border bg-background-paper px-l py-m">
+        <View
+          style={styles.heroCard}
+          className="mx-l mb-m mt-m overflow-hidden rounded-[24px] border border-border bg-background-paper px-l py-m"
+        >
           <View className="flex-row items-center justify-between gap-m">
             <View className="min-w-0 flex-1">
               <Text className="text-[10px] font-black tracking-[2px] text-brand-primary">
@@ -464,7 +494,7 @@ export default function MentorScreen() {
           </View>
         </View>
 
-        <View className="shrink-0 px-l pb-s">
+        <View style={styles.segmentedWrap} className="px-l pb-s">
           <SegmentedControl
             options={[
               'Ментор хайх',
@@ -476,13 +506,13 @@ export default function MentorScreen() {
         </View>
 
         {section === 0 ? (
-          <View className="min-h-0 flex-1">
-            <View className="shrink-0 px-l pb-s">
+          <View style={styles.tabBody}>
+            <View style={styles.searchWrap} className="px-l pb-s">
               <SearchBar value={query} onChangeText={setQuery} placeholder="Ментор, бизнес хайх" />
             </View>
             <ScrollView
               horizontal
-              className="max-h-12 shrink-0"
+              style={styles.tagsScroll}
               contentContainerStyle={{
                 flexGrow: 1,
                 justifyContent: 'flex-start',
@@ -503,12 +533,13 @@ export default function MentorScreen() {
             </ScrollView>
 
             {loading ? (
-              <View className="min-h-0 flex-1 items-center justify-center">
+              <View style={styles.centerState}>
                 <Loader size={44} />
               </View>
             ) : (
               <ScrollView
-                className="min-h-0 flex-1 px-l"
+                style={styles.listScroll}
+                className="px-l"
                 contentContainerStyle={{ paddingBottom: 24 }}
                 showsVerticalScrollIndicator={false}
               >
@@ -539,7 +570,7 @@ export default function MentorScreen() {
             )}
           </View>
         ) : (
-          <View className="min-h-0 flex-1">
+          <View style={styles.tabBody}>
             <View className="px-l pb-s">
               <SegmentedControl
                 options={['Ирсэн', 'Илгээсэн']}
@@ -548,12 +579,13 @@ export default function MentorScreen() {
               />
             </View>
             {requestsLoading ? (
-              <View className="flex-1 items-center justify-center">
+              <View style={styles.centerState}>
                 <Loader size={44} />
               </View>
             ) : (
               <ScrollView
-                className="min-h-0 flex-1 px-l"
+                style={styles.listScroll}
+                className="px-l"
                 contentContainerStyle={{ paddingBottom: 24 }}
                 showsVerticalScrollIndicator={false}
               >

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, Share, Text, View } from 'react-native';
+import { Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Icon } from './Icon';
 import { VideoPlayer } from './VideoPlayer';
 import { useColorMode } from '@/providers/ColorModeProvider';
@@ -67,40 +67,60 @@ function AuthorAvatar({ author, size = 46 }: { author: PostCardAuthor; size?: nu
 }
 
 function MediaGrid({ media }: { media: PostCardMediaItem[] }) {
+  const { colors } = useColorMode();
   if (media.length === 0) return null;
   if (media.length === 1) {
     const item = media[0];
     return item.type === 'video' ? (
-      <View className="mt-s">
+      <View style={mediaStyles.singleVideo}>
         <VideoPlayer source={item.url} aspectRatio={4 / 3} />
       </View>
     ) : (
       <Image
         source={{ uri: item.url }}
-        resizeMode="cover"
-        className="mt-s aspect-video w-full rounded-btn bg-background-paper"
+        resizeMode="contain"
+        style={[mediaStyles.singleImage, { backgroundColor: colors.surface }]}
       />
     );
   }
   return (
-    <View className="mt-s flex-row flex-wrap gap-1">
+    <View style={mediaStyles.grid}>
       {media.map((item, index) =>
         item.type === 'video' ? (
-          <View key={`${item.url}-${index}`} className="w-[49%]">
+          <View key={`${item.url}-${index}`} style={mediaStyles.gridItem}>
             <VideoPlayer source={item.url} aspectRatio={1} />
           </View>
         ) : (
           <Image
             key={`${item.url}-${index}`}
             source={{ uri: item.url }}
-            resizeMode="cover"
-            className="aspect-square w-[49%] rounded-btn bg-background-paper"
+            resizeMode="contain"
+            style={[mediaStyles.gridItem, { backgroundColor: colors.surface }]}
           />
         ),
       )}
     </View>
   );
 }
+
+const mediaStyles = StyleSheet.create({
+  singleVideo: { width: '100%', marginTop: 8 },
+  singleImage: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    marginTop: 8,
+    borderRadius: 12,
+  },
+  grid: {
+    width: '100%',
+    marginTop: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 4,
+  },
+  gridItem: { width: '49%', aspectRatio: 1, borderRadius: 12 },
+});
 
 export const PostCard: React.FC<Props> = ({
   postId,

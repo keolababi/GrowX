@@ -1,11 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackResponsesPayload } from '@/types/feedback';
+
+// Same fix as profile/messages/posts/mentor/discover: nested `flex-1` via
+// className doesn't reliably collapse to the remaining space on native Yoga.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%' },
+  centerState: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flexMin0: { flex: 1, minHeight: 0 },
+});
 
 function QuestionSummary({
   question,
@@ -109,16 +123,16 @@ export default function FeedbackResponsesScreen() {
   }, [formId]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
+    <SafeAreaView className="bg-background-app" style={styles.safeArea}>
       <AppPageHeader title="Хариултууд" back />
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.centerState}>
           <Loader size={44} />
         </View>
       ) : (
         <ScrollView
-          className="flex-1"
+          style={styles.flexMin0}
           contentContainerStyle={{
             width: '100%',
             maxWidth: 900,

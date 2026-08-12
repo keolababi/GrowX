@@ -6,6 +6,7 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   Switch,
   Text,
   TextInput,
@@ -18,6 +19,13 @@ import { api } from '@/services/api';
 import { getApiError } from '@/utils/auth';
 import type { FeedbackQuestionType } from '@/types/feedback';
 import { useColorMode } from '@/providers/ColorModeProvider';
+
+// Same fix as profile/messages/posts/mentor/discover: nested `flex-1` via
+// className doesn't reliably collapse to the remaining space on native Yoga.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%' },
+  flexMin0: { flex: 1, minHeight: 0 },
+});
 
 const questionTypeLabels: Record<FeedbackQuestionType, string> = {
   SHORT_ANSWER: 'Богино хариулт',
@@ -151,10 +159,10 @@ export default function CreateFeedbackFormScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
+    <SafeAreaView className="bg-background-app" style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1"
+        style={styles.flexMin0}
       >
         <AppPageHeader
           title="Асуулга үүсгэх"
@@ -177,7 +185,7 @@ export default function CreateFeedbackFormScreen() {
         />
 
         <ScrollView
-          className="flex-1"
+          style={styles.flexMin0}
           contentContainerStyle={{
             width: '100%',
             maxWidth: 900,

@@ -235,8 +235,8 @@ export default function CreateGroupScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020B0D' },
-  keyboard: { flex: 1 },
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#020B0D' },
+  keyboard: { flex: 1, minHeight: 0 },
   header: {
     height: 68,
     paddingHorizontal: 12,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   backButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, color: '#F4F7F6', fontSize: 21, fontWeight: '900', textAlign: 'center' },
   headerSpacer: { width: 46 },
-  scroll: { flex: 1 },
+  scroll: { flex: 1, minHeight: 0 },
   content: {
     width: '100%',
     maxWidth: 560,

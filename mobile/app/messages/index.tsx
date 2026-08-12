@@ -463,7 +463,9 @@ export default function MessagesScreen() {
 
         {!!error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
         {loading ? (
-          <Loader size={32} style={styles.loader} />
+          <View style={styles.loaderState}>
+            <Loader size={32} />
+          </View>
         ) : (
           <ScrollView
             ref={conversationsScrollRef}
@@ -777,7 +779,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   error: { color: '#FF7777', paddingHorizontal: 16, paddingVertical: 7 },
-  loader: { flex: 1 },
+  loaderState: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scroll: { flex: 1, minHeight: 0 },
   list: {
     width: '100%',

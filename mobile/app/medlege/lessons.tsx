@@ -68,7 +68,11 @@ export default function LessonsScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <AppPageHeader title="Хичээлүүд" back maxWidth={900} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View
           style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
@@ -192,11 +196,7 @@ function LessonRow({
   return (
     <Pressable
       onPress={() => router.push(`/medlege/${lesson.id}`)}
-      style={({ pressed }) => [
-        styles.lesson,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.lesson, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
       <View style={[styles.lessonNumber, { backgroundColor: colors.surfaceSoft }]}>
         {completed ? (
@@ -240,7 +240,8 @@ function LessonRow({
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  scroll: { flex: 1, minHeight: 0 },
   content: { width: '100%', maxWidth: 900, alignSelf: 'center', padding: 20, paddingBottom: 52 },
   hero: { borderWidth: 1, borderRadius: 22, padding: 20, flexDirection: 'row', gap: 16 },
   heroIcon: {

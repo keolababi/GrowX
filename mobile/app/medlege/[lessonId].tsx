@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
@@ -10,6 +10,21 @@ import { api } from '@/services/api';
 import { useLearningStore } from '@/store/learningStore';
 import type { Lesson } from '@/types/learning';
 import { useColorMode } from '@/providers/ColorModeProvider';
+
+// Same fix as profile/messages/posts/mentor/discover/feedback: nested
+// `flex-1` via className doesn't reliably collapse to the remaining space
+// on native Yoga, which was rendering this screen's content blank.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%' },
+  centerState: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flexMin0: { flex: 1, minHeight: 0 },
+});
 
 export default function LessonDetailScreen() {
   const { colors } = useColorMode();
@@ -54,7 +69,7 @@ export default function LessonDetailScreen() {
 
   if (loading && !lesson) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background-app">
+      <SafeAreaView className="bg-background-app" style={styles.centerState}>
         <Loader size={44} />
       </SafeAreaView>
     );
@@ -62,7 +77,7 @@ export default function LessonDetailScreen() {
 
   if (!lesson) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background-app">
+      <SafeAreaView className="bg-background-app" style={styles.centerState}>
         <Text className="text-text-muted">Хичээл олдсонгүй.</Text>
       </SafeAreaView>
     );
@@ -72,11 +87,11 @@ export default function LessonDetailScreen() {
   const started = startedIds.has(lesson.id);
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
+    <SafeAreaView className="bg-background-app" style={styles.safeArea}>
       <AppPageHeader title="Хичээл" back />
 
       <ScrollView
-        className="flex-1"
+        style={styles.flexMin0}
         contentContainerStyle={{
           width: '100%',
           maxWidth: 900,

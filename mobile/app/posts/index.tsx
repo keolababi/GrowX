@@ -259,146 +259,153 @@ export default function PostsScreen() {
         />
       </View>
 
-      {loading ? (
-        <View style={styles.centerState}>
-          <Loader size={44} />
-          <Text className="text-sm text-text-muted">Post-уудыг ачаалж байна...</Text>
-        </View>
-      ) : error && posts.length === 0 ? (
-        <View style={styles.centerState}>
-          <Text className="text-center text-sm text-danger">{error}</Text>
-          <Pressable
-            onPress={() => void loadPosts()}
-            className="rounded-btn bg-brand-primary px-l py-s"
+      <View style={styles.feedRegion}>
+        {loading ? (
+          <View style={[styles.centerState, styles.loadingOverlay]}>
+            <Loader size={44} />
+            <Text className="text-sm text-text-muted">Post-уудыг ачаалж байна...</Text>
+          </View>
+        ) : error && posts.length === 0 ? (
+          <View style={styles.centerState}>
+            <Text className="text-center text-sm text-danger">{error}</Text>
+            <Pressable
+              onPress={() => void loadPosts()}
+              className="rounded-btn bg-brand-primary px-l py-s"
+            >
+              <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <ScrollView
+            ref={scrollRef}
+            style={[styles.feed, Platform.OS === 'web' ? webFeedScrollStyle : undefined]}
+            scrollEnabled
+            contentContainerStyle={styles.feedContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => void loadPosts(true)}
+                tintColor={accent}
+              />
+            }
           >
-            <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <ScrollView
-          ref={scrollRef}
-          style={[styles.feed, Platform.OS === 'web' ? webFeedScrollStyle : undefined]}
-          scrollEnabled
-          contentContainerStyle={styles.feedContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => void loadPosts(true)}
-              tintColor={accent}
-            />
-          }
-        >
-          {!!error && (
-            <View className="mx-l my-s items-center gap-s rounded-btn border border-border bg-background-paper p-m">
-              <Text className="text-center text-sm text-danger">{error}</Text>
-              <Pressable
-                onPress={() => void loadPosts()}
-                className="rounded-btn bg-brand-primary px-l py-s"
-              >
-                <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
-              </Pressable>
-            </View>
-          )}
+            {!!error && (
+              <View className="mx-l my-s items-center gap-s rounded-btn border border-border bg-background-paper p-m">
+                <Text className="text-center text-sm text-danger">{error}</Text>
+                <Pressable
+                  onPress={() => void loadPosts()}
+                  className="rounded-btn bg-brand-primary px-l py-s"
+                >
+                  <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
+                </Pressable>
+              </View>
+            )}
 
-          {posts.length === 0 && (
-            <View className="items-center px-9 pt-24">
-              <Text className="text-xl font-bold text-text-primary">Одоогоор post алга</Text>
-              <Text className="mt-2 text-center text-sm leading-5 text-text-muted">
-                Анхны post-оо оруулаад бусадтай санаагаа хуваалцаарай.
-              </Text>
-              <Pressable
-                onPress={() => router.push('/posts/create')}
-                className="mt-l h-12 items-center justify-center rounded-btn bg-brand-primary px-l"
-              >
-                <Text className="text-sm font-bold text-background-app">Post оруулах</Text>
-              </Pressable>
-            </View>
-          )}
+            {posts.length === 0 && (
+              <View className="items-center px-9 pt-24">
+                <Text className="text-xl font-bold text-text-primary">Одоогоор post алга</Text>
+                <Text className="mt-2 text-center text-sm leading-5 text-text-muted">
+                  Анхны post-оо оруулаад бусадтай санаагаа хуваалцаарай.
+                </Text>
+                <Pressable
+                  onPress={() => router.push('/posts/create')}
+                  className="mt-l h-12 items-center justify-center rounded-btn bg-brand-primary px-l"
+                >
+                  <Text className="text-sm font-bold text-background-app">Post оруулах</Text>
+                </Pressable>
+              </View>
+            )}
 
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              postId={post.id}
-              author={post.author}
-              timestamp={relativeTime(post.createdAt)}
-              content={post.content}
-              media={post.imageUrl ? [{ type: 'image', url: post.imageUrl }] : []}
-              communityName={post.community?.name}
-              likeCount={post.likeCount}
-              commentCount={post.commentCount}
-              shareCount={post.shareCount}
-              likedByMe={post.likedByMe}
-              isOwnPost={post.authorId === user?.id}
-              isFollowing={followingIds.has(post.authorId)}
-              reposted={repostedIds.has(post.id)}
-              saved={savedIds.has(post.id)}
-              onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
-              onPressLike={() => void toggleLike(post)}
-              onPressComment={() => router.push(`/posts/${post.id}?focusComment=1`)}
-              onToggleFollow={() => void toggleFollowAuthor(post.authorId)}
-              onToggleRepost={() => toggleRepost(post.id)}
-              onToggleSave={() => toggleSave(post.id)}
-              onPressMore={() => router.push(`/posts/${post.id}`)}
-              onEdit={
-                post.authorId === user?.id ? () => router.push(`/posts/${post.id}/edit`) : undefined
-              }
-              onDelete={post.authorId === user?.id ? () => void deletePost(post.id) : undefined}
-              footer={
-                <View className="mt-m flex-row items-center gap-s">
-                  {!!user && <AuthorAvatar author={user} size={34} />}
-                  <View
-                    className="min-w-0 flex-1 flex-row items-center rounded-avatar border border-border bg-background-paper px-m"
-                    style={{ backgroundColor: colors.surface, borderColor: colors.border }}
-                  >
-                    <TextInput
-                      value={commentDrafts[post.id] ?? ''}
-                      onChangeText={(value) =>
-                        setCommentDrafts((drafts) => ({ ...drafts, [post.id]: value }))
-                      }
-                      onSubmitEditing={() => void addComment(post.id)}
-                      placeholder="Сэтгэгдэл бичих..."
-                      placeholderTextColor={colors.muted}
-                      cursorColor={colors.primary}
-                      selectionColor={colors.primary}
-                      returnKeyType="send"
-                      className="h-11 flex-1 text-sm text-text-primary"
-                      style={{ color: colors.text, backgroundColor: colors.surface }}
-                    />
-                    <Pressable
-                      onPress={() => void addComment(post.id)}
-                      disabled={!(commentDrafts[post.id] ?? '').trim()}
-                      hitSlop={8}
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 17,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginLeft: 4,
-                        backgroundColor: colors.primary,
-                        opacity: (commentDrafts[post.id] ?? '').trim() ? 1 : 0.35,
-                      }}
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                postId={post.id}
+                author={post.author}
+                timestamp={relativeTime(post.createdAt)}
+                content={post.content}
+                media={post.imageUrl ? [{ type: 'image', url: post.imageUrl }] : []}
+                communityName={post.community?.name}
+                likeCount={post.likeCount}
+                commentCount={post.commentCount}
+                shareCount={post.shareCount}
+                likedByMe={post.likedByMe}
+                isOwnPost={post.authorId === user?.id}
+                isFollowing={followingIds.has(post.authorId)}
+                reposted={repostedIds.has(post.id)}
+                saved={savedIds.has(post.id)}
+                onPressAuthor={() => router.push(`/users/${post.author.id}` as Href)}
+                onPressLike={() => void toggleLike(post)}
+                onPressComment={() => router.push(`/posts/${post.id}?focusComment=1`)}
+                onToggleFollow={() => void toggleFollowAuthor(post.authorId)}
+                onToggleRepost={() => toggleRepost(post.id)}
+                onToggleSave={() => toggleSave(post.id)}
+                onPressMore={() => router.push(`/posts/${post.id}`)}
+                onEdit={
+                  post.authorId === user?.id
+                    ? () => router.push(`/posts/${post.id}/edit`)
+                    : undefined
+                }
+                onDelete={post.authorId === user?.id ? () => void deletePost(post.id) : undefined}
+                footer={
+                  <View className="mt-m flex-row items-center gap-s">
+                    {!!user && <AuthorAvatar author={user} size={34} />}
+                    <View
+                      className="min-w-0 flex-1 flex-row items-center rounded-avatar border border-border bg-background-paper px-m"
+                      style={{ backgroundColor: colors.surface, borderColor: colors.border }}
                     >
-                      <Icon name="send" size={16} color={colors.ink} />
-                    </Pressable>
+                      <TextInput
+                        value={commentDrafts[post.id] ?? ''}
+                        onChangeText={(value) =>
+                          setCommentDrafts((drafts) => ({ ...drafts, [post.id]: value }))
+                        }
+                        onSubmitEditing={() => void addComment(post.id)}
+                        placeholder="Сэтгэгдэл бичих..."
+                        placeholderTextColor={colors.muted}
+                        cursorColor={colors.primary}
+                        selectionColor={colors.primary}
+                        returnKeyType="send"
+                        className="h-11 flex-1 text-sm text-text-primary"
+                        style={{ color: colors.text, backgroundColor: colors.surface }}
+                      />
+                      <Pressable
+                        onPress={() => void addComment(post.id)}
+                        disabled={!(commentDrafts[post.id] ?? '').trim()}
+                        hitSlop={8}
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 17,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginLeft: 4,
+                          backgroundColor: colors.primary,
+                          opacity: (commentDrafts[post.id] ?? '').trim() ? 1 : 0.35,
+                        }}
+                      >
+                        <Icon name="send" size={16} color={colors.ink} />
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-              }
-            />
-          ))}
-        </ScrollView>
-      )}
+                }
+              />
+            ))}
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  feedRegion: { position: 'relative', flex: 1, minHeight: 0, width: '100%' },
+  loadingOverlay: { ...StyleSheet.absoluteFillObject },
   centerState: {
     flex: 1,
     minHeight: 0,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,

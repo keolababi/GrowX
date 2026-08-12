@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
 import { api } from '@/services/api';
@@ -9,6 +9,20 @@ import { relativeTime } from '@/utils/relativeTime';
 import type { CommunityFeedbackFormSummary, FeedbackFormSummary } from '@/types/feedback';
 import { AppPageHeader } from '@/components/AppPageHeader';
 import { useColorMode } from '@/providers/ColorModeProvider';
+
+// Same fix as profile/messages/posts/mentor/discover: nested `flex-1` via
+// className doesn't reliably collapse to the remaining space on native Yoga.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%' },
+  centerState: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flexMin0: { flex: 1, minHeight: 0 },
+});
 
 export default function FeedbackFormsScreen() {
   const { colors, iconAccent: lime } = useColorMode();
@@ -43,7 +57,7 @@ export default function FeedbackFormsScreen() {
   const totalResponses = forms.reduce((sum, form) => sum + form.responseCount, 0);
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
+    <SafeAreaView className="bg-background-app" style={styles.safeArea}>
       <AppPageHeader
         title="Feedback"
         back
@@ -63,13 +77,13 @@ export default function FeedbackFormsScreen() {
       />
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.centerState}>
           <Loader size={44} />
           <Text className="mt-s text-sm text-text-muted">Асуулгуудыг ачаалж байна...</Text>
         </View>
       ) : (
         <ScrollView
-          className="flex-1"
+          style={styles.flexMin0}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 48 }}
         >

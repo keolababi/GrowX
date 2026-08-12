@@ -748,7 +748,9 @@ export default function ConversationScreen() {
         </View>
 
         {loading ? (
-          <Loader size={32} style={styles.loader} />
+          <View style={styles.loaderState}>
+            <Loader size={32} />
+          </View>
         ) : (
           <ScrollView
             ref={scrollRef}
@@ -1251,7 +1253,13 @@ const styles = StyleSheet.create({
   headerCopy: { flex: 1, marginLeft: 11 },
   profileLink: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   name: { color: '#F5F8F6', fontSize: 16, fontWeight: '900', letterSpacing: -0.2 },
-  loader: { flex: 1 },
+  loaderState: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scroll: { flex: 1, backgroundColor: '#020D0B' },
   messages: {
     flexGrow: 1,

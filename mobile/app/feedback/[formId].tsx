@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, Share, Text, TextInput, View } from 'react-native';
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { Loader } from '@/components/ui/Loader';
 import { AppPageHeader } from '@/components/AppPageHeader';
@@ -12,6 +21,20 @@ import { useAppDialog } from '@/providers/AppDialogProvider';
 
 const stars = [1, 2, 3, 4, 5];
 const scaleValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Same fix as profile/messages/posts/mentor/discover: nested `flex-1` via
+// className doesn't reliably collapse to the remaining space on native Yoga.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%' },
+  centerState: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flexMin0: { flex: 1, minHeight: 0 },
+});
 
 export default function FeedbackFormScreen() {
   const { colors, iconAccent: lime } = useColorMode();
@@ -107,14 +130,14 @@ export default function FeedbackFormScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background-app">
+      <SafeAreaView className="bg-background-app" style={styles.centerState}>
         <Loader size={44} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background-app">
+    <SafeAreaView className="bg-background-app" style={styles.safeArea}>
       <AppPageHeader
         title="Асуулга"
         back
@@ -136,7 +159,7 @@ export default function FeedbackFormScreen() {
 
       {form && (
         <ScrollView
-          className="flex-1"
+          style={styles.flexMin0}
           contentContainerStyle={{
             width: '100%',
             maxWidth: 900,

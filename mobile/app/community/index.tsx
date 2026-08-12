@@ -185,10 +185,9 @@ export default function CommunityScreen() {
                   <Pressable
                     key={community.id}
                     onPress={() => router.push(`/community/${community.id}` as Href)}
-                    style={({ pressed }) => [
+                    style={[
                       styles.groupCard,
                       { backgroundColor: colors.surface, borderColor: colors.border },
-                      pressed && { backgroundColor: colors.surfaceRaised },
                     ]}
                   >
                     {community.coverUrl ? (
@@ -308,8 +307,8 @@ function EmptyState({ title, copy }: { title: string; copy: string }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020B0D' },
-  page: { flex: 1, width: '100%', maxWidth: 900, alignSelf: 'center' },
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#020B0D' },
+  page: { flex: 1, minHeight: 0, width: '100%', maxWidth: 900, alignSelf: 'center' },
   search: {
     height: 54,
     marginHorizontal: 22,
@@ -323,8 +322,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   searchInput: { flex: 1, height: '100%', color: '#EFF3F1', fontSize: 14, marginLeft: 10 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { flex: 1 },
+  center: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center' },
+  scroll: { flex: 1, minHeight: 0 },
   feed: { paddingHorizontal: 22, paddingBottom: 120 },
   error: { color: '#FF817B', fontSize: 13, paddingVertical: 12 },
   groupCard: {

@@ -8,6 +8,7 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -52,6 +53,14 @@ const webScreenStyle = {
   minHeight: '100vh',
   maxHeight: '100vh',
 } as never;
+
+// Same fix as profile/messages/posts/mentor: nested `flex-1`/`min-h-0` via
+// className don't reliably collapse to the remaining space on native Yoga.
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' },
+  centerState: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center' },
+  listScroll: { flex: 1, minHeight: 0 },
+});
 
 async function loadFromExistingRoutes(query: string): Promise<GlobalSearchResponse> {
   const [usersResponse, communitiesResponse, postsResponse, lessonsResponse, podcastsResponse] =
@@ -295,8 +304,8 @@ export default function DiscoverScreen() {
 
   return (
     <SafeAreaView
-      className="min-h-0 flex-1 overflow-hidden bg-background-app"
-      style={Platform.OS === 'web' ? webScreenStyle : undefined}
+      className="bg-background-app"
+      style={[styles.safeArea, Platform.OS === 'web' ? webScreenStyle : undefined]}
     >
       <AppPageHeader
         title="Нэгдсэн хайлт"
@@ -328,13 +337,13 @@ export default function DiscoverScreen() {
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.centerState}>
           <Loader size={44} />
           <Text className="mt-s text-xs text-text-muted">Хайж байна...</Text>
         </View>
       ) : (
         <ScrollView
-          className="min-h-0 flex-1"
+          style={styles.listScroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
