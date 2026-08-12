@@ -332,6 +332,7 @@ function ReelCard({
   onAddComment,
   onEditComment,
   onDeleteComment,
+  onDeleteReel,
   saved,
   onToggleSave,
   videoHeight,
@@ -341,6 +342,7 @@ function ReelCard({
   onAddComment: (content: string) => Promise<void>;
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  onDeleteReel: () => Promise<void>;
   saved: boolean;
   onToggleSave: () => void;
   videoHeight: number;
@@ -360,6 +362,7 @@ function ReelCard({
   const [commentEditDraft, setCommentEditDraft] = useState('');
   const [savingCommentEdit, setSavingCommentEdit] = useState(false);
   const [commentEditError, setCommentEditError] = useState('');
+  const [reelMenuOpen, setReelMenuOpen] = useState(false);
 
   useEffect(() => setShareCount(reel.shareCount), [reel.shareCount]);
 
@@ -444,6 +447,17 @@ function ReelCard({
     if (accepted) await remove();
   };
 
+  const deleteReel = async () => {
+    setReelMenuOpen(false);
+    const accepted = await confirm({
+      title: 'Reel устгах',
+      message: 'Энэ Reel-ийг устгах уу? Буцаан сэргээх боломжгүй.',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (accepted) await onDeleteReel();
+  };
+
   useEffect(() => {
     if (!commentsOpen) return;
     const timer = setTimeout(() => commentInputRef.current?.focus(), 300);
@@ -462,6 +476,38 @@ function ReelCard({
     <View className="overflow-hidden rounded-card border border-border bg-background-paper">
       <View className="relative w-full overflow-hidden bg-black" style={{ height: videoHeight }}>
         <ReelVideo videoUrl={reel.videoUrl} />
+        {reel.author.id === user?.id && (
+          <View className="absolute right-m top-m" style={{ zIndex: 30, elevation: 30 }}>
+            <Pressable
+              accessibilityLabel="Reel-ийн үйлдлүүд"
+              onPress={() => setReelMenuOpen((open) => !open)}
+              className="h-9 w-9 items-center justify-center rounded-avatar bg-black/70 outline-none"
+            >
+              <Icon name="ellipsis-horizontal" size={21} color="#FFFFFF" />
+            </Pressable>
+            {reelMenuOpen && (
+              <View className="absolute right-0 top-11 min-w-[142px] overflow-hidden rounded-btn border border-border bg-background-paper shadow-lg">
+                <Pressable
+                  onPress={() => {
+                    setReelMenuOpen(false);
+                    router.push(`/reels/${reel.id}/edit` as Href);
+                  }}
+                  className="min-h-[44px] flex-row items-center gap-s border-b border-border px-s outline-none"
+                >
+                  <Icon name="create-outline" size={17} color={colors.text} />
+                  <Text className="text-xs font-extrabold text-text-primary">Засах</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => void deleteReel()}
+                  className="min-h-[44px] flex-row items-center gap-s px-s outline-none"
+                >
+                  <Icon name="trash-outline" size={17} color={colors.danger} />
+                  <Text className="text-xs font-extrabold text-danger">Устгах</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
         <View
           pointerEvents="box-none"
           className="absolute bottom-16 left-0 right-0 bg-gradient-to-t from-black/80 px-m pb-s pr-20 pt-l"
@@ -837,6 +883,11 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
     );
   };
 
+  const deleteReel = async (reel: Reel) => {
+    await api.delete(`/media/reels/${reel.id}`);
+    setReels((current) => current.filter((item) => item.id !== reel.id));
+  };
+
   return (
     <SafeAreaView className="min-h-0 flex-1 overflow-hidden bg-background-app">
       <View className="h-[76px] flex-row items-center justify-between border-b border-border px-l">
@@ -881,6 +932,7 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
                 onAddComment={(content) => addComment(reel, content)}
                 onEditComment={(commentId, content) => editComment(reel, commentId, content)}
                 onDeleteComment={(commentId) => deleteComment(reel, commentId)}
+                onDeleteReel={() => deleteReel(reel)}
                 saved={savedReelIds.has(reel.id)}
                 onToggleSave={() => toggleSaveReel(reel.id)}
                 videoHeight={reelVideoHeight}

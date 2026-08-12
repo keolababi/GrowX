@@ -193,6 +193,34 @@ export async function createReel(userId: string, input: { caption?: string; vide
   return { reel: serializeReel(reel) };
 }
 
+export async function updateReel(userId: string, reelId: string, input: { caption?: string }) {
+  const existing = await prisma.reel.findUnique({
+    where: { id: reelId },
+    select: { authorId: true },
+  });
+  if (!existing) throw new HttpError(404, 'Reel олдсонгүй.');
+  if (existing.authorId !== userId)
+    throw new HttpError(403, 'Зөвхөн өөрийн Reel-ийг засах боломжтой.');
+
+  const reel = await prisma.reel.update({
+    where: { id: reelId },
+    data: { caption: input.caption },
+    include: reelInclude(userId),
+  });
+  return { reel: serializeReel(reel) };
+}
+
+export async function deleteReel(userId: string, reelId: string) {
+  const existing = await prisma.reel.findUnique({
+    where: { id: reelId },
+    select: { authorId: true },
+  });
+  if (!existing) throw new HttpError(404, 'Reel олдсонгүй.');
+  if (existing.authorId !== userId)
+    throw new HttpError(403, 'Зөвхөн өөрийн Reel-ийг устгах боломжтой.');
+  await prisma.reel.delete({ where: { id: reelId } });
+}
+
 async function requireReel(reelId: string) {
   const reel = await prisma.reel.findUnique({ where: { id: reelId }, select: { id: true } });
   if (!reel) throw new HttpError(404, 'Reel олдсонгүй.');
