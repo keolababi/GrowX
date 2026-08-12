@@ -68,6 +68,55 @@ function audioTime(value: number) {
   return `${Math.floor(safeValue / 60)}:${String(safeValue % 60).padStart(2, '0')}`;
 }
 
+function fitMediaSize(width: number, height: number, maxWidth: number, maxHeight: number) {
+  if (width <= 0 || height <= 0) return { width: maxWidth, height: maxWidth };
+
+  const scale = Math.min(maxWidth / width, maxHeight / height);
+  return {
+    width: Math.round(width * scale),
+    height: Math.round(height * scale),
+  };
+}
+
+function AdaptiveMessageImage({
+  source,
+  maxWidth,
+  maxHeight,
+  onPress,
+}: {
+  source: string;
+  maxWidth: number;
+  maxHeight: number;
+  onPress: () => void;
+}) {
+  const [size, setSize] = useState({ width: maxWidth, height: Math.round(maxWidth * 0.75) });
+
+  useEffect(() => {
+    let active = true;
+    Image.getSize(
+      source,
+      (width, height) => {
+        if (active) setSize(fitMediaSize(width, height, maxWidth, maxHeight));
+      },
+      () => undefined,
+    );
+    return () => {
+      active = false;
+    };
+  }, [maxHeight, maxWidth, source]);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Зургийг томоор харах"
+      onPress={onPress}
+      style={size}
+    >
+      <Image source={{ uri: source }} resizeMode="contain" style={styles.messageImage} />
+    </Pressable>
+  );
+}
+
 function VoiceMessage({ source, mine }: { source: string; mine: boolean }) {
   const { colors } = useColorMode();
   const player = useAudioPlayer(source, { updateInterval: 200 });
@@ -139,6 +188,8 @@ export default function ConversationScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { user } = useUser();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const mediaMaxWidth = Math.min(320, windowWidth * 0.68);
+  const mediaMaxHeight = Math.min(340, windowHeight * 0.42);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -777,10 +828,13 @@ export default function ConversationScreen() {
                       style={[
                         styles.bubble,
                         message.mediaUrl && {
-                          width: Math.min(310, windowWidth * 0.7),
                           paddingHorizontal: 6,
                           paddingTop: 6,
                         },
+                        message.mediaUrl &&
+                          (message.mediaType === 'AUDIO' || message.mediaType === 'VIDEO') && {
+                            width: mediaMaxWidth,
+                          },
                         mine
                           ? [styles.mineBubble, { backgroundColor: colors.primary }]
                           : [
@@ -803,17 +857,12 @@ export default function ConversationScreen() {
                           />
                         </View>
                       ) : message.mediaUrl ? (
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel="Зургийг томоор харах"
+                        <AdaptiveMessageImage
+                          source={message.mediaUrl}
+                          maxWidth={mediaMaxWidth}
+                          maxHeight={mediaMaxHeight}
                           onPress={() => setImageViewerUrl(message.mediaUrl)}
-                        >
-                          <Image
-                            source={{ uri: message.mediaUrl }}
-                            resizeMode="cover"
-                            style={styles.messageMedia}
-                          />
-                        </Pressable>
+                        />
                       ) : null}
                       {!!message.content && (
                         <Text
@@ -1329,6 +1378,12 @@ const styles = StyleSheet.create({
   messageText: { color: '#EAF0ED', fontSize: 14, lineHeight: 20 },
   messageCaption: { paddingHorizontal: 8, paddingTop: 8 },
   messageMedia: { width: '100%', aspectRatio: 16 / 9, borderRadius: 15, overflow: 'hidden' },
+  messageImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
+    backgroundColor: '#08110E',
+  },
   imageViewerRoot: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.92)' },
   imageViewerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 18 },
   imageViewerImage: { width: '100%', height: '100%' },
