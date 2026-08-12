@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { design } from '@/constants/design';
 import { useColorMode } from '@/providers/ColorModeProvider';
@@ -23,6 +23,8 @@ export function AppPageHeader({
   prominent = false,
 }: Props) {
   const { colors } = useColorMode();
+  const { width } = useWindowDimensions();
+  const compact = width <= 480;
   return (
     <View
       style={[
@@ -34,6 +36,8 @@ export function AppPageHeader({
         style={[
           styles.inner,
           prominent && styles.innerProminent,
+          compact && styles.innerCompact,
+          compact && prominent && styles.innerProminentCompact,
           maxWidth ? { maxWidth } : undefined,
         ]}
       >
@@ -44,14 +48,20 @@ export function AppPageHeader({
               accessibilityLabel="Буцах"
               hitSlop={8}
               onPress={() => (router.canGoBack() ? router.back() : router.replace(backFallback))}
-              style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+              style={styles.iconButton}
             >
               <Icon name="chevron-back" size={24} color={colors.text} />
             </Pressable>
           )}
           <Text
             numberOfLines={1}
-            style={[styles.title, prominent && styles.titleProminent, { color: colors.text }]}
+            style={[
+              styles.title,
+              prominent && styles.titleProminent,
+              compact && styles.titleCompact,
+              compact && prominent && styles.titleProminentCompact,
+              { color: colors.text },
+            ]}
           >
             {title || 'Grow'}
             {!title && <Text style={[styles.accent, { color: colors.primary }]}>X</Text>}
@@ -84,6 +94,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   innerProminent: { height: 78 },
+  innerCompact: { height: 62, paddingHorizontal: 16 },
+  innerProminentCompact: { height: 68 },
   leading: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: {
     flexShrink: 1,
@@ -94,6 +106,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
   },
   titleProminent: { fontSize: 32, lineHeight: 38, letterSpacing: -1.4 },
+  titleCompact: { fontSize: 23, lineHeight: 28 },
+  titleProminentCompact: { fontSize: 28, lineHeight: 34, letterSpacing: -1 },
   accent: { color: design.colors.primary },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   actionsProminent: { gap: 6 },

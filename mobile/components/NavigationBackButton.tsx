@@ -16,7 +16,7 @@ export function NavigationBackButton({ fallback = '/posts' }: { fallback?: '/pos
       accessibilityLabel="Буцах"
       hitSlop={10}
       onPress={goBack}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      style={styles.button}
     >
       <Icon name="chevron-back" size={24} color={colors.text} />
     </Pressable>
@@ -30,5 +30,4 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
-  pressed: { opacity: 0.55 },
 });

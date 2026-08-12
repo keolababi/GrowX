@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   ScrollView,
   Share,
+  StyleSheet,
   Text,
   TextInput,
   useWindowDimensions,
@@ -777,15 +778,17 @@ function ReelCard({
 }
 
 export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
+  const { colors } = useColorMode();
   const { height } = useWindowDimensions();
+  const [measuredFeedHeight, setMeasuredFeedHeight] = useState(0);
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const savedReelIds = useEngagementStore((state) => state.savedReelIds);
   const toggleSaveReel = useEngagementStore((state) => state.toggleSaveReel);
-  const feedViewportHeight = Math.max(320, height - 156);
-  const reelVideoHeight = Math.max(420, feedViewportHeight - 8);
+  const feedViewportHeight = Math.max(300, measuredFeedHeight || height - 168);
+  const reelVideoHeight = Math.max(292, feedViewportHeight - 8);
   const reelItemHeight = feedViewportHeight;
 
   const load = useCallback(
@@ -796,7 +799,7 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
         const { data } = await api.get<{ reels: Reel[] }>(
           mine ? '/media/reels/mine' : '/media/reels',
         );
-        setReels(data.reels);
+        setReels(Array.isArray(data.reels) ? data.reels : []);
       } catch (value) {
         setError(getApiError(value, 'Reel-үүдийг ачаалж чадсангүй.'));
       } finally {
@@ -898,8 +901,8 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
   };
 
   return (
-    <SafeAreaView className="min-h-0 flex-1 overflow-hidden bg-background-app">
-      <View className="h-[76px] flex-row items-center justify-between border-b border-border px-l">
+    <SafeAreaView style={[feedStyles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[feedStyles.header, { borderBottomColor: colors.border }]}>
         <View className="w-[42px]">
           <NavigationBackButton />
         </View>
@@ -911,77 +914,133 @@ export function ReelsFeedScreen({ mine = false }: { mine?: boolean }) {
         </View>
       </View>
 
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <Loader size={32} />
-        </View>
-      ) : (
-        <FlatList
-          style={
-            Platform.OS === 'web'
-              ? ({
-                  height: feedViewportHeight,
-                  flexGrow: 0,
-                  flexShrink: 0,
-                  overflowY: 'auto',
-                  overscrollBehaviorY: 'contain',
-                } as never)
-              : { flex: 1, minHeight: 0 }
-          }
-          data={reels}
-          keyExtractor={(reel) => reel.id}
-          renderItem={({ item: reel }) => (
-            <View
-              className="w-full justify-start px-[18px] pt-1"
-              style={{ height: reelItemHeight }}
+      <View
+        style={feedStyles.viewport}
+        onLayout={(event) => {
+          const nextHeight = Math.round(event.nativeEvent.layout.height);
+          if (nextHeight > 0 && nextHeight !== measuredFeedHeight)
+            setMeasuredFeedHeight(nextHeight);
+        }}
+      >
+        {loading ? (
+          <View style={feedStyles.centerState}>
+            <Loader size={32} />
+            <Text className="text-sm text-text-muted">Reel-үүдийг ачаалж байна...</Text>
+          </View>
+        ) : error && reels.length === 0 ? (
+          <View style={feedStyles.centerState}>
+            <Text className="text-center text-sm text-danger">{error}</Text>
+            <Pressable
+              onPress={() => void load()}
+              className="rounded-btn bg-brand-primary px-l py-s"
             >
-              <ReelCard
-                reel={reel}
-                onToggleLike={() => void toggleLike(reel)}
-                onAddComment={(content) => addComment(reel, content)}
-                onEditComment={(commentId, content) => editComment(reel, commentId, content)}
-                onDeleteComment={(commentId) => deleteComment(reel, commentId)}
-                onDeleteReel={() => deleteReel(reel)}
-                saved={savedReelIds.has(reel.id)}
-                onToggleSave={() => toggleSaveReel(reel.id)}
-                videoHeight={reelVideoHeight}
-              />
-            </View>
-          )}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          decelerationRate="fast"
-          pagingEnabled
-          snapToAlignment="start"
-          snapToInterval={reelItemHeight}
-          disableIntervalMomentum
-          refreshing={refreshing}
-          onRefresh={() => void load(true)}
-          ListHeaderComponent={error ? <Text className="pb-s text-danger">{error}</Text> : null}
-          ListEmptyComponent={
-            <View className="items-center gap-l pt-16">
-              <Text className="text-center text-text-muted">
-                {mine ? 'Та одоогоор reel оруулаагүй байна.' : 'Одоогоор reel алга.'}
-              </Text>
-              {mine && (
-                <Pressable
-                  onPress={() =>
-                    router.push({ pathname: '/posts/create', params: { type: 'reel' } })
-                  }
-                  className="rounded-btn bg-brand-primary px-l py-s"
-                >
-                  <Text className="font-extrabold text-background-app">Reel оруулах</Text>
-                </Pressable>
-              )}
-            </View>
-          }
-          contentContainerStyle={{
-            width: '100%',
-            maxWidth: 620,
-            alignSelf: 'center',
-          }}
-        />
-      )}
+              <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            style={
+              Platform.OS === 'web'
+                ? ({
+                    height: feedViewportHeight,
+                    flexGrow: 0,
+                    flexShrink: 0,
+                    overflowY: 'auto',
+                    overscrollBehaviorY: 'contain',
+                  } as never)
+                : { flex: 1, minHeight: 0 }
+            }
+            data={reels}
+            keyExtractor={(reel) => reel.id}
+            renderItem={({ item: reel }) => (
+              <View
+                className="w-full justify-start px-[18px] pt-1"
+                style={{ height: reelItemHeight }}
+              >
+                <ReelCard
+                  reel={reel}
+                  onToggleLike={() => void toggleLike(reel)}
+                  onAddComment={(content) => addComment(reel, content)}
+                  onEditComment={(commentId, content) => editComment(reel, commentId, content)}
+                  onDeleteComment={(commentId) => deleteComment(reel, commentId)}
+                  onDeleteReel={() => deleteReel(reel)}
+                  saved={savedReelIds.has(reel.id)}
+                  onToggleSave={() => toggleSaveReel(reel.id)}
+                  videoHeight={reelVideoHeight}
+                />
+              </View>
+            )}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            decelerationRate="fast"
+            pagingEnabled
+            snapToAlignment="start"
+            snapToInterval={reelItemHeight}
+            disableIntervalMomentum
+            refreshing={refreshing}
+            onRefresh={() => void load(true)}
+            ListHeaderComponent={
+              error ? (
+                <View className="mx-l my-s items-center gap-s rounded-btn border border-border bg-background-paper p-m">
+                  <Text className="text-center text-sm text-danger">{error}</Text>
+                  <Pressable
+                    onPress={() => void load()}
+                    className="rounded-btn bg-brand-primary px-l py-s"
+                  >
+                    <Text className="text-xs font-extrabold text-background-app">
+                      Дахин оролдох
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              <View className="items-center gap-l pt-16">
+                <Text className="text-center text-text-muted">
+                  {mine ? 'Та одоогоор reel оруулаагүй байна.' : 'Одоогоор reel алга.'}
+                </Text>
+                {mine && (
+                  <Pressable
+                    onPress={() =>
+                      router.push({ pathname: '/posts/create', params: { type: 'reel' } })
+                    }
+                    className="rounded-btn bg-brand-primary px-l py-s"
+                  >
+                    <Text className="font-extrabold text-background-app">Reel оруулах</Text>
+                  </Pressable>
+                )}
+              </View>
+            }
+            contentContainerStyle={{
+              flexGrow: reels.length === 0 ? 1 : undefined,
+              width: '100%',
+              maxWidth: 620,
+              alignSelf: 'center',
+            }}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
+
+const feedStyles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  header: {
+    height: 68,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+  },
+  viewport: { flex: 1, minHeight: 0, width: '100%' },
+  centerState: {
+    flex: 1,
+    minHeight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingHorizontal: 20,
+  },
+});

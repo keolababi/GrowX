@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useTabPressStore } from '@/store/tabPressStore';
-import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { AppBottomNav } from '@/components/AppBottomNav';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppPageHeader } from '@/components/AppPageHeader';
@@ -29,6 +38,8 @@ const lime = '#9AF000';
 
 export default function ProfileScreen() {
   const { iconAccent, colors } = useColorMode();
+  const { width } = useWindowDimensions();
+  const compact = width <= 480;
   const { confirm } = useAppDialog();
   const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useUser();
@@ -201,7 +212,7 @@ export default function ProfileScreen() {
                 { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
               ]}
             >
-              <Icon name="settings-outline" size={20} color={iconAccent} />
+              <Icon name="settings-outline" size={19} color={iconAccent} />
             </Pressable>
           </>
         }
@@ -213,7 +224,7 @@ export default function ProfileScreen() {
         <ScrollView
           ref={scrollRef}
           style={styles.scroll}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, compact && styles.contentCompact]}
           showsVerticalScrollIndicator={false}
         >
           {!!error && !profile && (
@@ -241,7 +252,13 @@ export default function ProfileScreen() {
           )}
           {profile && (
             <>
-              <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
+              <View
+                style={[
+                  styles.profileCard,
+                  compact && styles.profileCardCompact,
+                  { backgroundColor: colors.surface },
+                ]}
+              >
                 {profile.user.accountType === 'BUSINESS' && (
                   <View style={[styles.cover, { backgroundColor: colors.surfaceSoft }]}>
                     {profile.user.coverUrl && (
@@ -260,6 +277,7 @@ export default function ProfileScreen() {
                     source={{ uri: profile.user.avatarUrl }}
                     style={[
                       styles.avatar,
+                      compact && styles.avatarCompact,
                       { borderColor: colors.primary },
                       profile.user.accountType === 'BUSINESS' && styles.avatarOverCover,
                     ]}
@@ -268,6 +286,7 @@ export default function ProfileScreen() {
                   <View
                     style={[
                       styles.avatarFallback,
+                      compact && styles.avatarCompact,
                       { backgroundColor: colors.surfaceSoft, borderColor: colors.primary },
                       profile.user.accountType === 'BUSINESS' && styles.avatarOverCover,
                     ]}
@@ -277,7 +296,7 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                 )}
-                <Text style={[styles.name, { color: colors.text }]}>
+                <Text style={[styles.name, compact && styles.nameCompact, { color: colors.text }]}>
                   {profile.user.accountType === 'BUSINESS' && profile.user.company
                     ? profile.user.company
                     : profile.user.displayName || profile.user.email.split('@')[0]}
@@ -342,22 +361,25 @@ export default function ProfileScreen() {
 
                 <Pressable
                   onPress={() => router.push('/profile/personal' as Href)}
-                  style={({ pressed }) => [
-                    styles.editProfile,
-                    { backgroundColor: colors.primary },
-                    pressed && styles.buttonPressed,
-                  ]}
+                  style={[styles.editProfile, { backgroundColor: colors.primary }]}
                 >
                   <Icon name="pencil-outline" size={16} color={colors.ink} />
                   <Text style={[styles.editProfileText, { color: colors.ink }]}>Профайл засах</Text>
                 </Pressable>
 
-                <View style={[styles.stats, { backgroundColor: colors.surfaceRaised }]}>
+                <View
+                  style={[
+                    styles.stats,
+                    compact && styles.statsCompact,
+                    { backgroundColor: colors.surfaceRaised },
+                  ]}
+                >
                   <Stat value={profile.counts.posts} label="Posts" />
-                  <Pressable onPress={() => setTabIndex(1)}>
+                  <Pressable style={styles.statPressable} onPress={() => setTabIndex(1)}>
                     <Stat value={reels.length} label="Reels" />
                   </Pressable>
                   <Pressable
+                    style={styles.statPressable}
                     onPress={() =>
                       router.push(
                         `/profile/connections?userId=${profile.user.id}&tab=followers` as Href,
@@ -367,6 +389,7 @@ export default function ProfileScreen() {
                     <Stat value={profile.counts.followers} label="Дагагч" />
                   </Pressable>
                   <Pressable
+                    style={styles.statPressable}
                     onPress={() =>
                       router.push(
                         `/profile/connections?userId=${profile.user.id}&tab=following` as Href,
@@ -547,9 +570,9 @@ function ProfileReelCard({ reel, onDelete }: { reel: Reel; onDelete: () => void 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: design.colors.background },
   settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     borderColor: '#233D34',
     backgroundColor: '#0D1D19',
@@ -565,6 +588,7 @@ const styles = StyleSheet.create({
     padding: design.layout.pagePadding,
     paddingBottom: 24,
   },
+  contentCompact: { paddingHorizontal: 16, paddingTop: 14 },
   error: {
     width: '100%',
     color: '#FF7777',
@@ -582,6 +606,7 @@ const styles = StyleSheet.create({
     borderRadius: design.radius.hero,
     backgroundColor: design.colors.surface,
   },
+  profileCardCompact: { padding: 16, borderRadius: 18 },
   cover: {
     width: '100%',
     height: 126,
@@ -600,6 +625,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#16402E',
   },
   avatar: { width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: lime },
+  avatarCompact: { width: 76, height: 76, borderRadius: 38 },
   avatarOverCover: { marginTop: -60 },
   avatarFallback: {
     width: 96,
@@ -613,6 +639,7 @@ const styles = StyleSheet.create({
   },
   avatarInitial: { color: lime, fontSize: 34, fontWeight: '900' },
   name: { color: '#F4F7F6', fontSize: 24, fontWeight: '900', marginTop: 14, textAlign: 'center' },
+  nameCompact: { fontSize: 20, marginTop: 10 },
   username: { color: design.colors.muted, fontSize: 12, marginTop: 3 },
   badges: {
     marginTop: 10,
@@ -655,9 +682,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: design.colors.surfaceRaised,
   },
-  stat: { minWidth: 75, alignItems: 'center' },
-  statValue: { color: '#F3F6F5', fontSize: 22, fontWeight: '900' },
-  statLabel: { color: '#8F9C96', fontSize: 12, fontWeight: '600', marginTop: 5 },
+  statsCompact: { marginTop: 16, paddingVertical: 11, borderRadius: 15 },
+  statPressable: { flex: 1, minWidth: 0 },
+  stat: { flex: 1, minWidth: 0, alignItems: 'center' },
+  statValue: { color: '#F3F6F5', fontSize: 19, fontWeight: '900' },
+  statLabel: { color: '#8F9C96', fontSize: 11, fontWeight: '600', marginTop: 4 },
   postsSection: { width: '100%', maxWidth: 680, marginTop: 24 },
   postsHeading: {
     marginBottom: 13,

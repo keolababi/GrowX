@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useColorMode } from '@/providers/ColorModeProvider';
 import { Icon } from './Icon';
 
@@ -28,15 +28,28 @@ export const IconButton: React.FC<Props> = ({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      className={`h-[42px] w-[42px] items-center justify-center rounded-avatar active:opacity-70 ${
-        variant === 'filled'
-          ? 'border border-border bg-background-raised'
-          : variant === 'primary'
-            ? 'bg-brand-primary'
-            : ''
-      }`}
+      style={[
+        styles.button,
+        variant === 'filled' && {
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surfaceRaised,
+        },
+        variant === 'primary' && { backgroundColor: colors.primary },
+      ]}
     >
       <Icon name={name} size={size} color={iconColor} />
     </Pressable>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: { opacity: 0.68 },
+});

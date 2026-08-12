@@ -101,38 +101,48 @@ export function AppDialogProvider({ children }: { children: ReactNode }) {
               </Text>
               <View style={styles.actions}>
                 {request.mode === 'confirm' && (
+                  <View
+                    style={[
+                      styles.buttonShell,
+                      styles.cancelButton,
+                      { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
+                    ]}
+                  >
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={request.cancelLabel ?? 'Болих'}
+                      onPress={() => close(false)}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View pointerEvents="none" style={styles.buttonContent}>
+                      <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
+                        {request.cancelLabel ?? 'Болих'}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                <View
+                  style={[styles.buttonShell, { backgroundColor: accent, borderColor: accent }]}
+                >
                   <Pressable
                     accessibilityRole="button"
-                    onPress={() => close(false)}
-                    style={({ pressed }) => [
-                      styles.button,
-                      { backgroundColor: colors.surfaceSoft, borderColor: colors.border },
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
-                      {request.cancelLabel ?? 'Болих'}
+                    accessibilityLabel={
+                      request.confirmLabel ?? (request.mode === 'alert' ? 'Ойлголоо' : 'Тийм')
+                    }
+                    onPress={() => close(true)}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View pointerEvents="none" style={styles.buttonContent}>
+                    <Text
+                      style={[
+                        styles.confirmText,
+                        { color: variant === 'danger' ? '#FFFFFF' : colors.ink },
+                      ]}
+                    >
+                      {request.confirmLabel ?? (request.mode === 'alert' ? 'Ойлголоо' : 'Тийм')}
                     </Text>
-                  </Pressable>
-                )}
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => close(true)}
-                  style={({ pressed }) => [
-                    styles.button,
-                    { backgroundColor: accent, borderColor: accent },
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.confirmText,
-                      { color: variant === 'danger' ? '#FFFFFF' : colors.ink },
-                    ]}
-                  >
-                    {request.confirmLabel ?? (request.mode === 'alert' ? 'Ойлголоо' : 'Тийм')}
-                  </Text>
-                </Pressable>
+                  </View>
+                </View>
               </View>
             </View>
           )}
@@ -158,10 +168,10 @@ const styles = StyleSheet.create({
   },
   dialog: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 360,
     borderWidth: 1,
-    borderRadius: 22,
-    padding: 22,
+    borderRadius: 24,
+    padding: 20,
     alignItems: 'center',
     shadowColor: '#000000',
     shadowOpacity: 0.35,
@@ -170,25 +180,50 @@ const styles = StyleSheet.create({
     elevation: 24,
   },
   iconWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { marginTop: 16, textAlign: 'center', fontSize: 20, fontWeight: '900' },
-  message: { marginTop: 8, textAlign: 'center', fontSize: 14, lineHeight: 21 },
-  actions: { width: '100%', marginTop: 22, flexDirection: 'row', gap: 10 },
-  button: {
+  title: { marginTop: 15, textAlign: 'center', fontSize: 20, lineHeight: 26, fontWeight: '900' },
+  message: { marginTop: 7, textAlign: 'center', fontSize: 14, lineHeight: 20 },
+  actions: {
+    width: '100%',
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  buttonShell: {
     flex: 1,
-    minHeight: 48,
+    flexBasis: 0,
+    minWidth: 0,
+    height: 50,
     borderWidth: 1,
-    borderRadius: 13,
+    borderRadius: 14,
+  },
+  cancelButton: { marginRight: 10 },
+  buttonContent: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
-  cancelText: { fontSize: 14, fontWeight: '800' },
-  confirmText: { fontSize: 14, fontWeight: '900' },
-  pressed: { opacity: 0.72, transform: [{ scale: 0.985 }] },
+  cancelText: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
+    includeFontPadding: false,
+  },
+  confirmText: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '900',
+    includeFontPadding: false,
+  },
 });

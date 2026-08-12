@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, useGlobalSearchParams, useSegments } from 'expo-router';
-import { Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { MessageUnreadBadge } from './MessageUnreadBadge';
 import { BottomSheet } from './ui/BottomSheet';
 import { Icon } from './ui/Icon';
@@ -22,6 +22,8 @@ export function AppBottomNav() {
   const { colors, isDark } = useColorMode();
   const inCommunity = segments[0] === 'community' && !!params.communityId;
   const pressActiveTab = useTabPressStore((state) => state.pressActiveTab);
+  const { width } = useWindowDimensions();
+  const compact = width <= 480;
 
   const goToTab = (section: NavSection, path: '/posts' | '/medlege' | '/messages' | '/profile') => {
     const targetSegment = path.slice(1);
@@ -75,42 +77,61 @@ export function AppBottomNav() {
   return (
     <>
       <SafeAreaView
-        className={`shrink-0 ${isDark ? 'bg-background-app' : 'bg-background-paper'}`}
-        style={{ zIndex: 20, borderTopWidth: 1, borderTopColor: colors.border }}
+        style={[
+          styles.safeArea,
+          {
+            backgroundColor: isDark ? colors.background : colors.surface,
+            borderTopColor: colors.border,
+          },
+        ]}
       >
-        <View className="h-[82px] w-full max-w-[680px] self-center flex-row items-center justify-around px-xs pb-1">
+        <View style={[styles.navRow, { height: compact ? 68 : 78 }]}>
           <NavItem
             active={active === 'home'}
             icon={active === 'home' ? 'home' : 'home-outline'}
             label="Нүүр"
+            compact={compact}
             onPress={() => goToTab('home', '/posts')}
           />
           <NavItem
             active={active === 'knowledge'}
             icon={active === 'knowledge' ? 'school' : 'school-outline'}
             label="Мэдлэг"
+            compact={compact}
             onPress={() => goToTab('knowledge', '/medlege')}
           />
           <View
-            className={`-mt-7 h-[72px] w-[72px] items-center justify-center rounded-avatar ${isDark ? 'bg-background-app' : 'bg-background-paper'}`}
-            style={{
-              borderWidth: 1,
-              borderColor: colors.border,
-              boxShadow: '0 5px 14px rgba(0, 0, 0, 0.16)',
-            }}
+            style={[
+              styles.createShell,
+              {
+                width: compact ? 60 : 68,
+                height: compact ? 60 : 68,
+                marginTop: compact ? -20 : -25,
+                borderColor: colors.border,
+                backgroundColor: isDark ? colors.background : colors.surface,
+              },
+            ]}
           >
             <Pressable
               accessibilityLabel="Шинэ контент"
               onPress={openCreate}
-              className="h-[60px] w-[60px] items-center justify-center rounded-avatar bg-brand-primary active:opacity-80"
+              style={[
+                styles.createButton,
+                {
+                  width: compact ? 50 : 56,
+                  height: compact ? 50 : 56,
+                  backgroundColor: colors.primary,
+                },
+              ]}
             >
-              <Icon name="add" size={30} color={colors.ink} />
+              <Icon name="add" size={compact ? 25 : 28} color={colors.ink} />
             </Pressable>
           </View>
           <NavItem
             active={active === 'messages'}
             icon={active === 'messages' ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'}
             label="Мессеж"
+            compact={compact}
             showUnread
             onPress={() => goToTab('messages', '/messages')}
           />
@@ -118,6 +139,7 @@ export function AppBottomNav() {
             active={active === 'profile'}
             icon={active === 'profile' ? 'person' : 'person-outline'}
             label="Профайл"
+            compact={compact}
             onPress={() => goToTab('profile', '/profile')}
           />
         </View>
@@ -179,12 +201,14 @@ function NavItem({
   icon,
   label,
   showUnread,
+  compact,
   onPress,
 }: {
   active: boolean;
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   showUnread?: boolean;
+  compact: boolean;
   onPress: () => void;
 }) {
   const { iconAccent, colors } = useColorMode();
@@ -193,15 +217,59 @@ function NavItem({
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      className="w-[69px] items-center gap-1 active:opacity-60"
+      style={[styles.navItem, { width: compact ? 60 : 67 }]}
     >
-      <Icon name={icon} size={27} color={active ? iconAccent : colors.textSecondary} />
+      <Icon
+        name={icon}
+        size={compact ? 23 : 25}
+        color={active ? iconAccent : colors.textSecondary}
+      />
       {showUnread && <MessageUnreadBadge />}
       <Text
-        className={`text-xs font-semibold ${active ? 'text-brand-primary' : 'text-text-secondary'}`}
+        style={[
+          styles.navLabel,
+          { fontSize: compact ? 11 : 12, color: active ? iconAccent : colors.textSecondary },
+        ]}
       >
         {label}
       </Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flexShrink: 0,
+    zIndex: 20,
+    borderTopWidth: 1,
+  },
+  navRow: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    paddingHorizontal: 6,
+    paddingBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  createShell: {
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
+  },
+  createButton: {
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navItem: { alignItems: 'center', justifyContent: 'center', gap: 4 },
+  navLabel: { fontWeight: '600', lineHeight: 16, textAlign: 'center' },
+  pressed: { opacity: 0.68 },
+});

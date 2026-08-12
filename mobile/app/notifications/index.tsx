@@ -80,12 +80,7 @@ export default function NotificationsScreen() {
           <Pressable
             disabled={!hasUnread}
             onPress={() => void markAllRead()}
-            style={({ pressed }) => [
-              styles.readAllButton,
-              { backgroundColor: colors.primary },
-              pressed &&
-                hasUnread && [styles.readAllPressed, { backgroundColor: colors.primaryPressed }],
-            ]}
+            style={[styles.readAllButton, { backgroundColor: colors.primary }]}
           >
             <Icon name="checkmark-done" size={16} color="#FFFFFF" />
             <Text style={[styles.readAll, { color: '#FFFFFF' }]}>Уншсан болгох</Text>
@@ -137,13 +132,12 @@ export default function NotificationsScreen() {
               <Pressable
                 key={notification.id}
                 onPress={() => void openNotification(notification)}
-                style={({ pressed }) => [
+                style={[
                   styles.item,
                   {
                     backgroundColor: notification.readAt ? colors.surface : colors.surfaceSoft,
                     borderColor: notification.readAt ? 'transparent' : colors.borderStrong,
                   },
-                  pressed && [styles.itemPressed, { backgroundColor: colors.surfaceRaised }],
                 ]}
               >
                 {notification.actor?.avatarUrl ? (

@@ -42,11 +42,7 @@ export function EmptyState({
         <Pressable
           accessibilityRole="button"
           onPress={onAction}
-          style={({ pressed }) => [
-            styles.action,
-            { backgroundColor: colors.primary },
-            pressed && styles.pressed,
-          ]}
+          style={[styles.action, { backgroundColor: colors.primary }]}
         >
           <Text style={[styles.actionText, { color: colors.ink }]}>{actionLabel}</Text>
           <Icon name="arrow-forward" size={16} color={colors.ink} />

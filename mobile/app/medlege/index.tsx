@@ -142,24 +142,23 @@ export default function KnowledgeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
+      <AppPageHeader
+        title="Мэдлэг"
+        maxWidth={900}
+        actions={
+          <>
+            <GlobalSearchButton />
+            <NotificationBell />
+          </>
+        }
+      />
       <ScrollView
         ref={scrollRef}
         style={[styles.scroll, Platform.OS === 'web' && webKnowledgeScrollStyle]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.page}>
-          <AppPageHeader
-            title="Мэдлэг"
-            maxWidth={900}
-            actions={
-              <>
-                <GlobalSearchButton />
-                <NotificationBell />
-              </>
-            }
-          />
-
+        <View style={[styles.page, compact && styles.pageCompact]}>
           <View
             style={[
               styles.progressHero,
@@ -169,7 +168,13 @@ export default function KnowledgeScreen() {
           >
             <View style={styles.progressCopy}>
               <Text style={[styles.eyebrow, { color: colors.primary }]}>ТАНЫ СУРАЛЦАХ ЗАМ</Text>
-              <Text style={[styles.progressTitle, { color: colors.text }]}>
+              <Text
+                style={[
+                  styles.progressTitle,
+                  compact && styles.progressTitleCompact,
+                  { color: colors.text },
+                ]}
+              >
                 Бизнесийн сууриа бэхжүүлье
               </Text>
               <View style={styles.progressRow}>
@@ -181,7 +186,15 @@ export default function KnowledgeScreen() {
                     ]}
                   />
                 </View>
-                <Text style={[styles.progressPercent, { color: colors.primary }]}>{progress}%</Text>
+                <Text
+                  style={[
+                    styles.progressPercent,
+                    compact && styles.progressPercentCompact,
+                    { color: colors.primary },
+                  ]}
+                >
+                  {progress}%
+                </Text>
               </View>
               <Text style={[styles.progressDescription, { color: colors.muted }]}>
                 {lessonCatalog.length} хичээлээс {completedCount}-ыг дуусгасан
@@ -194,7 +207,7 @@ export default function KnowledgeScreen() {
                 <Text style={[styles.continueText, { color: colors.ink }]}>
                   {completedCount === lessonCatalog.length ? 'Дахин үзэх' : 'Үргэлжлүүлэх'}
                 </Text>
-                <Icon name="chevron-forward" size={18} color={colors.ink} />
+                <Icon name="chevron-forward" size={compact ? 16 : 18} color={colors.ink} />
               </Pressable>
             </View>
             <View style={[styles.progressVisual, compact && styles.progressVisualCompact]}>
@@ -206,7 +219,7 @@ export default function KnowledgeScreen() {
                 ]}
               >
                 <View style={[styles.progressCircleInner, { backgroundColor: colors.surface }]}>
-                  <GrowXMark size={compact ? 60 : 78} />
+                  <GrowXMark size={compact ? 46 : 78} />
                 </View>
               </View>
             </View>
@@ -217,15 +230,21 @@ export default function KnowledgeScreen() {
               <Pressable
                 key={shortcut.label}
                 onPress={shortcut.onPress}
-                style={({ pressed }) => [
+                style={[
                   styles.shortcutCard,
                   compact && styles.shortcutCardCompact,
                   { backgroundColor: colors.surface, borderColor: colors.border },
-                  pressed && styles.cardPressed,
                 ]}
               >
-                <Icon name={shortcut.icon} size={28} color={iconAccent} />
-                <Text style={[styles.shortcutLabel, { color: colors.textSecondary }]}>
+                <Icon name={shortcut.icon} size={compact ? 21 : 27} color={iconAccent} />
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.shortcutLabel,
+                    compact && styles.shortcutLabelCompact,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   {shortcut.label}
                 </Text>
               </Pressable>
@@ -239,15 +258,14 @@ export default function KnowledgeScreen() {
           />
           <Pressable
             onPress={() => router.push('/podcast')}
-            style={({ pressed }) => [
+            style={[
               styles.mediaCard,
               { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && styles.cardPressed,
             ]}
           >
             <View style={[styles.podcastArt, { backgroundColor: colors.surfaceSoft }]}>
               <Text style={[styles.podcastBrand, { color: colors.text }]}>GrowX</Text>
-              <Icon name="mic" size={30} color={iconAccent} />
+              <Icon name="mic" size={compact ? 24 : 28} color={iconAccent} />
               <Text style={[styles.podcastWord, { color: colors.text }]}>PODCAST</Text>
             </View>
             <View style={styles.mediaCopy}>
@@ -259,7 +277,7 @@ export default function KnowledgeScreen() {
               </Text>
             </View>
             <View style={[styles.roundAction, { backgroundColor: colors.primary }]}>
-              <Icon name="play" size={20} color={colors.ink} />
+              <Icon name="play" size={compact ? 17 : 20} color={colors.ink} />
             </View>
           </Pressable>
 
@@ -270,10 +288,9 @@ export default function KnowledgeScreen() {
           />
           <Pressable
             onPress={() => router.push('/mentor')}
-            style={({ pressed }) => [
+            style={[
               styles.mentorCard,
               { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && styles.cardPressed,
             ]}
           >
             <View
@@ -282,7 +299,7 @@ export default function KnowledgeScreen() {
                 { backgroundColor: colors.surfaceSoft, borderColor: colors.borderStrong },
               ]}
             >
-              <Icon name="school-outline" size={28} color={iconAccent} />
+              <Icon name="school-outline" size={compact ? 23 : 27} color={iconAccent} />
             </View>
             <View style={styles.mediaCopy}>
               <Text style={[styles.mediaTitle, { color: colors.text }]}>
@@ -308,6 +325,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, minHeight: 0 },
   scrollContent: { paddingBottom: 30 },
   page: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingHorizontal: 20 },
+  pageCompact: { paddingHorizontal: 16, paddingTop: 12 },
   header: {
     minHeight: 72,
     flexDirection: 'row',
@@ -337,7 +355,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  progressHeroCompact: { minHeight: 0, padding: 20 },
+  progressHeroCompact: { minHeight: 218, padding: 16, borderRadius: 20 },
   progressCopy: { flex: 1, minWidth: 0, zIndex: 2 },
   eyebrow: { color: lime, fontSize: 10, fontWeight: '900', letterSpacing: 1.7 },
   progressTitle: {
@@ -349,7 +367,8 @@ const styles = StyleSheet.create({
     marginTop: 7,
     maxWidth: 430,
   },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 21 },
+  progressTitleCompact: { fontSize: 20, lineHeight: 25, marginTop: 5 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18 },
   progressTrack: {
     flex: 1,
     maxWidth: 330,
@@ -360,22 +379,23 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: '100%', minWidth: 5, borderRadius: 4, backgroundColor: lime },
   progressPercent: { color: lime, fontSize: 22, fontWeight: '900' },
-  progressDescription: { color: '#91A099', fontSize: 13, marginTop: 11 },
+  progressPercentCompact: { fontSize: 18 },
+  progressDescription: { color: '#91A099', fontSize: 12, marginTop: 10 },
   continueButton: {
     alignSelf: 'flex-start',
-    height: 46,
-    paddingHorizontal: 18,
+    height: 42,
+    paddingHorizontal: 16,
     borderRadius: 14,
     backgroundColor: lime,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 20,
+    marginTop: 16,
   },
   continueText: { color: '#071209', fontSize: 13, fontWeight: '900' },
   progressVisual: { width: '34%', alignItems: 'center', justifyContent: 'center' },
-  progressVisualCompact: { width: 105, opacity: 0.92 },
+  progressVisualCompact: { width: 76, opacity: 0.92 },
   progressCircle: {
     width: 164,
     height: 164,
@@ -393,8 +413,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressCircleCompact: { width: 102, height: 102, borderRadius: 51, borderWidth: 10 },
-  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 },
+  progressCircleCompact: { width: 72, height: 72, borderRadius: 36, borderWidth: 7 },
+  shortcutGrid: { flexDirection: 'row', gap: 6, marginTop: 12 },
   shortcutCard: {
     flex: 1,
     minWidth: 0,
@@ -408,8 +428,9 @@ const styles = StyleSheet.create({
     gap: 9,
     paddingHorizontal: 5,
   },
-  shortcutCardCompact: { flexBasis: '30%', minWidth: '30%' },
+  shortcutCardCompact: { flex: 1, flexBasis: 0, minWidth: 0, minHeight: 68, borderRadius: 14 },
   shortcutLabel: { color: '#C8D1CD', fontSize: 12, fontWeight: '800', textAlign: 'center' },
+  shortcutLabelCompact: { width: '100%', fontSize: 9, lineHeight: 12 },
   cardPressed: { opacity: 0.72, transform: [{ scale: 0.993 }] },
   categoryList: { gap: 9, paddingVertical: 22 },
   categoryChip: {
@@ -523,7 +544,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mediaCard: {
-    minHeight: 115,
+    minHeight: 104,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: '#233D34',
@@ -535,8 +556,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   podcastArt: {
-    width: 88,
-    height: 88,
+    width: 76,
+    height: 76,
     borderRadius: 16,
     backgroundColor: '#12311F',
     alignItems: 'center',
@@ -548,15 +569,15 @@ const styles = StyleSheet.create({
   mediaTitle: { color: '#F4F8F6', fontSize: 15, lineHeight: 21, fontWeight: '900' },
   mediaMeta: { color: '#84928C', fontSize: 10, lineHeight: 15, marginTop: 5 },
   roundAction: {
-    width: 43,
-    height: 43,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: lime,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mentorCard: {
-    minHeight: 104,
+    minHeight: 96,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: '#233D34',
@@ -568,9 +589,9 @@ const styles = StyleSheet.create({
     marginBottom: 17,
   },
   mentorAvatar: {
-    width: 65,
-    height: 65,
-    borderRadius: 33,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#163126',
     borderWidth: 1,
     borderColor: '#355849',

@@ -561,7 +561,7 @@ export default function ConversationScreen() {
       await recorder.prepareToRecordAsync();
       setAttachment(null);
       setUploadProgress(0);
-      recorder.record({ forDuration: 30 });
+      recorder.record();
       setIsRecording(true);
       setRecordingPaused(false);
     } catch (value) {
@@ -575,8 +575,7 @@ export default function ConversationScreen() {
   const toggleRecordingPause = () => {
     if (!isRecording || recordingBusyRef.current) return;
     if (recordingPaused) {
-      const remainingSeconds = Math.max(1, (30_000 - recorderState.durationMillis) / 1000);
-      recorder.record({ forDuration: remainingSeconds });
+      recorder.record();
       setRecordingPaused(false);
       return;
     }
@@ -599,13 +598,6 @@ export default function ConversationScreen() {
     const timer = setTimeout(() => void finishRecording(), remainingMs + 100);
     return () => clearTimeout(timer);
   }, [finishRecording, isRecording, recorderState.durationMillis, recordingPaused]);
-
-  useEffect(
-    () => () => {
-      if (recorder.isRecording) void recorder.stop();
-    },
-    [recorder],
-  );
 
   const unsend = async (messageId: string) => {
     if (!conversationId || unsendingId) return;
@@ -804,13 +796,12 @@ export default function ConversationScreen() {
                           onPress={(event) =>
                             selected ? setSelectedMessage(null) : openMessageMenu(message, event)
                           }
-                          style={({ pressed }) => [
+                          style={[
                             styles.moreButton,
                             selected && [
                               styles.moreButtonActive,
                               { backgroundColor: colors.surfaceRaised },
                             ],
-                            pressed && styles.moreButtonPressed,
                           ]}
                         >
                           <Icon
@@ -1002,10 +993,9 @@ export default function ConversationScreen() {
                 accessibilityLabel="Зураг эсвэл видео сонгох"
                 disabled={sending || uploading}
                 onPress={() => void pickAttachment()}
-                style={({ pressed }) => [
+                style={[
                   styles.attachmentButton,
                   { backgroundColor: colors.surfaceRaised, borderColor: colors.borderStrong },
-                  pressed && styles.attachmentButtonPressed,
                   (sending || uploading) && styles.sendDisabled,
                 ]}
               >
@@ -1171,13 +1161,7 @@ export default function ConversationScreen() {
                 </Text>
                 <View style={[styles.popoverDivider, { backgroundColor: colors.border }]} />
                 {!!selectedMessage.content.trim() && (
-                  <Pressable
-                    onPress={() => beginEdit(selectedMessage)}
-                    style={({ pressed }) => [
-                      styles.popoverItem,
-                      pressed && { backgroundColor: colors.surfaceRaised },
-                    ]}
-                  >
+                  <Pressable onPress={() => beginEdit(selectedMessage)} style={styles.popoverItem}>
                     <Icon name="create-outline" size={17} color={iconAccent} />
                     <Text style={[styles.popoverItemText, { color: colors.text }]}>Засах</Text>
                   </Pressable>
@@ -1185,10 +1169,7 @@ export default function ConversationScreen() {
                 <Pressable
                   disabled={Boolean(unsendingId)}
                   onPress={() => confirmUnsend(selectedMessage.id)}
-                  style={({ pressed }) => [
-                    styles.popoverItem,
-                    pressed && { backgroundColor: colors.surfaceRaised },
-                  ]}
+                  style={styles.popoverItem}
                 >
                   <Icon name="trash-outline" size={17} color={colors.danger} />
                   <Text style={[styles.popoverDeleteText, { color: colors.danger }]}>Устгах</Text>

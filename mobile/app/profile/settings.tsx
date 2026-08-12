@@ -41,7 +41,8 @@ export default function ProfileSettingsScreen() {
     const accepted = await confirm({
       title: 'Бүртгэлээс гарах',
       message: 'Та бүртгэлээс гарахдаа итгэлтэй байна уу?',
-      confirmLabel: 'Гарах',
+      cancelLabel: 'Үгүй',
+      confirmLabel: 'Тийм',
       variant: 'danger',
     });
     if (accepted) await signOut();
@@ -51,7 +52,7 @@ export default function ProfileSettingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Icon name="chevron-back" size={27} color={colors.text} />
+          <Icon name="chevron-back" size={23} color={colors.text} />
         </Pressable>
         <Text style={styles.title}>Settings</Text>
         <View style={styles.headerSpacer} />
@@ -61,12 +62,14 @@ export default function ProfileSettingsScreen() {
           <View style={styles.iconWrap}>
             <Icon
               name={isDark ? 'moon-outline' : 'sunny-outline'}
-              size={23}
+              size={20}
               color={colors.textSecondary}
             />
           </View>
           <View style={styles.themeCopy}>
-            <Text style={styles.label}>{isDark ? 'Dark mode' : 'Light mode'}</Text>
+            <Text style={[styles.label, styles.themeLabel]}>
+              {isDark ? 'Dark mode' : 'Light mode'}
+            </Text>
             <Text style={styles.themeHint}>Аппын харагдах өнгийг солих</Text>
           </View>
           <Switch
@@ -77,39 +80,45 @@ export default function ProfileSettingsScreen() {
           />
         </View>
         {user?.role === 'ADMIN' && (
-          <Pressable
-            onPress={() => router.push('/admin' as Href)}
-            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
-          >
-            <View style={styles.iconWrap}>
-              <Icon name="shield-outline" size={22} color={colors.primary} />
+          <Pressable onPress={() => router.push('/admin' as Href)} style={styles.menuItem}>
+            <View style={styles.menuRow}>
+              <View style={styles.iconWrap}>
+                <Icon name="shield-outline" size={20} color={colors.primary} />
+              </View>
+              <Text numberOfLines={1} style={[styles.label, { color: colors.primary }]}>
+                Admin удирдлага
+              </Text>
+              <Icon name="chevron-forward" size={18} color={colors.primary} />
             </View>
-            <Text style={[styles.label, { color: colors.primary }]}>Admin удирдлага</Text>
-            <Icon name="chevron-forward" size={20} color={colors.primary} />
           </Pressable>
         )}
         {menuItems.map((item) => (
           <Pressable
             key={item.label}
             onPress={item.route ? () => router.push(item.route!) : undefined}
-            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+            style={styles.menuItem}
           >
-            <View style={styles.iconWrap}>
-              <Icon name={item.icon} size={22} color={colors.textSecondary} />
+            <View style={styles.menuRow}>
+              <View style={styles.iconWrap}>
+                <Icon name={item.icon} size={20} color={colors.textSecondary} />
+              </View>
+              <Text numberOfLines={1} style={styles.label}>
+                {item.label}
+              </Text>
+              <Icon name="chevron-forward" size={18} color={colors.muted} />
             </View>
-            <Text style={styles.label}>{item.label}</Text>
-            <Icon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
         ))}
-        <Pressable
-          onPress={confirmSignOut}
-          style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
-        >
-          <View style={styles.iconWrap}>
-            <Icon name="log-out-outline" size={22} color={colors.danger} />
+        <Pressable onPress={confirmSignOut} style={styles.menuItem}>
+          <View style={styles.menuRow}>
+            <View style={styles.iconWrap}>
+              <Icon name="log-out-outline" size={20} color={colors.danger} />
+            </View>
+            <Text numberOfLines={1} style={[styles.label, { color: colors.danger }]}>
+              Гарах
+            </Text>
+            <Icon name="chevron-forward" size={18} color={colors.danger} />
           </View>
-          <Text style={[styles.label, { color: colors.danger }]}>Гарах</Text>
-          <Icon name="chevron-forward" size={20} color={colors.danger} />
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -120,7 +129,7 @@ const createStyles = (isDark: boolean) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: isDark ? '#020B0D' : '#FFFFFF' },
     header: {
-      height: 68,
+      height: 58,
       paddingHorizontal: 12,
       flexDirection: 'row',
       alignItems: 'center',
@@ -131,43 +140,58 @@ const createStyles = (isDark: boolean) =>
     title: {
       flex: 1,
       color: isDark ? '#F4F7F6' : '#111111',
-      fontSize: 21,
+      fontSize: 20,
       fontWeight: '900',
       textAlign: 'center',
     },
     headerSpacer: { width: 46 },
     scroll: { flex: 1 },
-    content: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: 20, gap: 5 },
+    content: {
+      width: '100%',
+      maxWidth: 560,
+      alignSelf: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      paddingBottom: 24,
+      gap: 3,
+    },
     menuItem: {
-      minHeight: 68,
-      paddingHorizontal: 10,
+      minHeight: 56,
+      paddingHorizontal: 8,
       borderRadius: 14,
+      justifyContent: 'center',
+    },
+    menuRow: {
+      width: '100%',
       flexDirection: 'row',
       alignItems: 'center',
     },
     menuItemPressed: { backgroundColor: isDark ? '#0A201A' : '#F2F2EF' },
     themeItem: {
-      minHeight: 72,
-      paddingHorizontal: 10,
+      minHeight: 60,
+      paddingHorizontal: 8,
       borderRadius: 14,
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 8,
     },
     themeCopy: { flex: 1, marginLeft: 13 },
+    themeLabel: { marginLeft: 0 },
     themeHint: { color: isDark ? '#899790' : '#7A7A76', fontSize: 12, marginTop: 3 },
     iconWrap: {
-      width: 43,
-      height: 43,
-      borderRadius: 13,
+      width: 38,
+      height: 38,
+      borderRadius: 11,
+      flexShrink: 0,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: isDark ? '#10261F' : '#F2F2EF',
     },
     label: {
       flex: 1,
+      minWidth: 0,
       color: isDark ? '#F0F3F2' : '#111111',
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '700',
       marginLeft: 13,
     },

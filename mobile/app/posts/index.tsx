@@ -8,6 +8,7 @@ import {
   RefreshControl,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   type ViewStyle,
   Text,
   TextInput,
@@ -84,17 +85,17 @@ export default function PostsScreen() {
       setError('');
       try {
         const postsResponse = await api.get<{ posts: SocialPost[] }>('/posts');
-        setPosts(postsResponse.data.posts);
+        setPosts(Array.isArray(postsResponse.data.posts) ? postsResponse.data.posts : []);
+        setLoading(false);
         if (user?.id) {
-          try {
-            const followingResponse = await api.get<{ users: { id: string }[] }>(
-              `/users/${user.id}/following`,
-            );
-            setFollowingIds(new Set(followingResponse.data.users.map((item) => item.id)));
-          } catch {
-            // The main feed must remain visible if follow metadata cannot be loaded.
-            setFollowingIds(new Set());
-          }
+          // Follow metadata is secondary. Never hold the visible feed behind this request.
+          void api
+            .get<{ users: { id: string }[] }>(`/users/${user.id}/following`)
+            .then(({ data }) => {
+              const users = Array.isArray(data.users) ? data.users : [];
+              setFollowingIds(new Set(users.map((item) => item.id)));
+            })
+            .catch(() => setFollowingIds(new Set()));
         }
       } catch (value) {
         setError(getApiError(value, 'Post-уудыг ачаалж чадсангүй.'));
@@ -232,19 +233,18 @@ export default function PostsScreen() {
   };
 
   return (
-    <SafeAreaView className="min-h-0 flex-1 overflow-hidden bg-background-app">
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <AppPageHeader
         maxWidth={680}
-        prominent
         actions={
           <>
-            <GlobalSearchButton prominent />
+            <GlobalSearchButton />
             <NotificationBell />
           </>
         }
       />
 
-      <View className="w-full max-w-[680px] self-center px-l py-s">
+      <View style={styles.segmentWrap}>
         <SegmentedControl
           options={tabs}
           selectedIndex={0}
@@ -260,16 +260,26 @@ export default function PostsScreen() {
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.centerState}>
           <Loader size={44} />
+          <Text className="text-sm text-text-muted">Post-уудыг ачаалж байна...</Text>
+        </View>
+      ) : error && posts.length === 0 ? (
+        <View style={styles.centerState}>
+          <Text className="text-center text-sm text-danger">{error}</Text>
+          <Pressable
+            onPress={() => void loadPosts()}
+            className="rounded-btn bg-brand-primary px-l py-s"
+          >
+            <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
+          </Pressable>
         </View>
       ) : (
         <ScrollView
           ref={scrollRef}
-          className="min-h-0 w-full max-w-[680px] flex-1 self-center"
-          style={Platform.OS === 'web' ? webFeedScrollStyle : undefined}
+          style={[styles.feed, Platform.OS === 'web' ? webFeedScrollStyle : undefined]}
           scrollEnabled
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={styles.feedContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={
@@ -280,7 +290,17 @@ export default function PostsScreen() {
             />
           }
         >
-          {!!error && <Text className="px-l py-s text-danger">{error}</Text>}
+          {!!error && (
+            <View className="mx-l my-s items-center gap-s rounded-btn border border-border bg-background-paper p-m">
+              <Text className="text-center text-sm text-danger">{error}</Text>
+              <Pressable
+                onPress={() => void loadPosts()}
+                className="rounded-btn bg-brand-primary px-l py-s"
+              >
+                <Text className="text-xs font-extrabold text-background-app">Дахин оролдох</Text>
+              </Pressable>
+            </View>
+          )}
 
           {posts.length === 0 && (
             <View className="items-center px-9 pt-24">
@@ -373,3 +393,30 @@ export default function PostsScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  centerState: {
+    flex: 1,
+    minHeight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingHorizontal: 20,
+  },
+  feed: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
+  segmentWrap: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  feedContent: { flexGrow: 1, paddingBottom: 24 },
+});

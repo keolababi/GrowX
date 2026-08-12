@@ -10,7 +10,7 @@ export function GlobalSearchButton({ prominent = false }: { prominent?: boolean 
       accessibilityLabel="Нэгдсэн хайлт"
       variant={isDark ? 'filled' : 'plain'}
       color={iconAccent}
-      size={prominent ? 27 : 20}
+      size={prominent ? 23 : 20}
       onPress={() => router.push('/discover')}
     />
   );

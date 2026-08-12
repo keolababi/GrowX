@@ -62,17 +62,24 @@ export function PrimaryButton({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.primary,
-        pressed && styles.pressed,
+    <View
+      style={[
+        styles.primaryShell,
+        { backgroundColor: '#9AF000', borderColor: '#B7FF39' },
         disabled && styles.disabled,
       ]}
     >
-      <Text style={styles.primaryText}>{children}</Text>
-    </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: Boolean(disabled) }}
+        disabled={disabled}
+        onPress={onPress}
+        style={StyleSheet.absoluteFill}
+      />
+      <View pointerEvents="none" style={styles.primaryContent}>
+        <Text style={styles.primaryText}>{children}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -123,20 +130,34 @@ const styles = StyleSheet.create({
   icon: { width: 27, alignItems: 'flex-start' },
   input: { color: '#FFFFFF', fontSize: 14, flex: 1, height: '100%' },
   eye: { paddingLeft: 8 },
-  primary: {
-    height: 52,
-    borderRadius: 11,
-    backgroundColor: colors.lime,
+  primaryShell: {
+    width: '100%',
+    height: 54,
+    borderRadius: 15,
+    borderWidth: 1,
+    marginTop: 10,
+    shadowColor: '#9AF000',
+    shadowOpacity: 0.28,
+    shadowRadius: 11,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  primaryContent: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: colors.lime,
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
+    paddingHorizontal: 20,
   },
-  pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
-  disabled: { opacity: 0.45 },
-  primaryText: { color: '#071000', fontSize: 15, fontWeight: '800' },
+  disabled: { opacity: 0.65 },
+  primaryText: {
+    color: '#0B1605',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+    letterSpacing: 0.1,
+    textAlign: 'center',
+  },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   footerText: { color: '#A7AEB0', fontSize: 13 },
   link: { color: colors.lime, fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },

@@ -31,15 +31,11 @@ export function NotificationBell() {
       accessibilityRole="button"
       accessibilityLabel={`Мэдэгдэл${unreadCount ? `, ${unreadCount} уншаагүй` : ''}`}
       onPress={() => router.push('/notifications')}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: isDark ? colors.surfaceRaised : 'transparent' },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.button, { backgroundColor: isDark ? colors.surfaceRaised : 'transparent' }]}
     >
       <Icon
         name={unreadCount > 0 ? 'notifications' : 'notifications-outline'}
-        size={24}
+        size={21}
         color={colors.text}
       />
       {unreadCount > 0 && (
@@ -53,9 +49,9 @@ export function NotificationBell() {
 
 const styles = StyleSheet.create({
   button: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: design.colors.surfaceRaised,
@@ -65,13 +61,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: -3,
     top: -3,
-    minWidth: 19,
-    height: 19,
+    minWidth: 18,
+    height: 18,
     paddingHorizontal: 4,
     borderRadius: 10,
     backgroundColor: '#FF4D4F',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
+  badgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '900' },
 });

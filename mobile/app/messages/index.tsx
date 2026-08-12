@@ -412,7 +412,7 @@ export default function MessagesScreen() {
               }}
               style={[styles.newButton, { backgroundColor: colors.primary }]}
             >
-              <Icon name={newChatOpen ? 'close' : 'create-outline'} size={22} color={colors.ink} />
+              <Icon name={newChatOpen ? 'close' : 'create-outline'} size={20} color={colors.ink} />
             </Pressable>
           </View>
         </View>
@@ -448,10 +448,7 @@ export default function MessagesScreen() {
                     key={presenceUser.id}
                     accessibilityLabel={`${displayName(presenceUser)}, ${active ? 'Идэвхтэй' : 'Идэвхгүй'}`}
                     onPress={() => void startChat(presenceUser.id)}
-                    style={({ pressed }) => [
-                      styles.presenceCard,
-                      pressed && styles.presenceCardPressed,
-                    ]}
+                    style={styles.presenceCard}
                   >
                     <UserAvatar user={presenceUser} />
                     <Text numberOfLines={1} style={[styles.presenceName, { color: colors.text }]}>
@@ -489,10 +486,7 @@ export default function MessagesScreen() {
                   <Pressable
                     key={user.id}
                     onPress={() => void startChat(user.id)}
-                    style={({ pressed }) => [
-                      styles.row,
-                      pressed && { backgroundColor: colors.surfaceRaised },
-                    ]}
+                    style={styles.row}
                   >
                     <UserAvatar user={user} />
                     <View style={styles.rowCopy}>
@@ -523,13 +517,12 @@ export default function MessagesScreen() {
                               !conversation.lastMessage?.mediaUrl
                             }
                             onPress={() => openForward(conversation)}
-                            style={({ pressed }) => [
+                            style={[
                               styles.swipeAction,
                               styles.forwardAction,
                               !conversation.lastMessage?.content &&
                                 !conversation.lastMessage?.mediaUrl &&
                                 styles.swipeActionDisabled,
-                              pressed && styles.swipeActionPressed,
                             ]}
                           >
                             <Icon name="arrow-redo-outline" size={20} color={lime} />
@@ -540,11 +533,7 @@ export default function MessagesScreen() {
                           <Pressable
                             accessibilityLabel="Устгах"
                             onPress={() => deleteConversation(conversation)}
-                            style={({ pressed }) => [
-                              styles.swipeAction,
-                              styles.deleteAction,
-                              pressed && styles.swipeActionPressed,
-                            ]}
+                            style={[styles.swipeAction, styles.deleteAction]}
                           >
                             <Icon name="trash-outline" size={20} color={swipeDeleteForeground} />
                             <Text style={[styles.swipeActionText, styles.deleteActionText]}>
@@ -562,11 +551,7 @@ export default function MessagesScreen() {
                           }
                           router.push(`/messages/${conversation.id}`);
                         }}
-                        style={({ pressed }) => [
-                          styles.row,
-                          { backgroundColor: colors.background },
-                          pressed && { backgroundColor: colors.surfaceRaised },
-                        ]}
+                        style={[styles.row, { backgroundColor: colors.background }]}
                       >
                         <UserAvatar user={conversation.otherUser} />
                         <View style={styles.rowCopy}>
@@ -690,10 +675,7 @@ export default function MessagesScreen() {
                   key={user.id}
                   disabled={Boolean(forwardingId)}
                   onPress={() => void sendForward(user.id)}
-                  style={({ pressed }) => [
-                    styles.row,
-                    pressed && { backgroundColor: colors.surfaceRaised },
-                  ]}
+                  style={styles.row}
                 >
                   <UserAvatar user={user} />
                   <View style={styles.rowCopy}>
@@ -723,8 +705,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#020B0D' },
   page: { flex: 1, minHeight: 0, width: '100%', maxWidth: 780, alignSelf: 'center' },
   header: {
-    minHeight: 82,
-    paddingHorizontal: 20,
+    minHeight: 68,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -733,12 +715,12 @@ const styles = StyleSheet.create({
   },
   titleGroup: { flex: 1, minWidth: 0 },
   eyebrow: { color: lime, fontSize: 9, fontWeight: '900', letterSpacing: 1.8 },
-  title: { color: '#F7FAF8', fontSize: 27, fontWeight: '900', letterSpacing: -0.7, marginTop: 2 },
+  title: { color: '#F7FAF8', fontSize: 23, fontWeight: '900', letterSpacing: -0.5, marginTop: 1 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   newButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: lime,
     alignItems: 'center',
     justifyContent: 'center',
@@ -750,9 +732,9 @@ const styles = StyleSheet.create({
   newButtonText: { color: '#142000', fontSize: 26, lineHeight: 28, fontWeight: '800' },
   search: {
     height: 48,
-    marginHorizontal: 20,
-    marginTop: 14,
-    marginBottom: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
     borderRadius: 24,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -772,14 +754,14 @@ const styles = StyleSheet.create({
     color: '#DCE4E0',
     fontSize: 14,
     fontWeight: '900',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 10,
   },
-  presenceList: { gap: 10, paddingHorizontal: 20 },
+  presenceList: { gap: 8, paddingHorizontal: 16 },
   presenceCard: {
-    width: 86,
-    minHeight: 88,
-    paddingVertical: 10,
+    width: 78,
+    minHeight: 80,
+    paddingVertical: 8,
     paddingHorizontal: 5,
     borderRadius: 18,
     backgroundColor: 'transparent',
@@ -787,21 +769,29 @@ const styles = StyleSheet.create({
   },
   presenceCardPressed: { opacity: 0.65 },
   presenceName: {
-    width: 76,
+    width: 70,
     color: '#E6ECE9',
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
     marginTop: 6,
   },
-  error: { color: '#FF7777', paddingHorizontal: 20, paddingVertical: 7 },
+  error: { color: '#FF7777', paddingHorizontal: 16, paddingVertical: 7 },
   loader: { flex: 1 },
   scroll: { flex: 1, minHeight: 0 },
-  list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 28, gap: 9 },
+  list: {
+    width: '100%',
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: 5,
+    paddingBottom: 24,
+    gap: 6,
+  },
   row: {
-    minHeight: 82,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    width: '100%',
+    minHeight: 74,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 19,
@@ -810,16 +800,16 @@ const styles = StyleSheet.create({
   rowPressed: { backgroundColor: '#0D251D' },
   avatarWrap: { position: 'relative' },
   avatar: {
-    width: 51,
-    height: 51,
-    borderRadius: 26,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#153126',
     borderWidth: 1,
     borderColor: '#345347',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: lime, fontSize: 20, fontWeight: '900' },
+  avatarText: { color: lime, fontSize: 18, fontWeight: '900' },
   growxAvatar: { overflow: 'hidden' },
   avatarPresence: {
     position: 'absolute',
@@ -832,17 +822,22 @@ const styles = StyleSheet.create({
     borderColor: '#071713',
     backgroundColor: lime,
   },
-  rowCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
+  rowCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, gap: 9 },
   name: { color: '#F5F8F6', fontSize: 15, fontWeight: '900', flexShrink: 1 },
   offlineDot: { backgroundColor: '#68756F' },
   preview: { color: '#83908B', fontSize: 13, marginTop: 5 },
   unreadPreview: { color: '#DCE5E1', fontWeight: '700' },
-  rowMeta: { alignItems: 'flex-end', gap: 7, marginLeft: 8 },
+  rowMeta: { flexShrink: 0, alignItems: 'flex-end', gap: 6, marginLeft: 8 },
   time: { color: '#6F7D77', fontSize: 11 },
   timeOpen: { fontSize: 10, fontWeight: '700' },
-  swipeWrap: { borderRadius: 19, overflow: 'hidden' },
-  swipeForeground: { position: 'relative', zIndex: 1 },
+  swipeWrap: {
+    width: '100%',
+    alignSelf: 'stretch',
+    borderRadius: 19,
+    overflow: 'hidden',
+  },
+  swipeForeground: { position: 'relative', zIndex: 1, width: '100%', alignSelf: 'stretch' },
   swipeActions: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: 'row',
