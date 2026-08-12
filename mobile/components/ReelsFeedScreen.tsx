@@ -348,7 +348,7 @@ function ReelCard({
   videoHeight: number;
 }) {
   const { user } = useUser();
-  const { confirm } = useAppDialog();
+  const { confirm, alert } = useAppDialog();
   const { colors } = useColorMode();
   const { height: windowHeight } = useWindowDimensions();
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -455,7 +455,16 @@ function ReelCard({
       confirmLabel: 'Устгах',
       variant: 'danger',
     });
-    if (accepted) await onDeleteReel();
+    if (!accepted) return;
+    try {
+      await onDeleteReel();
+    } catch (value) {
+      await alert({
+        title: 'Reel устгаж чадсангүй',
+        message: getApiError(value, 'Дахин оролдоно уу.'),
+        variant: 'danger',
+      });
+    }
   };
 
   useEffect(() => {
