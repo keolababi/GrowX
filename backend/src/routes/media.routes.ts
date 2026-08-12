@@ -12,6 +12,8 @@ mediaRouter.delete('/podcasts/:podcastId', asyncHandler(mediaController.removePo
 mediaRouter.get('/reels', asyncHandler(mediaController.listReels));
 mediaRouter.get('/reels/mine', asyncHandler(mediaController.listMyReels));
 mediaRouter.post('/reels', asyncHandler(mediaController.createReel));
+mediaRouter.patch('/reels/:reelId', asyncHandler(mediaController.updateReel));
+mediaRouter.delete('/reels/:reelId', asyncHandler(mediaController.removeReel));
 mediaRouter.post('/reels/:reelId/like', asyncHandler(mediaController.toggleReelLike));
 mediaRouter.get('/reels/:reelId/likes', asyncHandler(mediaController.listReelLikes));
 mediaRouter.post('/reels/:reelId/share', asyncHandler(mediaController.shareReel));

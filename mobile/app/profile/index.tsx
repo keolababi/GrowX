@@ -129,6 +129,22 @@ export default function ProfileScreen() {
     if (accepted) await remove();
   };
 
+  const deleteReel = async (reelId: string) => {
+    const accepted = await confirm({
+      title: 'Reel устгах',
+      message: 'Энэ Reel-ийг устгах уу? Буцаан сэргээх боломжгүй.',
+      confirmLabel: 'Устгах',
+      variant: 'danger',
+    });
+    if (!accepted) return;
+    try {
+      await api.delete(`/media/reels/${reelId}`);
+      setReels((items) => items.filter((item) => item.id !== reelId));
+    } catch (value) {
+      setError(getApiError(value, 'Reel устгаж чадсангүй.'));
+    }
+  };
+
   const tabPosts =
     tabIndex === 0
       ? posts
@@ -388,7 +404,11 @@ export default function ProfileScreen() {
                       </View>
                       <View style={styles.reelGrid}>
                         {reels.slice(0, 6).map((reel) => (
-                          <ProfileReelCard key={reel.id} reel={reel} />
+                          <ProfileReelCard
+                            key={reel.id}
+                            reel={reel}
+                            onDelete={() => void deleteReel(reel.id)}
+                          />
                         ))}
                       </View>
                     </>
@@ -465,13 +485,46 @@ function Stat({ value, label }: { value: number; label: string }) {
   );
 }
 
-function ProfileReelCard({ reel }: { reel: Reel }) {
+function ProfileReelCard({ reel, onDelete }: { reel: Reel; onDelete: () => void }) {
   const { colors } = useColorMode();
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <View
       style={[styles.reelCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
-      <VideoPlayer source={reel.videoUrl} aspectRatio={9 / 16} loop />
+      <View style={styles.reelVideoWrap}>
+        <VideoPlayer source={reel.videoUrl} aspectRatio={9 / 16} loop />
+        <Pressable
+          accessibilityLabel="Reel-ийн үйлдлүүд"
+          onPress={() => setMenuOpen((open) => !open)}
+          style={[styles.reelMenuButton, { backgroundColor: 'rgba(0,0,0,0.7)' }]}
+        >
+          <Icon name="ellipsis-horizontal" size={18} color="#FFFFFF" />
+        </Pressable>
+        {menuOpen && (
+          <View
+            style={[
+              styles.reelMenu,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Pressable
+              onPress={() => {
+                setMenuOpen(false);
+                router.push(`/reels/${reel.id}/edit` as Href);
+              }}
+              style={[styles.reelMenuItem, { borderBottomColor: colors.border }]}
+            >
+              <Icon name="create-outline" size={16} color={colors.text} />
+              <Text style={[styles.reelMenuText, { color: colors.text }]}>Засах</Text>
+            </Pressable>
+            <Pressable onPress={onDelete} style={styles.reelMenuItem}>
+              <Icon name="trash-outline" size={16} color={colors.danger} />
+              <Text style={[styles.reelMenuText, { color: colors.danger }]}>Устгах</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
       <View style={styles.reelMeta}>
         <Text numberOfLines={2} style={[styles.reelCaption, { color: colors.text }]}>
           {reel.caption || 'Тайлбаргүй Reel'}
@@ -628,6 +681,38 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
+  reelVideoWrap: { position: 'relative', overflow: 'hidden' },
+  reelMenuButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
+  },
+  reelMenu: {
+    position: 'absolute',
+    top: 42,
+    right: 8,
+    zIndex: 4,
+    minWidth: 116,
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 12,
+  },
+  reelMenuItem: {
+    minHeight: 39,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderBottomWidth: 1,
+  },
+  reelMenuText: { fontSize: 12, fontWeight: '800' },
   reelMeta: { paddingHorizontal: 10, paddingVertical: 10 },
   reelCaption: { minHeight: 36, fontSize: 12, lineHeight: 17, fontWeight: '700' },
   reelStats: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },

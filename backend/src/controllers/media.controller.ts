@@ -13,6 +13,9 @@ const reelSchema = z.object({
   caption: z.string().trim().max(1000).optional(),
   videoUrl: z.string().url(),
 });
+const reelUpdateSchema = z.object({
+  caption: z.string().trim().max(1000).optional(),
+});
 const reelIdSchema = z.object({ reelId: z.string().min(1) });
 const reelCommentIdSchema = reelIdSchema.extend({ commentId: z.string().min(1) });
 const reelCommentSchema = z.object({ content: z.string().trim().min(1).max(1000) });
@@ -42,6 +45,21 @@ export async function listMyReels(req: Request, res: Response): Promise<void> {
 
 export async function createReel(req: Request, res: Response): Promise<void> {
   res.status(201).json(await mediaService.createReel(req.auth!.userId, reelSchema.parse(req.body)));
+}
+
+export async function updateReel(req: Request, res: Response): Promise<void> {
+  const { reelId } = reelIdSchema.parse(req.params);
+  res
+    .status(200)
+    .json(
+      await mediaService.updateReel(req.auth!.userId, reelId, reelUpdateSchema.parse(req.body)),
+    );
+}
+
+export async function removeReel(req: Request, res: Response): Promise<void> {
+  const { reelId } = reelIdSchema.parse(req.params);
+  await mediaService.deleteReel(req.auth!.userId, reelId);
+  res.status(204).send();
 }
 
 export async function toggleReelLike(req: Request, res: Response): Promise<void> {
