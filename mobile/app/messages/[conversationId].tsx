@@ -153,6 +153,7 @@ export default function ConversationScreen() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [attachment, setAttachment] = useState<SelectedMedia | null>(null);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingPaused, setRecordingPaused] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
@@ -802,11 +803,17 @@ export default function ConversationScreen() {
                           />
                         </View>
                       ) : message.mediaUrl ? (
-                        <Image
-                          source={{ uri: message.mediaUrl }}
-                          resizeMode="cover"
-                          style={styles.messageMedia}
-                        />
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Зургийг томоор харах"
+                          onPress={() => setImageViewerUrl(message.mediaUrl)}
+                        >
+                          <Image
+                            source={{ uri: message.mediaUrl }}
+                            resizeMode="cover"
+                            style={styles.messageMedia}
+                          />
+                        </Pressable>
                       ) : null}
                       {!!message.content && (
                         <Text
@@ -1141,6 +1148,35 @@ export default function ConversationScreen() {
             )}
           </View>
         </Modal>
+
+        <Modal
+          animationType="fade"
+          transparent
+          visible={Boolean(imageViewerUrl)}
+          onRequestClose={() => setImageViewerUrl(null)}
+        >
+          <View style={styles.imageViewerRoot}>
+            <Pressable
+              accessibilityLabel="Зураг хаах"
+              onPress={() => setImageViewerUrl(null)}
+              style={StyleSheet.absoluteFill}
+            />
+            <View pointerEvents="box-none" style={styles.imageViewerContent}>
+              <Image
+                source={imageViewerUrl ? { uri: imageViewerUrl } : undefined}
+                resizeMode="contain"
+                style={styles.imageViewerImage}
+              />
+              <Pressable
+                accessibilityLabel="Зураг хаах"
+                onPress={() => setImageViewerUrl(null)}
+                style={styles.imageViewerClose}
+              >
+                <Icon name="close" size={25} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -1293,6 +1329,20 @@ const styles = StyleSheet.create({
   messageText: { color: '#EAF0ED', fontSize: 14, lineHeight: 20 },
   messageCaption: { paddingHorizontal: 8, paddingTop: 8 },
   messageMedia: { width: '100%', aspectRatio: 16 / 9, borderRadius: 15, overflow: 'hidden' },
+  imageViewerRoot: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.92)' },
+  imageViewerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 18 },
+  imageViewerImage: { width: '100%', height: '100%' },
+  imageViewerClose: {
+    position: 'absolute',
+    top: 54,
+    right: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+  },
   voiceMessage: {
     minHeight: 50,
     width: '100%',
