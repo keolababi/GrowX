@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { useTabPressStore } from '@/store/tabPressStore';
 import {
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -10,7 +9,6 @@ import {
   Text,
   useWindowDimensions,
   View,
-  type ViewStyle,
 } from 'react-native';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppBottomNav } from '@/components/AppBottomNav';
@@ -25,14 +23,6 @@ import type { Lesson } from '@/types/learning';
 import { useColorMode } from '@/providers/ColorModeProvider';
 
 const lime = '#9AF000';
-const webKnowledgeScrollStyle = {
-  height: 'calc(100vh - 85px)',
-  flexGrow: 0,
-  flexShrink: 0,
-  flexBasis: 'auto',
-  overflowY: 'auto',
-} as unknown as ViewStyle;
-
 type Shortcut = {
   label: string;
   icon: React.ComponentProps<typeof Icon>['name'];
@@ -154,7 +144,7 @@ export default function KnowledgeScreen() {
       />
       <ScrollView
         ref={scrollRef}
-        style={[styles.scroll, Platform.OS === 'web' && webKnowledgeScrollStyle]}
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
