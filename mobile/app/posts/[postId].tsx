@@ -204,7 +204,7 @@ export default function PostCommentsScreen() {
                   { borderBottomColor: colors.border },
                 ]}
               >
-                <View style={styles.postAuthor}>
+                <View style={[styles.postAuthor, postMenuOpen && styles.postAuthorActive]}>
                   <View style={[styles.avatar, { backgroundColor: colors.surfaceSoft }]}>
                     <Text style={[styles.avatarText, { color: colors.primary }]}>
                       {(post.author.displayName || post.author.email).slice(0, 2).toUpperCase()}
@@ -488,8 +488,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#17272C',
   },
-  postActive: { zIndex: 50 },
+  postActive: { zIndex: 50, elevation: 50 },
   postAuthor: { position: 'relative', flexDirection: 'row', alignItems: 'center', gap: 11 },
+  postAuthorActive: { zIndex: 60, elevation: 60 },
   postAuthorCopy: { minWidth: 0, flex: 1 },
   postMenuButton: {
     width: 40,
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 14,
   },
-  commentActive: { zIndex: 40 },
+  commentActive: { zIndex: 40, elevation: 40 },
   commentAvatar: {
     width: 40,
     height: 40,
